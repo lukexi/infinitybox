@@ -6,12 +6,13 @@ import Control.Concurrent.STM
 import Control.Monad
 import Control.Monad.Trans
 import Network.Socket.ByteString
-import Network.Socket (SockAddr)
+
 import Network.Sox
 import Data.ByteString
 import Data.Monoid
 
-packetSize = 2048
+packetSize :: Int
+packetSize = 4096
 
 makeBinaryReceiveFromChan :: (MonadIO m) => Socket -> m (TChan (ByteString, SockAddr))
 makeBinaryReceiveFromChan s = liftIO $ do

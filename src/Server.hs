@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TemplateHaskell #-}
 import qualified Data.ByteString as B
 import Network.Socket.ByteString
 
@@ -6,6 +7,7 @@ import Control.Monad
 import Control.Monad.State
 import Control.Monad.Free.Binary ()
 import Control.Monad.Free.FromFreeT
+import Control.Monad.Free
 
 import Network.Sox
 import Network.ReceiveChan
@@ -13,40 +15,81 @@ import Network.ReceiveChan
 import Types
 
 import Control.Concurrent
-import Linear
+-- import Linear
 
 import Control.Lens
 import qualified Data.Map as Map
+import Data.Map (Map)
 import Data.List
+
+import Physics.Bullet
+
+
+data ServerState = ServerState 
+    { _ssClients :: [SockAddr]
+    , _ssRigidBodies :: Map ObjectID RigidBody
+    }
+
+newServerState :: ServerState
+newServerState = ServerState mempty mempty
+
+makeLenses ''ServerState
+
+
+
+interpretS :: (MonadIO m, MonadState ServerState m) => DynamicsWorld -> Free Op () -> m ()
+interpretS dynamicsWorld = iterM interpret'
+    where
+        interpret' :: (MonadIO m, MonadState ServerState m) => Op (m t) -> m t
+        interpret' (Update objID obj n) = do
+            -- TODO pass object pos/orientation to dynamics world 
+            rigidBody <- addCube dynamicsWorld
+            ssRigidBodies . at objID ?= rigidBody >> n
+        interpret' (Echo    _ n)     = n
+        interpret' (Connect _ n)     = n
+
+
+
 
 main :: IO ()
 main = asServer $ \sock -> do
     putStrLn "Server engaged..."
 
+    dynamicsWorld  <- createDynamicsWorld
+    _              <- addGroundPlane dynamicsWorld
+    -- cubeBodies     <- replicateM 1000 $ addCube dynamicsWorld
+    
     -- Receive messages on a background thread so we don't block
     receiveChan <- makeBinaryReceiveFromChan sock
 
-    void . flip runStateT [] . flip runStateT newWorld . forever $ do
+    void . flip runStateT newServerState . flip runStateT newWorld . forever $ do
         -- Receive updates from clients
         readChanAll receiveChan $ \(message, fromAddress) -> do
             let instructions = decode' message :: Instructions
             -- Apply to our state
             interpret instructions
+            lift $ do
+                interpretS dynamicsWorld instructions
 
-            -- Update our clients list
-            lift $ id <>= [fromAddress]
-            lift $ id %= nub
+                -- Update our clients list
+                ssClients %= nub . (fromAddress:)
 
-            -- Rebroadcast to other clients
-            lift $ sendInstructions sock message fromAddress
+                -- Rebroadcast to other clients
+                sendInstructions sock message fromAddress
             return ()
+
+        -- Run the physics sim
+        stepSimulation dynamicsWorld
         
         -- Server runs simulation
-        cubes <- use (wldCubes . to Map.toList)
-        tickInstructions <- fromFreeT $ forM_ cubes $ \(objID, obj) -> do
-            let vec = V3 0 0 (-0.5)
-            let newObj = obj & objPosition +~ rotate (obj ^. objOrientation) vec
-            update objID newObj
+        rigidBodies <- lift $ use (ssRigidBodies . to Map.toList)
+        tickInstructions <- fromFreeT $ forM_ rigidBodies $ \(objID, rigidBody) -> do
+
+            (pos, orient) <- updateBody rigidBody
+            
+            let obj = Object pos orient
+
+            update objID obj
         interpret tickInstructions
         
         -- Encode and broadcast the simulation results
@@ -54,14 +97,14 @@ main = asServer $ \sock -> do
             fromNobody = SockAddrInet 3000 999
         lift $ sendInstructions sock encoded fromNobody
 
-        liftIO $ threadDelay (1000000 `div` 30)
+        liftIO $ threadDelay (1000000 `div` 60)
 
-sendInstructions :: (MonadIO m, MonadState [SockAddr] m) => Socket
-                                                         -> B.ByteString
-                                                         -> SockAddr
-                                                         -> m ()
+sendInstructions :: (MonadIO m, MonadState ServerState m) => Socket
+                                                          -> B.ByteString
+                                                          -> SockAddr
+                                                          -> m ()
 sendInstructions sock message fromAddress = do
-    clients <- get
+    clients <- use ssClients
     forM_ clients $ \clientAddr -> 
         when (clientAddr /= fromAddress) $ do
             _bytesSent <- liftIO $ sendTo sock message clientAddr

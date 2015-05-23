@@ -44,6 +44,7 @@ makeLenses ''World
 makeLenses ''Object
 makeLenses ''Player
 
+-- | Num instances so we can lerp between object states
 instance Num Object where
     (Object p1 o1) + (Object p2 o2) = Object (p1 + p2) (o1 + o2)
     (Object p1 o1) * (Object p2 o2) = Object (p1 * p2) (o1 * o2)
@@ -66,11 +67,11 @@ newWorld = World newPlayer mempty mempty
 
 interpret :: (MonadIO m, MonadState World m) => Free Op () -> m ()
 interpret = iterM interpret'
-
-interpret' :: (MonadIO m, MonadState World m) => Op (m t) -> m t
-interpret' (Echo s n)           = (liftIO $ putStrLn s) >> n
-interpret' (Update objID obj n) = wldCubes . at objID ?= obj >> n
-interpret' (Connect name n)     = (liftIO . putStrLn $ name ++ " connected") >> n
+    where
+        interpret' :: (MonadIO m, MonadState World m) => Op (m t) -> m t
+        interpret' (Echo s n)           = (liftIO $ putStrLn s) >> n
+        interpret' (Update objID obj n) = wldCubes . at objID ?= obj >> n
+        interpret' (Connect name n)     = (liftIO . putStrLn $ name ++ " connected") >> n
 
 
 -- | Deriving Generics
@@ -92,7 +93,7 @@ connect :: (Monad m) => String -> FT.FreeT Op m ()
 connect n = liftF (Connect n ())
 
 
-
-
 sendInstrs :: (MonadIO m) => Socket -> Instructions -> m Int
 sendInstrs s = sendB s
+
+
