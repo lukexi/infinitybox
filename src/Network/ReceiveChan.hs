@@ -6,18 +6,35 @@ import Control.Concurrent.STM
 import Control.Monad
 import Control.Monad.Trans
 import Network.Socket.ByteString
+import Network.Socket (SockAddr)
 import Network.Sox
+import Data.ByteString
+import Data.Monoid
+
+packetSize = 2048
+
+makeBinaryReceiveFromChan :: (MonadIO m) => Socket -> m (TChan (ByteString, SockAddr))
+makeBinaryReceiveFromChan s = liftIO $ do
+    messageChan <- newTChanIO
+    void . forkIO . forever $ do
+        message <- recvFrom s packetSize
+        atomically $ writeTChan messageChan message
+    return messageChan
 
 makeReceiveChan :: (MonadIO m, Binary a) => Socket -> m (TChan a)
 makeReceiveChan s = liftIO $ do
     messageChan <- newTChanIO
     void . forkIO . forever $ do
-        message <- recv s 1024
+        message <- recv s packetSize
         let decoded = decode' message
         atomically $ writeTChan messageChan decoded
     return messageChan
 
-readChanAll :: MonadIO m => TChan a -> (a -> m b) -> m ()
-readChanAll chan action = liftIO (atomically (tryReadTChan chan)) >>= \case
-    Just msg -> action msg >> readChanAll chan action
-    Nothing -> return ()
+readChanAll :: (MonadIO m, Monoid b) => TChan a -> (a -> m b) -> m b
+readChanAll chan action = go mempty 
+    where go accum = do 
+            liftIO (atomically (tryReadTChan chan)) >>= \case
+                Just msg -> do
+                    r <- action msg
+                    go (r <> accum)
+                Nothing -> return accum

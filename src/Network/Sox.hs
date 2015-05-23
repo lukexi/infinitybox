@@ -1,7 +1,7 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 module Network.Sox (
     module Network.Sox,
-    Socket(..)
+    Socket(..), SockAddr(..),
 ) where
 
 import Network.Socket hiding (send, sendTo, recv, recvFrom)
