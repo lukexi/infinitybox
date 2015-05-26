@@ -42,9 +42,9 @@ interpretS dynamicsWorld = iterM interpret'
     where
         interpret' :: (MonadIO m, MonadState ServerState m) => Op (m t) -> m t
         interpret' (Update objID obj n) = do
-            -- TODO pass object pos/orientation to dynamics world 
-            rigidBody <- addCube dynamicsWorld
-            ssRigidBodies . at objID ?= rigidBody >> n
+            rigidBody <- addCube dynamicsWorld (obj ^. objPosition) (obj ^. objOrientation)
+            ssRigidBodies . at objID ?= rigidBody
+            n
         interpret' (Echo    _ n)     = n
         interpret' (Connect _ n)     = n
 
@@ -57,7 +57,6 @@ main = asServer $ \sock -> do
 
     dynamicsWorld  <- createDynamicsWorld
     _              <- addGroundPlane dynamicsWorld
-    -- cubeBodies     <- replicateM 1000 $ addCube dynamicsWorld
     
     -- Receive messages on a background thread so we don't block
     receiveChan <- makeBinaryReceiveFromChan sock
@@ -75,7 +74,9 @@ main = asServer $ \sock -> do
                 ssClients %= nub . (fromAddress:)
 
                 -- Rebroadcast to other clients
-                sendInstructions sock message fromAddress
+                -- sendInstructions sock message fromAddress
+                -- Not rebroadcasting for now, since we don't
+                -- want to send unsimulated objects to the clients
             return ()
 
         -- Run the physics sim
@@ -84,8 +85,8 @@ main = asServer $ \sock -> do
         -- Server runs simulation
         rigidBodies <- lift $ use (ssRigidBodies . to Map.toList)
         tickInstructions <- fromFreeT $ forM_ rigidBodies $ \(objID, rigidBody) -> do
-
-            (pos, orient) <- updateBody rigidBody
+            
+            (pos, orient) <- getBodyState rigidBody
             
             let obj = Object pos orient
 

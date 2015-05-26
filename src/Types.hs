@@ -57,6 +57,10 @@ instance Fractional Object where
     fromRational a = Object (fromRational a) (fromRational a)
     (Object p1 o1) / (Object p2 o2) = Object (p1 / p2) (o1 / o2)
 
+interpolateObjects :: Object -> Object -> Object
+(Object p1 o1) `interpolateObjects` (Object p2 o2) = 
+    Object (lerp 0.5 p1 p2) (slerp o1 o2 0.5)
+
 newPlayer :: Player
 newPlayer = Player (V3 0 0 5) (axisAngle (V3 0 1 0) 0)
 

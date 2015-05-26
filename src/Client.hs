@@ -25,6 +25,7 @@ import Randoms
 import Movement
 import Control.Monad.Free.Binary ()
 import Control.Monad.Free.FromFreeT
+import qualified Data.Map as Map
 
 main :: IO ()
 main = asClient $ \s -> do
@@ -38,6 +39,8 @@ main = asClient $ \s -> do
 
     -- Reacquire our window
     (win, events) <- reacquire 0 $ createWindow "R2" 640 480
+    -- Lock the cursor for mouselook
+    setCursorInputMode win CursorInputMode'Disabled
 
     -- Set up our cube resources
     cubeProg <- createShaderProgram "src/Geo/cube.vert" "src/Geo/cube.frag"
@@ -63,7 +66,8 @@ main = asClient $ \s -> do
             keyDown Key'Enter e (addCube s)
 
         -- Handle mouse events
-        applyMouseLook win
+        isFocused <- getWindowFocused win
+        when isFocused $ applyMouseLook win
 
         -- Handle movement events
         applyMovement win
@@ -86,7 +90,8 @@ render win Cube{..} = do
 
     newCubes <- use wldCubes
     lastCubes <- use wldLastCubes
-    let cubes = lerp 0.5 newCubes lastCubes
+    -- let cubes = lerp 0.5 newCubes lastCubes
+    let cubes = Map.unionWith interpolateObjects lastCubes newCubes
     forM_ cubes $ \obj -> do
         let model = mkTransformation (obj ^. objOrientation) (obj ^. objPosition)
         uniformM44 cubeUniformMVP (viewProj !*! model)
