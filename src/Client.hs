@@ -11,7 +11,6 @@ import Control.Monad
 import Control.Monad.State
 import System.Random
 import Control.Lens
-import Foreign (nullPtr)
 
 import Control.Monad.Random
 
@@ -26,6 +25,7 @@ import Movement
 import Control.Monad.Free.Binary ()
 import Control.Monad.Free.FromFreeT
 import qualified Data.Map as Map
+import Data.Maybe
 
 main :: IO ()
 main = asClient $ \s -> do
@@ -88,14 +88,24 @@ render win Cube{..} = do
     useProgram cubeShader
     glBindVertexArray (unVertexArrayObject cubeVAO)
 
-    newCubes <- use wldCubes
+    newCubes  <- use wldCubes
     lastCubes <- use wldLastCubes
+
+    cameraPos <- use (wldPlayer . plrPosition)
+
     -- let cubes = lerp 0.5 newCubes lastCubes
     let cubes = Map.unionWith interpolateObjects lastCubes newCubes
     forM_ cubes $ \obj -> do
         let model = mkTransformation (obj ^. objOrientation) (obj ^. objPosition)
         uniformM44 cubeUniformMVP (viewProj !*! model)
-        glDrawElements GL_TRIANGLES cubeIndexCount GL_UNSIGNED_INT nullPtr
+
+        glUniform3f (unUniformLocation cubeUniformCamera) 
+                (cameraPos ^. _x)
+                (cameraPos ^. _y)
+                (cameraPos ^. _z)
+        uniformM44 cubeUniformInverseModel (fromMaybe model (inv44 model))
+        uniformM44 cubeUniformModel model
+        glDrawArrays GL_TRIANGLES 0 cubeVertexCount
 
 
 addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Socket -> m ()
