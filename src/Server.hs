@@ -35,8 +35,8 @@ newServerState = ServerState mempty mempty
 
 makeLenses ''ServerState
 
-
-
+-- | Interpret a client message 'updating' an object as creating that object
+-- and add it to the physics world
 interpretS :: (MonadIO m, MonadState ServerState m) => DynamicsWorld -> Free Op () -> m ()
 interpretS dynamicsWorld = iterM interpret'
     where
@@ -47,8 +47,6 @@ interpretS dynamicsWorld = iterM interpret'
             n
         interpret' (Echo    _ n)     = n
         interpret' (Connect _ n)     = n
-
-
 
 
 main :: IO ()
@@ -74,7 +72,7 @@ main = asServer $ \sock -> do
                 ssClients %= nub . (fromAddress:)
 
                 -- Rebroadcast to other clients
-                -- sendInstructions sock message fromAddress
+                -- sendInstructions sock message (Just fromAddress)
                 -- Not rebroadcasting for now, since we don't
                 -- want to send unsimulated objects to the clients
             return ()
@@ -82,32 +80,32 @@ main = asServer $ \sock -> do
         -- Run the physics sim
         stepSimulation dynamicsWorld
         
-        -- Server runs simulation
+        -- Generate a list of instructions updating 
+        -- each object with the state from the physics sim
         rigidBodies <- lift $ use (ssRigidBodies . to Map.toList)
-        tickInstructions <- fromFreeT $ forM_ rigidBodies $ \(objID, rigidBody) -> do
-            
-            (pos, orient) <- getBodyState rigidBody
-            
-            let obj = Object pos orient
-
-            update objID obj
+        tickInstructions <- fromFreeT . forM_ rigidBodies $ 
+            \(objID, rigidBody) -> do
+                (pos, orient) <- getBodyState rigidBody
+                update objID (Object pos orient)
+        
+        -- Apply to our own copy of the world
         interpret tickInstructions
         
         -- Encode and broadcast the simulation results
         let encoded = encode' tickInstructions
-            fromNobody = SockAddrInet 3000 999
-        lift $ sendInstructions sock encoded fromNobody
+        lift $ sendInstructions sock encoded Nothing
 
+        -- Run at 60 FPS
         liftIO $ threadDelay (1000000 `div` 60)
 
 sendInstructions :: (MonadIO m, MonadState ServerState m) => Socket
                                                           -> B.ByteString
-                                                          -> SockAddr
+                                                          -> Maybe SockAddr
                                                           -> m ()
 sendInstructions sock message fromAddress = do
     clients <- use ssClients
     forM_ clients $ \clientAddr -> 
-        when (clientAddr /= fromAddress) $ do
+        when (Just clientAddr /= fromAddress) $ do
             _bytesSent <- liftIO $ sendTo sock message clientAddr
             return ()
     

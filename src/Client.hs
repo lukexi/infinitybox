@@ -100,9 +100,9 @@ render win Cube{..} = do
         uniformM44 cubeUniformMVP (viewProj !*! model)
 
         glUniform3f (unUniformLocation cubeUniformCamera) 
-                (cameraPos ^. _x)
-                (cameraPos ^. _y)
-                (cameraPos ^. _z)
+                    (cameraPos ^. _x)
+                    (cameraPos ^. _y)
+                    (cameraPos ^. _z)
         uniformM44 cubeUniformInverseModel (fromMaybe model (inv44 model))
         uniformM44 cubeUniformModel model
         glDrawArrays GL_TRIANGLES 0 cubeVertexCount
