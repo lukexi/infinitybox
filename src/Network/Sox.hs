@@ -18,7 +18,7 @@ ip :: String
 ip   = "127.0.0.1"
 
 asClient :: (Socket -> IO c) -> IO c
-asClient = bracket (clientSocket ip port) sClose
+asClient = withSocketsDo . bracket (clientSocket ip port) sClose
 
 
 -- Connect a socket to a remote address
@@ -31,7 +31,7 @@ clientSocket toAddress toPort = do
 
 
 asServer :: (Socket -> IO c) -> IO c
-asServer = bracket (serverSocket port) sClose
+asServer = withSocketsDo . bracket (serverSocket port) sClose
 
 -- | Create a socket than can be listened to
 serverSocket :: ServiceName -> IO Socket

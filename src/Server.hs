@@ -63,6 +63,7 @@ main = asServer $ \sock -> do
         -- Receive updates from clients
         readChanAll receiveChan $ \(message, fromAddress) -> do
             let instructions = decode' message :: Instructions
+            -- liftIO $ putStrLn $ "Got instructions " ++ show instructions
             -- Apply to our state
             interpret instructions
             lift $ do

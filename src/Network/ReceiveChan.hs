@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE BangPatterns #-}
 module Network.ReceiveChan where
 import Data.Binary
 import Control.Concurrent
@@ -33,7 +34,7 @@ makeReceiveChan s = liftIO $ do
 
 readChanAll :: (MonadIO m, Monoid b) => TChan a -> (a -> m b) -> m b
 readChanAll chan action = go mempty 
-    where go accum = do 
+    where go !accum = do 
             liftIO (atomically (tryReadTChan chan)) >>= \case
                 Just msg -> do
                     r <- action msg
