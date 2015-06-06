@@ -1,0 +1,10 @@
+[x] Fix server crashes when client disconnects
+
+[x] Fix flashing oculus
+
+[x] Turn off cmder new tab dialog
+
+[ ] Open cmder in the correct directory, 
+
+[ ] Fix server crashes when too many cubes
+
