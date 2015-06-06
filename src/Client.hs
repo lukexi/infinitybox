@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleContexts, LambdaCase, RecordWildCards #-}
+{-# LANGUAGE FlexibleContexts, LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 import Graphics.UI.GLFW.Pal
 
 import Halive.Utils
@@ -14,7 +15,11 @@ import Control.Lens
 
 import Control.Monad.Random
 
-import Geo.Cube
+import GELP.WithActions
+
+import Geo.CubeInfo
+import Geo.PlaneInfo
+import Geo.Geometry
 
 import Network.Sox
 import Network.ReceiveChan
@@ -38,13 +43,18 @@ main = asClient $ \s -> do
     _bytesSent <- sendInstrs s (compile stdGen (connect "player"))
 
     -- Reacquire our window
-    (win, events) <- reacquire 0 $ createWindow "R2" 640 480
+    (win, events) <- reacquire 0 $ createWindow "R2" 1000 618
+
     -- Lock the cursor for mouselook
     setCursorInputMode win CursorInputMode'Disabled
 
     -- Set up our cube resources
     cubeProg <- createShaderProgram "src/Geo/cube.vert" "src/Geo/cube.frag"
-    cube     <- makeCube cubeProg
+    cubeGeometry <- initCubeGeometry cubeProg
+
+    -- Set up our cube resources
+    planeProg <- createShaderProgram "src/Geo/cube.vert" "src/Geo/cube.frag"
+    planeGeometry <- initPlaneGeometry planeProg
 
     -- Set up GL state
     glEnable GL_DEPTH_TEST
@@ -63,7 +73,9 @@ main = asClient $ \s -> do
         -- Handle key events
         processEvents events $ \e -> do
             closeOnEscape win e
-            keyDown Key'Enter e (addCube s)
+            keyDown Key'E e (addCube s)
+            keyDown Key'F e (setCursorInputMode win CursorInputMode'Disabled)
+            keyDown Key'G e (setCursorInputMode win CursorInputMode'Normal)
 
         -- Handle mouse events
         isFocused <- getWindowFocused win
@@ -73,10 +85,10 @@ main = asClient $ \s -> do
         applyMovement win
 
         -- Render the scene
-        render win cube
+        render win cubeGeometry planeGeometry
 
-render :: (MonadIO m, MonadState World m) => Window -> Cube -> m ()
-render win Cube{..} = do
+render :: ( MonadIO m, MonadState World m ) => Window -> Geometry -> Geometry -> m ()
+render win cubeGeometry planeGeometry = do
     glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
 
     projMat <- makeProjection win
@@ -84,28 +96,51 @@ render win Cube{..} = do
 
     let viewProj = projMat !*! viewMat
 
-    -- Begin cube batch
-    useProgram cubeShader
-    glBindVertexArray (unVertexArrayObject cubeVAO)
-
+ 
+    
     newCubes  <- use wldCubes
     lastCubes <- use wldLastCubes
 
     cameraPos <- use (wldPlayer . plrPosition)
 
-    -- let cubes = lerp 0.5 newCubes lastCubes
-    let cubes = Map.unionWith interpolateObjects lastCubes newCubes
-    forM_ cubes $ \obj -> do
-        let model = mkTransformation (obj ^. objOrientation) (obj ^. objPosition)
-        uniformM44 cubeUniformMVP (viewProj !*! model)
+    -- Begin cube batch
+    useProgram (program cubeGeometry)
 
-        glUniform3f (unUniformLocation cubeUniformCamera) 
+    withVAO (vAO cubeGeometry) $ do
+
+        -- let cubes = lerp 0.5 newCubes lastCubes
+        let cubes = Map.unionWith interpolateObjects lastCubes newCubes
+        forM_ cubes $ \obj -> do
+            let model = mkTransformation (obj ^. objOrientation) (obj ^. objPosition)
+            uniformM44 ( uMVP cubeGeometry ) (viewProj !*! model)
+
+            glUniform3f (unUniformLocation ( uCamera cubeGeometry )) 
+                        (cameraPos ^. _x)
+                        (cameraPos ^. _y)
+                        (cameraPos ^. _z)
+            uniformM44 ( uInverseModel cubeGeometry ) (fromMaybe model (inv44 model))
+            uniformM44 ( uModel cubeGeometry ) model
+            glDrawArrays GL_TRIANGLES 0 ( vertCount cubeGeometry )
+
+
+    useProgram (program planeGeometry)
+
+    withVAO (vAO planeGeometry) $ do
+
+        let model = mkTransformation 
+                        ( axisAngle ( V3 1 0 0 ) ((-pi)/2) )
+                        ( V3 0 0 0 )
+
+        uniformM44 ( uMVP planeGeometry ) ( viewProj !*! model )
+        glUniform3f (unUniformLocation ( uCamera planeGeometry )) 
                     (cameraPos ^. _x)
                     (cameraPos ^. _y)
                     (cameraPos ^. _z)
-        uniformM44 cubeUniformInverseModel (fromMaybe model (inv44 model))
-        uniformM44 cubeUniformModel model
-        glDrawArrays GL_TRIANGLES 0 cubeVertexCount
+        uniformM44 ( uInverseModel planeGeometry ) (fromMaybe model (inv44 model))
+        uniformM44 ( uModel planeGeometry ) model
+
+        glDrawArrays GL_TRIANGLES 0 ( vertCount planeGeometry )
+
 
 
 addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Socket -> m ()
@@ -115,7 +150,8 @@ addCube s = do
     instructions <- fromFreeT $ do
         playerPos <- use (wldPlayer . plrPosition)
         playerRot <- use (wldPlayer . plrOrientation)
-        let object = Object playerPos playerRot
+        let spawnPoint = rotate playerRot (V3 0 1 0) + playerPos
+            object = Object spawnPoint playerRot
         
         objID <- getRandom'
         update objID object

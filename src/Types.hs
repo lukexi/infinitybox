@@ -62,7 +62,7 @@ interpolateObjects :: Object -> Object -> Object
     Object (lerp 0.5 p1 p2) (slerp o1 o2 0.5)
 
 newPlayer :: Player
-newPlayer = Player (V3 0 0 5) (axisAngle (V3 0 1 0) 0)
+newPlayer = Player (V3 0 5 0) (axisAngle (V3 0 1 0) 0)
 
 newWorld :: World
 newWorld = World newPlayer mempty mempty

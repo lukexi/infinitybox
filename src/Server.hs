@@ -15,7 +15,7 @@ import Network.ReceiveChan
 import Types
 
 import Control.Concurrent
--- import Linear
+import Linear
 
 import Control.Lens
 import qualified Data.Map as Map
@@ -43,6 +43,9 @@ interpretS dynamicsWorld = iterM interpret'
         interpret' :: (MonadIO m, MonadState ServerState m) => Op (m t) -> m t
         interpret' (Update objID obj n) = do
             rigidBody <- addCube dynamicsWorld (obj ^. objPosition) (obj ^. objOrientation)
+
+            let v = rotate ( obj ^. objOrientation ) ( V3 0 0 ( -30 ) )
+            applyCentralForce rigidBody v
             ssRigidBodies . at objID ?= rigidBody
             n
         interpret' (Echo    _ n)     = n
