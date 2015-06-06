@@ -1,8 +1,8 @@
-module Geo.Geometry where
+module Pal.Material where
 import Graphics.GL
 import Graphics.GL.Pal
 
-data Geometry = Geometry
+data Material = Material
         { vAO           :: VertexArrayObject
         , program       :: GLProgram
         , vertCount     :: GLsizei

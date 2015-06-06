@@ -16,11 +16,11 @@ import Control.Lens
 
 import Control.Monad.Random
 
-import GELP.WithActions
+import Pal.WithActions
 
-import Geo.CubeInfo
-import Geo.PlaneInfo
-import Geo.Geometry
+import Pal.Geometry
+import Pal.Geometries.CubeInfo
+import Pal.Geometries.PlaneInfo
 
 import Network.Sox
 import Network.ReceiveChan
@@ -72,16 +72,14 @@ main = asClient $ \s -> do
   -- Connect to the server
   _bytesSent <- sendInstrs s (compile stdGen (connect "player"))
 
-  -- Lock the cursor for mouselook
-  setCursorInputMode window CursorInputMode'Disabled
 
   -- Set up our cube resources
-  cubeProg <- createShaderProgram "src/Geo/cube.vert" "src/Geo/cube.frag"
-  cubeGeometry <- initCubeGeometry cubeProg
+  cubeProg <- createShaderProgram "src/shaders/cube.vert" "src/shaders/cube.frag"
+  cubeGeometry <- initCubeGeometry cubeProg 0.2
 
   -- Set up our cube resources
-  planeProg <- createShaderProgram "src/Geo/cube.vert" "src/Geo/cube.frag"
-  planeGeometry <- initPlaneGeometry planeProg
+  planeProg <- createShaderProgram "src/shaders/cube.vert" "src/shaders/cube.frag"
+  planeGeometry <- initPlaneGeometry planeProg 50
 
   -- Set up GL state
   glEnable GL_DEPTH_TEST
@@ -188,13 +186,12 @@ render cubeGeometry planeGeometry viewProj = do
 
 addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Socket -> m ()
 addCube s = do
-
   -- Spawn a cube at the player's position and orientation
   instructions <- fromFreeT $ do
     playerPos <- use (wldPlayer . plrPosition)
     playerRot <- use (wldPlayer . plrOrientation)
-    let spawnPoint = rotate playerRot (V3 0 1 0) + playerPos
-        object = Object spawnPoint playerRot
+    let spawnPoint = rotate playerRot (V3 0 0.1 0) + playerPos
+        object = Object spawnPoint playerRot 0.2
     
     objID <- getRandom'
     update objID object
