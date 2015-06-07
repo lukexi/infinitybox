@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module Pal.Entity where
+  
 import Graphics.GL
 
 import Pal.Types

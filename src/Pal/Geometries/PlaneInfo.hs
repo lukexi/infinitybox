@@ -48,7 +48,6 @@ initPlaneGeometry scale = do
   tangents <- bufferData $ take 18 $ cycle [1,0,0]
 
 
-
   -----------------
   -- Plane UVs
   -----------------

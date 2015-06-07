@@ -5,56 +5,52 @@ import Control.Monad.Trans
 import Foreign
 
 
-newtype ArrayBuffer = ArrayBuffer         { unArrayBuffer         :: GLuint  }
-
-newtype Program         = Program           { unProgram           :: GLuint }
+newtype Program           = Program             { unProgram             :: GLuint }
 
 newtype AttributeLocation = AttributeLocation   { unAttributeLocation   :: GLint  }
 newtype UniformLocation   = UniformLocation     { unUniformLocation     :: GLint  }
 newtype TextureID         = TextureID           { unTextureID           :: GLuint }
 
 newtype VertexArrayObject = VertexArrayObject   { unVertexArrayObject   :: GLuint }
+newtype ArrayBuffer       = ArrayBuffer         { unArrayBuffer         :: GLuint }
 
-newtype TextureObject = TextureObject { unTextureObject :: GLuint }
+newtype TextureObject     = TextureObject       { unTextureObject       :: GLuint }
 
 data ColorSpace = SRGB | Linear
 
-
 data Uniforms = Uniforms
-
-        { uMVP          :: UniformLocation
-        , uInverseModel :: UniformLocation
-        , uModel        :: UniformLocation
-        , uCamera       :: UniformLocation
-        } 
+  { uMVP          :: UniformLocation
+  , uInverseModel :: UniformLocation
+  , uModel        :: UniformLocation
+  , uCamera       :: UniformLocation
+  } 
 
 
 data Geometry = Geometry
-
-        { positions     :: ArrayBuffer
-        , normals       :: ArrayBuffer
-        , tangents      :: ArrayBuffer
-        , uvs           :: ArrayBuffer
-        , vertCount     :: GLsizei
-        }
+  { positions     :: ArrayBuffer
+  , normals       :: ArrayBuffer
+  , tangents      :: ArrayBuffer
+  , uvs           :: ArrayBuffer
+  , vertCount     :: GLsizei
+  }
 
 {-
 data Body = Body
 
-        { position  :: V3 Float
-        , rotation  :: Quaternion
-        , scale     :: V3 Float
-        , rigidBody :: RigidBody
-        }
+  { position  :: V3 Float
+  , rotation  :: Quaternion
+  , scale     :: V3 Float
+  , rigidBody :: RigidBody
+  }
 -}
 
 data Entity = Entity
+  { program   :: Program
+  , uniforms  :: Uniforms
+  , geometry  :: Geometry
+  , vAO       :: VertexArrayObject
+  }
 
-        { program   :: Program
-        , uniforms  :: Uniforms
-        , geometry  :: Geometry
-        , vAO       :: VertexArrayObject
-        }
 
 -- | Utility for extracting a value from a pointer-taking function
 overPtr :: (MonadIO m, Storable a) => (Ptr a -> IO b) -> m a
