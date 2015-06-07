@@ -26,7 +26,7 @@ randomCube = fromFreeT $ do
         <*> getRandomR' (0, 1)
     angle' <- getRandomR' (0, 2*pi)
     let orientation = axisAngle axis angle'
-        object = Object position orientation
+        object = Object position orientation 0.05
     objID <- getRandom'
     update objID object
     echo (show object)

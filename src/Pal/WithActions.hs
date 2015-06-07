@@ -1,4 +1,4 @@
-module GELP.WithActions where
+module Pal.WithActions where
 
 import Graphics.GL
 import Graphics.GL.Pal

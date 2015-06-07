@@ -15,11 +15,11 @@ import Control.Lens
 
 import Control.Monad.Random
 
-import GELP.WithActions
+import Pal.WithActions
 
-import Geo.CubeInfo
-import Geo.PlaneInfo
-import Geo.Geometry
+import Pal.Geometry
+import Pal.Geometries.CubeInfo
+import Pal.Geometries.PlaneInfo
 
 import Network.Sox
 import Network.ReceiveChan
@@ -49,12 +49,12 @@ main = asClient $ \s -> do
     setCursorInputMode win CursorInputMode'Disabled
 
     -- Set up our cube resources
-    cubeProg <- createShaderProgram "src/Geo/cube.vert" "src/Geo/cube.frag"
-    cubeGeometry <- initCubeGeometry cubeProg
+    cubeProg <- createShaderProgram "src/shaders/cube.vert" "src/shaders/cube.frag"
+    cubeGeometry <- initCubeGeometry cubeProg 0.2
 
     -- Set up our cube resources
-    planeProg <- createShaderProgram "src/Geo/cube.vert" "src/Geo/cube.frag"
-    planeGeometry <- initPlaneGeometry planeProg
+    planeProg <- createShaderProgram "src/shaders/cube.vert" "src/shaders/cube.frag"
+    planeGeometry <- initPlaneGeometry planeProg 50
 
     -- Set up GL state
     glEnable GL_DEPTH_TEST
@@ -150,8 +150,8 @@ addCube s = do
     instructions <- fromFreeT $ do
         playerPos <- use (wldPlayer . plrPosition)
         playerRot <- use (wldPlayer . plrOrientation)
-        let spawnPoint = rotate playerRot (V3 0 1 0) + playerPos
-            object = Object spawnPoint playerRot
+        let spawnPoint = rotate playerRot (V3 0 0.1 0) + playerPos
+            object = Object spawnPoint playerRot 0.2
         
         objID <- getRandom'
         update objID object

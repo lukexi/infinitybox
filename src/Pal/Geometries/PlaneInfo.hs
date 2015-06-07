@@ -1,23 +1,24 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module Geo.PlaneInfo where
+module Pal.Geometries.PlaneInfo where
 
 import Graphics.GL
 import Graphics.GL.Pal
-import Geo.AssignAttribute
-import GELP.WithActions
-import Geo.Geometry
+
+import Pal.AssignAttribute
+import Pal.WithActions
+import Pal.Geometry
 
 
-initPlaneGeometry :: GLProgram -> IO Geometry
-initPlaneGeometry program = do
+--initPlaneGeometry :: GLProgram -> IO Geometry
+initPlaneGeometry program scale = do
 
     -----------------
     -- Plane Positions
     -----------------
     
     -- Buffer the plane vertices
-    let positions = map (*100)
+    let positions = map (*scale)
 
 
             -- front

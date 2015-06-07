@@ -1,4 +1,4 @@
-module Geo.AssignAttribute where
+module Pal.AssignAttribute where
 
 import Foreign
 import Graphics.GL

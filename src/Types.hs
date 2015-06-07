@@ -27,6 +27,7 @@ type ObjectID = Int
 data Object = Object
     { _objPosition    :: V3 GLfloat
     , _objOrientation :: Quaternion GLfloat
+    , _objScale       :: GLfloat
     } deriving (Generic, Binary, Show)
 
 data Player = Player 
@@ -44,22 +45,9 @@ makeLenses ''World
 makeLenses ''Object
 makeLenses ''Player
 
--- | Num instances so we can lerp between object states
-instance Num Object where
-    (Object p1 o1) + (Object p2 o2) = Object (p1 + p2) (o1 + o2)
-    (Object p1 o1) * (Object p2 o2) = Object (p1 * p2) (o1 * o2)
-    fromInteger a                   = Object (fromInteger a) (fromInteger a)
-    abs (Object p o)                = Object (abs p) (abs o)
-    signum (Object p o)             = Object (signum p) (signum o)
-    negate (Object p o)             = Object (negate p) (negate o)
-
-instance Fractional Object where
-    fromRational a = Object (fromRational a) (fromRational a)
-    (Object p1 o1) / (Object p2 o2) = Object (p1 / p2) (o1 / o2)
-
 interpolateObjects :: Object -> Object -> Object
-(Object p1 o1) `interpolateObjects` (Object p2 o2) = 
-    Object (lerp 0.5 p1 p2) (slerp o1 o2 0.5)
+(Object p1 o1 s1) `interpolateObjects` (Object p2 o2 s2) = 
+    Object (lerp 0.5 p1 p2) (slerp o1 o2 0.5) s2
 
 newPlayer :: Player
 newPlayer = Player (V3 0 5 0) (axisAngle (V3 0 1 0) 0)

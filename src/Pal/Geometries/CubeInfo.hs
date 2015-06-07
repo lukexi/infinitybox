@@ -1,15 +1,16 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module Geo.CubeInfo where
+module Pal.Geometries.CubeInfo where
 
 import Graphics.GL
 import Graphics.GL.Pal
-import GELP.WithActions
-import Geo.AssignAttribute
-import Geo.Geometry
 
-initCubeGeometry :: GLProgram -> IO Geometry
-initCubeGeometry program = do
+import Pal.WithActions
+import Pal.AssignAttribute
+import Pal.Geometry
+
+--initCubeGeometry :: GLProgram -> IO Geometry
+initCubeGeometry program scale = do
 
 
     -----------------
@@ -17,7 +18,7 @@ initCubeGeometry program = do
     -----------------
     
     -- Buffer the cube vertices
-    let positions = 
+    let positions = map ( * scale )
 
 
             -- front
