@@ -118,6 +118,7 @@ renderVR :: (MonadIO m, MonadState World m)
          => RenderHMD -> Geometry -> Geometry -> m ()
 renderVR renderHMD cubeGeometry planeGeometry = do
   renderHMDFrame renderHMD $ \eyePoses -> do
+
     glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
 
     viewMat <- playerViewMat
@@ -128,7 +129,9 @@ renderVR renderHMD cubeGeometry planeGeometry = do
 renderFlat :: (MonadIO m, MonadState World m) 
            => Window -> Geometry -> Geometry -> m ()
 renderFlat win cubeGeometry planeGeometry = do
+
   glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
+  
   projMat <- makeProjection win
   viewMat <- playerViewMat
 
