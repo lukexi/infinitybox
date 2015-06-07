@@ -7,7 +7,7 @@ import Foreign
 
 newtype ArrayBuffer = ArrayBuffer         { unArrayBuffer         :: GLuint  }
 
-newtype GLProgram         = GLProgram           { unGLProgram           :: GLuint }
+newtype Program         = Program           { unProgram           :: GLuint }
 
 newtype AttributeLocation = AttributeLocation   { unAttributeLocation   :: GLint  }
 newtype UniformLocation   = UniformLocation     { unUniformLocation     :: GLint  }
@@ -50,7 +50,7 @@ data Body = Body
 
 data Entity = Entity
 
-        { program   :: GLProgram
+        { program   :: Program
         , uniforms  :: Uniforms
         , geometry  :: Geometry
         , vAO       :: VertexArrayObject

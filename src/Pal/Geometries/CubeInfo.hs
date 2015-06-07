@@ -3,13 +3,11 @@
 module Pal.Geometries.CubeInfo where
 
 import Graphics.GL
-import Graphics.GL.Pal
 
-import Pal.WithActions
 import Pal.ArrayBuffer
 import Pal.Types
 
---initCubeGeometry :: GLProgram -> IO Geometry
+initCubeGeometry :: GLfloat -> IO Geometry
 initCubeGeometry scale = do
 
 

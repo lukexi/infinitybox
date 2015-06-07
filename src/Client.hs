@@ -145,7 +145,7 @@ renderFlat win cube plane = do
 
 
 
-render :: ( MonadIO m, MonadState World m ) => Entity -> Entity -> V4 (V4 GLfloat) -> m ()
+render :: ( MonadIO m, MonadState World m ) => Entity -> Entity -> M44 GLfloat -> m ()
 render cube plane viewProj = do
 
   newCubes  <- use wldCubes
@@ -182,18 +182,16 @@ render cube plane viewProj = do
     drawEntity model viewProj plane
 
 
+drawEntity :: MonadIO m => M44 GLfloat -> M44 GLfloat -> Entity -> m ()
+drawEntity model projection anEntity = do 
 
-drawEntity model projection entity = do 
-
-  let Uniforms{..} = uniforms entity
+  let Uniforms{..} = uniforms anEntity
 
   uniformM44 uMVP ( projection !*! model)
   uniformM44 uInverseModel (fromMaybe model (inv44 model))
   uniformM44 uModel model
 
-  glDrawArrays GL_TRIANGLES 0 ( vertCount ( geometry entity ) )
-
-
+  glDrawArrays GL_TRIANGLES 0 ( vertCount ( geometry anEntity ) )
 
 
 addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Socket -> m ()

@@ -5,10 +5,11 @@ import Graphics.GL
 import Pal.Types
 import Pal.Shader
 
-assignAttribute program attributeName attributeLength = do
+assignAttribute :: Program -> String -> GLint -> IO ()
+assignAttribute prog attributeName attributeLength = do
 
   -- Gets the attribute for the program we have passed in
-  attribute <- getShaderAttribute program attributeName
+  attribute <- getShaderAttribute prog attributeName
 
   -- Describe our array to OpenGL
   glEnableVertexAttribArray ( fromIntegral ( unAttributeLocation attribute ) )

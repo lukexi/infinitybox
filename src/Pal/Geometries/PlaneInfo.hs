@@ -3,14 +3,11 @@
 module Pal.Geometries.PlaneInfo where
 
 import Graphics.GL
-import Graphics.GL.Pal
 
-import Pal.WithActions
 import Pal.ArrayBuffer
 import Pal.Types
 
-
---initPlaneGeometry :: GLProgram -> IO Geometry
+initPlaneGeometry :: GLfloat -> IO Geometry
 initPlaneGeometry scale = do
 
   -----------------
