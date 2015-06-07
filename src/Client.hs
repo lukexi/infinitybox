@@ -3,7 +3,6 @@
 import Graphics.UI.GLFW.Pal
 
 -- import Halive.Utils
-import Graphics.GL.Pal
 import Graphics.GL
 import Graphics.Oculus
 import Linear
@@ -16,11 +15,10 @@ import Control.Lens
 
 import Control.Monad.Random
 
-import Pal.WithActions
-
-import Pal.Geometry
+import Pal.Pal
 import Pal.Geometries.CubeInfo
 import Pal.Geometries.PlaneInfo
+
 
 import Network.Sox
 import Network.ReceiveChan
@@ -75,11 +73,15 @@ main = asClient $ \s -> do
 
   -- Set up our cube resources
   cubeProg <- createShaderProgram "src/shaders/cube.vert" "src/shaders/cube.frag"
-  cubeGeometry <- initCubeGeometry cubeProg 0.2
+  cubeGeometry <- initCubeGeometry 0.2
+
+  cube <- entity cubeGeometry cubeProg 
 
   -- Set up our cube resources
   planeProg <- createShaderProgram "src/shaders/cube.vert" "src/shaders/cube.frag"
-  planeGeometry <- initPlaneGeometry planeProg 50
+  planeGeometry <- initPlaneGeometry 50
+
+  plane <- entity planeGeometry planeProg 
 
   -- Set up GL state
   glEnable GL_DEPTH_TEST
@@ -111,12 +113,12 @@ main = asClient $ \s -> do
 
     -- Render the scene
     case maybeRenderHMD of
-      Nothing -> renderFlat window cubeGeometry planeGeometry
-      Just renderHMD -> renderVR renderHMD cubeGeometry planeGeometry
+      Nothing -> renderFlat window cube plane
+      Just renderHMD -> renderVR renderHMD cube plane
 
 renderVR :: (MonadIO m, MonadState World m) 
-         => RenderHMD -> Geometry -> Geometry -> m ()
-renderVR renderHMD cubeGeometry planeGeometry = do
+         => RenderHMD -> Entity -> Entity -> m ()
+renderVR renderHMD cube plane = do
   renderHMDFrame renderHMD $ \eyePoses -> do
 
     glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
@@ -124,11 +126,11 @@ renderVR renderHMD cubeGeometry planeGeometry = do
     viewMat <- playerViewMat
 
     renderHMDEyes renderHMD eyePoses $ \projMat -> do
-      render cubeGeometry planeGeometry (projMat !*! viewMat)
+      render cube plane (projMat !*! viewMat)
 
 renderFlat :: (MonadIO m, MonadState World m) 
-           => Window -> Geometry -> Geometry -> m ()
-renderFlat win cubeGeometry planeGeometry = do
+           => Window -> Entity -> Entity -> m ()
+renderFlat win cube plane = do
 
   glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
   
@@ -136,11 +138,15 @@ renderFlat win cubeGeometry planeGeometry = do
   viewMat <- playerViewMat
 
   let viewProj = projMat !*! viewMat
-  render cubeGeometry planeGeometry viewProj
+  render cube plane viewProj
   swapBuffers win
 
-render :: ( MonadIO m, MonadState World m ) => Geometry -> Geometry -> V4 (V4 GLfloat) -> m ()
-render cubeGeometry planeGeometry viewProj = do
+
+
+
+
+render :: ( MonadIO m, MonadState World m ) => Entity -> Entity -> V4 (V4 GLfloat) -> m ()
+render cube plane viewProj = do
 
   newCubes  <- use wldCubes
   lastCubes <- use wldLastCubes
@@ -148,42 +154,45 @@ render cubeGeometry planeGeometry viewProj = do
   cameraPos <- use (wldPlayer . plrPosition)
 
   -- Begin cube batch
-  useProgram (program cubeGeometry)
+  useProgram (program cube)
 
-  withVAO (vAO cubeGeometry) $ do
+  let cam = uCamera ( uniforms cube )
+  glUniform3f ( unUniformLocation  cam )
+      ( cameraPos ^. _x )
+      ( cameraPos ^. _y )
+      ( cameraPos ^. _z )
+
+  withVAO ( vAO cube ) $ do
 
     -- let cubes = lerp 0.5 newCubes lastCubes
     let cubes = Map.unionWith interpolateObjects lastCubes newCubes
     forM_ cubes $ \obj -> do
+
       let model = mkTransformation (obj ^. objOrientation) (obj ^. objPosition)
-      uniformM44 ( uMVP cubeGeometry ) (viewProj !*! model)
 
-      glUniform3f (unUniformLocation ( uCamera cubeGeometry )) 
-            (cameraPos ^. _x)
-            (cameraPos ^. _y)
-            (cameraPos ^. _z)
-      uniformM44 ( uInverseModel cubeGeometry ) (fromMaybe model (inv44 model))
-      uniformM44 ( uModel cubeGeometry ) model
-      glDrawArrays GL_TRIANGLES 0 ( vertCount cubeGeometry )
+      drawEntity model viewProj cube
 
 
-  useProgram (program planeGeometry)
-
-  withVAO (vAO planeGeometry) $ do
+  withVAO (vAO plane) $ do
 
     let model = mkTransformation 
             ( axisAngle ( V3 1 0 0 ) ((-pi)/2) )
             ( V3 0 0 0 )
 
-    uniformM44 ( uMVP planeGeometry ) ( viewProj !*! model )
-    glUniform3f (unUniformLocation ( uCamera planeGeometry )) 
-          (cameraPos ^. _x)
-          (cameraPos ^. _y)
-          (cameraPos ^. _z)
-    uniformM44 ( uInverseModel planeGeometry ) (fromMaybe model (inv44 model))
-    uniformM44 ( uModel planeGeometry ) model
+    drawEntity model viewProj plane
 
-    glDrawArrays GL_TRIANGLES 0 ( vertCount planeGeometry )
+
+
+drawEntity model projection entity = do 
+
+  let Uniforms{..} = uniforms entity
+
+  uniformM44 uMVP ( projection !*! model)
+  uniformM44 uInverseModel (fromMaybe model (inv44 model))
+  uniformM44 uModel model
+
+  glDrawArrays GL_TRIANGLES 0 ( vertCount ( geometry entity ) )
+
 
 
 
