@@ -27,8 +27,6 @@ import Data.Default
 
 import Physics.Bullet
 
-import Data.IORef
-
 data ServerState = ServerState 
   { _ssClients :: [SockAddr]
   , _ssRigidBodies :: Map ObjectID RigidBody
@@ -40,11 +38,10 @@ newServerState = ServerState mempty mempty
 makeLenses ''ServerState
 
 main :: IO ()
-main = asServer $ \sock -> do
+main = do
   putStrLn "Server engaged..."
-
-  sockRef <- newIORef sock
-
+  sock <- listenSocket serverPort
+  
   dynamicsWorld  <- createDynamicsWorld
   _              <- addGroundPlane dynamicsWorld
   
