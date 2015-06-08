@@ -9,6 +9,7 @@ import Pal.Uniforms
 import Pal.WithActions
 import Pal.AssignAttribute
 
+entity :: Geometry -> Program -> IO Entity
 entity geometry program = do
 
   -- Setup a VAO

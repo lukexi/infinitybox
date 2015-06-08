@@ -4,7 +4,8 @@ import Graphics.GL
 import Control.Monad.Trans
 import Foreign
 
-newtype GLProgram         = GLProgram           { unGLProgram           :: GLuint }
+
+newtype Program           = Program             { unProgram             :: GLuint }
 
 newtype AttributeLocation = AttributeLocation   { unAttributeLocation   :: GLint  }
 newtype UniformLocation   = UniformLocation     { unUniformLocation     :: GLint  }
@@ -18,7 +19,6 @@ newtype TextureObject     = TextureObject       { unTextureObject       :: GLuin
 data ColorSpace = SRGB | Linear
 
 data Uniforms = Uniforms
-
   { uMVP          :: UniformLocation
   , uInverseModel :: UniformLocation
   , uModel        :: UniformLocation
@@ -27,7 +27,6 @@ data Uniforms = Uniforms
 
 
 data Geometry = Geometry
-
   { positions     :: ArrayBuffer
   , normals       :: ArrayBuffer
   , tangents      :: ArrayBuffer
@@ -46,12 +45,12 @@ data Body = Body
 -}
 
 data Entity = Entity
-
-  { program   :: GLProgram
+  { program   :: Program
   , uniforms  :: Uniforms
   , geometry  :: Geometry
   , vAO       :: VertexArrayObject
   }
+
 
 -- | Utility for extracting a value from a pointer-taking function
 overPtr :: (MonadIO m, Storable a) => (Ptr a -> IO b) -> m a

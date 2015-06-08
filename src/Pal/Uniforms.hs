@@ -6,22 +6,16 @@ import Graphics.GL
 import Pal.Types
 import Pal.Shader
 
-import Control.Monad
 import Control.Monad.Trans
 import Foreign
 
-import Foreign.C.String
 
-import qualified Data.ByteString as BS
-import qualified Data.Text.Encoding as Text
-import qualified Data.Text.IO as Text
+
 
 import Linear
 import Data.Foldable
 
-import Data.Text (Text)
-
-
+assignUniforms :: Program -> IO Uniforms
 assignUniforms program = do 
 
   uMVP            <- getShaderUniform program "uModelViewProjection"

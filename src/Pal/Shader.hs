@@ -14,13 +14,10 @@ import qualified Data.ByteString as BS
 import qualified Data.Text.Encoding as Text
 import qualified Data.Text.IO as Text
 
-import Linear
-import Data.Foldable
-
 import Data.Text (Text)
 
-useProgram :: MonadIO m => GLProgram -> m ()
-useProgram (GLProgram program) = glUseProgram (fromIntegral program)
+useProgram :: MonadIO m => Program -> m ()
+useProgram (Program prog) = glUseProgram (fromIntegral prog)
 
 ---------------
 -- Load shaders
@@ -29,7 +26,7 @@ useProgram (GLProgram program) = glUseProgram (fromIntegral program)
 -- | Takes the raw source of a pair of shader programs. 
 -- Useful when getting shader source from somewhere other than a file,
 -- or for munging shader source before compiling it.
-createShaderProgramFromSources :: String -> Text -> String -> Text -> IO GLProgram
+createShaderProgramFromSources :: String -> Text -> String -> Text -> IO Program
 createShaderProgramFromSources vertexShaderName vertexShaderSource fragmentShaderName fragmentShaderSource = do 
   
   vertexShader <- glCreateShader GL_VERTEX_SHADER
@@ -42,7 +39,7 @@ createShaderProgramFromSources vertexShaderName vertexShaderSource fragmentShade
 
 
 
-createShaderProgram :: FilePath -> FilePath -> IO GLProgram
+createShaderProgram :: FilePath -> FilePath -> IO Program
 createShaderProgram vertexShaderPath fragmentShaderPath = do 
   
   vertexShader <- glCreateShader GL_VERTEX_SHADER
@@ -55,19 +52,20 @@ createShaderProgram vertexShaderPath fragmentShaderPath = do
 
 
 
-attachProgram :: GLuint -> GLuint -> IO GLProgram
+attachProgram :: GLuint -> GLuint -> IO Program
 attachProgram vertexShader fragmentShader = do
 
-  program <- glCreateProgram
+  prog <- glCreateProgram
 
-  glAttachShader program vertexShader
-  glAttachShader program fragmentShader
+  glAttachShader prog vertexShader
+  glAttachShader prog fragmentShader
 
-  glLinkProgram program
+  glLinkProgram prog
 
-  checkLinkStatus program
+  checkLinkStatus prog
   
-  return (GLProgram program)
+  return (Program prog)
+
 
 
 
@@ -91,8 +89,9 @@ compileShaderSource path src shader = do
 
 
 
-getShaderAttribute :: GLProgram -> String -> IO AttributeLocation
-getShaderAttribute (GLProgram prog) attributeName = do
+
+getShaderAttribute :: Program -> String -> IO AttributeLocation
+getShaderAttribute (Program prog) attributeName = do
 
   location <- withCString attributeName $ \attributeNameCString -> 
     glGetAttribLocation prog attributeNameCString
@@ -105,8 +104,8 @@ getShaderAttribute (GLProgram prog) attributeName = do
 
 
 
-getShaderUniform :: GLProgram -> String -> IO UniformLocation
-getShaderUniform (GLProgram prog) uniformName = do
+getShaderUniform :: Program -> String -> IO UniformLocation
+getShaderUniform (Program prog) uniformName = do
 
   location <- withCString uniformName $ \uniformNameCString -> 
     glGetUniformLocation prog uniformNameCString
@@ -146,24 +145,23 @@ glGetErrors = do
 
 
 checkLinkStatus :: GLuint -> IO ()
-checkLinkStatus program = do
+checkLinkStatus prog = do
 
-  linked <- overPtr (glGetProgramiv program GL_LINK_STATUS)
+  linked <- overPtr (glGetProgramiv prog GL_LINK_STATUS)
 
   when (linked == GL_FALSE) $ do
 
-    maxLength <- overPtr (glGetProgramiv program GL_INFO_LOG_LENGTH)
+    maxLength <- overPtr (glGetProgramiv prog GL_INFO_LOG_LENGTH)
 
     logLines <- allocaArray (fromIntegral maxLength) $ \p ->
 
             alloca $ \lenP -> do
 
-              glGetProgramInfoLog program maxLength lenP p
+              glGetProgramInfoLog prog maxLength lenP p
               len <- peek lenP
               peekCStringLen (p, fromIntegral len)
 
     putStrLn logLines
-
 
 
 checkCompileStatus :: String -> GLuint -> IO ()

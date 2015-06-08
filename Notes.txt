@@ -1,6 +1,10 @@
 [x] Fix flashing oculus
-
 [x] Turn off cmder new tab dialog
+[x] Fix isaac HSW display
+
+[ ] Fix isaac sandboxing for dependent packages
+
+[ ] Have client attempt reconnects
 
 [ ] Fix server crashes when too many cubes
 
