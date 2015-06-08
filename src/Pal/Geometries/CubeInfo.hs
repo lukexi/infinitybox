@@ -72,8 +72,8 @@ initCubeGeometry scale = do
       , -1.0 , -1.0 , -1.0
       ,  1.0 , -1.0 , -1.0
 
-      ,  1.0 , -1.0 ,  1.0
       ,  1.0 , -1.0 , -1.0
+      ,  1.0 , -1.0 ,  1.0
       , -1.0 , -1.0 ,  1.0 ]
 
 
@@ -82,6 +82,8 @@ initCubeGeometry scale = do
   -- Cube Normals
   -----------------
 
+  --normals <- bufferData $ take ( 18 * 6 ) $ cycle [0,0,1]
+  
   -- Buffer the cube vertices
   normals <- bufferData
 
@@ -141,7 +143,6 @@ initCubeGeometry scale = do
       ,  0.0 , -1.0 ,  0.0
       ,  0.0 , -1.0 ,  0.0
       ,  0.0 , -1.0 ,  0.0 ]
-
 
   -----------------
   -- Cube Tangents
@@ -263,8 +264,8 @@ initCubeGeometry scale = do
       ,  0.0 ,  0.0
       ,  1.0 ,  1.0
 
-      ,  1.0 ,  0.0 
       ,  1.0 ,  1.0 
+      ,  1.0 ,  0.0 
       ,  0.0 ,  0.0 ]
 
   let vertCount = 3 * 2 * 6

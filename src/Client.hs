@@ -30,10 +30,11 @@ import Control.Monad.Free.Binary ()
 import Control.Monad.Free.FromFreeT
 import qualified Data.Map as Map
 import Data.Maybe
+import Control.Concurrent
 
 enableVR :: Bool
-enableVR = False
---enableVR = True
+--enableVR = False
+enableVR = True
 
 main :: IO ()
 main = asClient $ \s -> do
@@ -63,7 +64,6 @@ main = asClient $ \s -> do
   -- Get a stdgen for Entity ID generation
   stdGen <- getStdGen
 
-
   -- Create a UDP receive thread
   receiveChan <- makeReceiveChan s
 
@@ -86,8 +86,8 @@ main = asClient $ \s -> do
   -- Set up GL state
   glEnable GL_DEPTH_TEST
   glClearColor 0 0 0.1 1
-  glPolygonMode GL_FRONT GL_LINE
-  glPolygonMode GL_BACK GL_LINE
+
+  eyeVar <- newMVar 0
 
   -- Begin game loop
   void . flip runRandT stdGen . flip runStateT newWorld . whileWindow window $ do
@@ -106,6 +106,8 @@ main = asClient $ \s -> do
       keyDown Key'F e (setCursorInputMode window CursorInputMode'Disabled)
       keyDown Key'G e (setCursorInputMode window CursorInputMode'Normal)
 
+      keyDown Key'Y e ( liftIO $ withMVar eyeVar print )
+
     -- Handle mouse events
     isFocused <- getWindowFocused window
     when isFocused $ applyMouseLook window
@@ -115,40 +117,43 @@ main = asClient $ \s -> do
 
     -- Render the scene
     case maybeRenderHMD of
-      Nothing -> renderFlat window cube plane
-      Just renderHMD -> renderVR renderHMD cube plane
+      Nothing -> renderFlat window cube plane eyeVar
+      Just renderHMD -> renderVR renderHMD cube plane eyeVar
 
-renderVR :: (MonadIO m, MonadState World m) 
-         => RenderHMD -> Entity -> Entity -> m ()
-renderVR renderHMD cube plane = do
+-- renderVR :: (MonadIO m, MonadState World m) 
+--          => RenderHMD -> Entity -> Entity -> m ()
+renderVR renderHMD cube plane eyeVar = do
   renderHMDFrame renderHMD $ \eyePoses -> do
 
     glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
 
-    viewMat <- playerViewMat
 
-    renderHMDEyes renderHMD eyePoses $ \projMat -> do
-      render cube plane (projMat !*! viewMat)
+    view <- playerViewMat
 
-renderFlat :: (MonadIO m, MonadState World m) 
-           => Window -> Entity -> Entity -> m ()
-renderFlat win cube plane = do
+    renderHMDEyes renderHMD eyePoses $ \projection eyeView -> do
+
+      let finalView = eyeView !*! view 
+
+      render cube plane projection finalView eyeVar
+
+-- renderFlat :: (MonadIO m, MonadState World m) 
+--            => Window -> Entity -> Entity -> m ()
+renderFlat win cube plane eyeVar = do
 
   glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
   
-  projMat <- makeProjection win
-  viewMat <- playerViewMat
+  projection  <- makeProjection win
+  view        <- playerViewMat
 
-  let viewProj = projMat !*! viewMat
-  render cube plane viewProj
+  render cube plane projection view eyeVar
   swapBuffers win
 
 
+logOut :: MonadIO m => String -> m ()
+logOut = liftIO . putStrLn
 
-
-
-render :: ( MonadIO m, MonadState World m ) => Entity -> Entity -> M44 GLfloat -> m ()
-render cube plane viewProj = do
+-- render :: ( MonadIO m, MonadState World m ) => Entity -> Entity -> M44 GLfloat -> M44 GLfloat -> m ()
+render cube plane projection view eyeVar = do
 
   newCubes  <- use wldCubes
   lastCubes <- use wldLastCubes
@@ -159,11 +164,19 @@ render cube plane viewProj = do
   useProgram (program cube)
 
 
+  let projectionView = projection !*! view
+
+  let eyePos = fromMaybe view (inv44 view) ^. translation
+
+  --liftIO $ swapMVar eyeVar eyePos
+  liftIO $ swapMVar eyeVar eyePos
+
+  -- logOut (show view )
   let cam = uCamera ( uniforms cube )
   glUniform3f ( unUniformLocation  cam )
-      ( cameraPos ^. _x )
-      ( cameraPos ^. _y )
-      ( cameraPos ^. _z )
+      ( eyePos ^. _x )
+      ( eyePos ^. _y )
+      ( eyePos ^. _z )
 
   withVAO ( vAO cube ) $ do
 
@@ -173,7 +186,7 @@ render cube plane viewProj = do
 
       let model = mkTransformation (obj ^. objOrientation) (obj ^. objPosition)
 
-      drawEntity model viewProj cube
+      drawEntity model projectionView cube
 
 
   withVAO (vAO plane) $ do
@@ -182,15 +195,18 @@ render cube plane viewProj = do
             ( axisAngle ( V3 1 0 0 ) ((-pi)/2) )
             ( V3 0 0 0 )
 
-    drawEntity model viewProj plane
+    drawEntity model projectionView plane
 
 
 drawEntity :: MonadIO m => M44 GLfloat -> M44 GLfloat -> Entity -> m ()
-drawEntity model projection anEntity = do 
+drawEntity model projectionView anEntity = do 
+
+  glEnable GL_CULL_FACE
+  glCullFace GL_BACK
 
   let Uniforms{..} = uniforms anEntity
 
-  uniformM44 uMVP ( projection !*! model)
+  uniformM44 uMVP ( projectionView !*! model)
   uniformM44 uInverseModel (fromMaybe model (inv44 model))
   uniformM44 uModel model
 

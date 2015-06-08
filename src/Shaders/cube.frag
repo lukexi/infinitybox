@@ -26,8 +26,8 @@ void main( void ) {
 
   vec3 d = normalize( vEye );
   vec2 uv2;
-  const float layers = 4.;
-  float step = .05;
+  const float layers = 5.;
+  float step = .01;
 
   vec3 col = vec3( 0. );
   float lum = 0.;
@@ -35,19 +35,21 @@ void main( void ) {
   for( float j = 0.; j < layers; j ++ ){
     uv2 = vUV - step * d.xy * j * j / d.z;
 
-    if( length( uv2 ) > .5 && length( uv2 ) < .55 ){
-      col += hsv( j/10. , 1. , 1. ) ;
-    }
+    lum += abs(sin( uv2.x * 4. * 3.14159 ) + sin( uv2.y  * 4. * 3.14159 ));///
+
+    col += hsv( lum / 10. , 1. , 1. ); 
 
   }
-  col /= layers;
+  col /= layers ;
+  //col *= 2.;
 
   vec3 eye = vPos - uCamera;
   eye = normalize( eye );
   float match = abs( dot( eye , vNormal ) );
  
-  col = eye * .5 + .5;
-  col = vec3( match );
+  //col = eye * .5 + .5;
+  //col = vec3( match );
+  //col = uCamera;
   color = vec4( col , 1. );
   //if( found == 1 ) gl_FragColor = vec4( c, 0., c, 1. );
 
