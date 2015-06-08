@@ -17,7 +17,7 @@ viewMatrix position orientation = mkTransformation q (rotate q . negate $ positi
 makeProjection :: (Floating a, MonadIO m) => Window -> m (M44 a)
 makeProjection win = do
     (w,h) <- getWindowSize win
-    return $ perspective 45 (fromIntegral w / fromIntegral h) 0.01 1000
+    return $ perspective 45 (fromIntegral w / fromIntegral h) 0.01 100
 
 playerViewMat :: MonadState World m => m (M44 GLfloat)
 playerViewMat = do

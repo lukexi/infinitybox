@@ -15,7 +15,8 @@ import Control.Monad.Trans
 port :: String
 port = "3000"
 ip :: String
-ip   = "192.168.0.14"
+--ip   = "192.168.0.14"
+ip   = "127.0.0.1"
 
 asClient :: (Socket -> IO c) -> IO c
 asClient = withSocketsDo . bracket (clientSocket ip port) sClose

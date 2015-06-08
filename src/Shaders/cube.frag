@@ -1,8 +1,10 @@
 #version 330 core
 
+uniform vec3 uCamera;
+
 in vec2 vUV;
 in mat3 vINormMat;
-in vec3 vNormal;
+in vec3 vNormal; 
 in vec3 vEye;
 in vec3 vPos;
 
@@ -20,34 +22,33 @@ vec3 hsv(float h, float s, float v){
     h + vec3( 3.0, 2.0, 1.0 ) / 3.0 ) * 6.0 - 3.0 ) - 1.0 ), 0.0, 1.0 ), s ) * v;
 }
 
-#define STEPS 10
-vec4 volumeColor( vec3 ro , vec3 rd , mat3 iBasis ){
+void main( void ) {
+
+  vec3 d = normalize( vEye );
+  vec2 uv2;
+  const float layers = 4.;
+  float step = .05;
 
   vec3 col = vec3( 0. );
-  float lum = 0.3;
-  for( int i = 0; i < STEPS; i++ ){
+  float lum = 0.;
 
-    vec3 p = ro - rd * float( i ) * stepDepth;
-   
-    p = iBasis * p;
-    //float lu = abs(sin( p.y * oscillationSize ) +sin( p.z * oscillationSize ))/2.; 
+  for( float j = 0.; j < layers; j ++ ){
+    uv2 = vUV - step * d.xy * j * j / d.z;
 
-    lum += abs(sin( p.y * 10. ) + sin( p.z * 10. ));///
-    //col += hsv( p.x * 3. + lum / 20., 1. , 1. );
-    col += hsv( lum / 10. , 1. , 1. ) / lum;
+    if( length( uv2 ) > .5 && length( uv2 ) < .55 ){
+      col += hsv( j/10. , 1. , 1. ) ;
+    }
 
   }
+  col /= layers;
 
-  return vec4( col , lum ) / float( STEPS );
-
-}
-
-
-void main(void) {
-
-  vec4 volCol = volumeColor( vPos , normalize(vEye) , vINormMat );
-
-  color = vec4( (normalize( vNormal ) * .5 + .5 )  * volCol.xyz , 1. );
-  // color = vec4(1.);
+  vec3 eye = vPos - uCamera;
+  eye = normalize( eye );
+  float match = abs( dot( eye , vNormal ) );
+ 
+  col = eye * .5 + .5;
+  col = vec3( match );
+  color = vec4( col , 1. );
+  //if( found == 1 ) gl_FragColor = vec4( c, 0., c, 1. );
 
 }

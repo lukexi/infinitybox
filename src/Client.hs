@@ -32,8 +32,8 @@ import qualified Data.Map as Map
 import Data.Maybe
 
 enableVR :: Bool
--- enableVR = False
-enableVR = True
+enableVR = False
+--enableVR = True
 
 main :: IO ()
 main = asClient $ \s -> do
@@ -86,6 +86,8 @@ main = asClient $ \s -> do
   -- Set up GL state
   glEnable GL_DEPTH_TEST
   glClearColor 0 0 0.1 1
+  glPolygonMode GL_FRONT GL_LINE
+  glPolygonMode GL_BACK GL_LINE
 
   -- Begin game loop
   void . flip runRandT stdGen . flip runStateT newWorld . whileWindow window $ do
@@ -155,6 +157,7 @@ render cube plane viewProj = do
 
   -- Begin cube batch
   useProgram (program cube)
+
 
   let cam = uCamera ( uniforms cube )
   glUniform3f ( unUniformLocation  cam )

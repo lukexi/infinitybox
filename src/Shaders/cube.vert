@@ -2,7 +2,6 @@
 
 uniform mat4 uModelViewProjection;
 uniform mat4 uModel;
-uniform mat4 uInverseModel;
 uniform vec3 uCamera;
 
 in vec3 aPosition;
@@ -10,73 +9,53 @@ in vec3 aNormal;
 in vec2 aUV;
 in vec3 aTangent;
 
-out mat3 vINormMat;
 out vec2 vUV;
 out vec3 vNormal;
 out vec3 vEye;
 out vec3 vPos;
 
 
-mat3 matInverse( mat3 m ){
-    
-  vec3 a = vec3(
-    
-    m[1][1] * m[2][2] - m[2][1] * m[1][2],
-    m[0][2] * m[2][1] - m[2][2] * m[0][1],
-    m[0][1] * m[1][2] - m[1][1] * m[0][2]
-      
-  );
+mat3 m3( mat4 mIn ) {
+
+  mat3 mOut;
   
-  vec3 b = vec3(
-    
-    m[1][2] * m[2][0] - m[2][2] * m[1][0],
-    m[0][0] * m[2][2] - m[2][0] * m[0][2],
-    m[0][2] * m[1][0] - m[1][2] * m[0][0]
-      
-  );
+  mOut[ 0 ][ 0 ] = mIn[ 0 ][ 0 ]; 
+  mOut[ 0 ][ 1 ] = mIn[ 0 ][ 1 ]; 
+  mOut[ 0 ][ 2 ] = mIn[ 0 ][ 2 ]; 
   
-   vec3 c = vec3(
-    
-    m[1][0] * m[2][1] - m[2][0] * m[1][1],
-    m[0][1] * m[2][0] - m[2][1] * m[0][0],
-    m[0][0] * m[1][1] - m[1][0] * m[0][1]
-      
-  );
+  mOut[ 1 ][ 0 ] = mIn[ 1 ][ 0 ]; 
+  mOut[ 1 ][ 1 ] = mIn[ 1 ][ 1 ]; 
+  mOut[ 1 ][ 2 ] = mIn[ 1 ][ 2 ]; 
   
+  mOut[ 2 ][ 0 ] = mIn[ 2 ][ 0 ]; 
+  mOut[ 2 ][ 1 ] = mIn[ 2 ][ 1 ]; 
+  mOut[ 2 ][ 2 ] = mIn[ 2 ][ 2 ]; 
   
-  return mat3( 
-      
-    a.x , a.y , a.z ,
-    b.x , b.y , b.z ,
-    c.x , c.y , c.z
-      
-  );
-  
+  return mOut;
 }
 
+void main() {
 
-void main( void ) { 
+  gl_Position = uModelViewProjection * vec4( aPosition, 1. );
+
   vUV = aUV;
 
-  vec3 norm = aNormal;
-  vec3 tang = aTangent;
-  vec3 bino = cross( norm , tang );
-
-  mat3 normMat = mat3(
-    norm.x , norm.y , norm.z ,
-    tang.x , tang.y , tang.z ,
-    bino.x , bino.y , bino.z 
+  vec3 n = m3( uModel ) * aNormal; 
+  vec3 t = m3( uModel ) * aTangent.xyz;
+  vec3 b = m3( uModel ) * cross( n, t );
+  
+  vec3 eyeVec = ( uModel * vec4( aPosition, 1. ) ).xyz - uCamera;
+  //eyeVec = ( modelViewMatrix * vec4( eyeVec, 1. ) ).xyz;
+  vec3 v = vec3(
+    dot( eyeVec, t ),
+    dot( eyeVec, b ),
+    dot( eyeVec, n )
   );
+  eyeVec = normalize( v );
 
-  vINormMat = matInverse( normMat );
-
+  vEye = eyeVec;
+  vPos = ( uModel * vec4( aPosition, 1. ) ).xyz;
   vNormal = normalize( ( uModel * vec4( aNormal , 0. ) ).xyz );
 
-  vec3 iCamPos = ( uInverseModel * vec4( uCamera , 1. ) ).xyz;
-
-  vEye = normalize( iCamPos  - aPosition );
-  vPos = aPosition;
-
-  gl_Position = uModelViewProjection * vec4( aPosition , 1.0 );
-
 }
+
