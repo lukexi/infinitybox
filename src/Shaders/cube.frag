@@ -35,9 +35,12 @@ void main( void ) {
   for( float j = 0.; j < layers; j ++ ){
     uv2 = vUV - step * d.xy * j * j / d.z;
 
-    lum += abs(sin( uv2.x * 4. * 3.14159 ) + sin( uv2.y  * 4. * 3.14159 ));///
 
-    col += hsv( lum / 10. , 1. , 1. ); 
+    float amount = sin( uv2.x * 4. * 3.14159 ) + sin( uv2.y  * 4. * 3.14159 );///
+
+    if( amount > .5 && amount < .55 ){
+      col += hsv( abs( sin( amount ) * 10. )  , 1. , 1. ) ;
+    }
 
   }
   col /= layers ;
