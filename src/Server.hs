@@ -12,10 +12,11 @@ import Control.Monad.Free
 import Network.ReceiveChan
 import Network.Socket (SockAddr)
 import Network.UDP.Pal hiding (newClientThread)
-import Network.Socket (close)
+import Network.Socket (close, getSocketName)
+import Network.Socket hiding (sendTo)
 import Control.Exception
 
-import Types
+import Types hiding (connect)
 
 import Control.Concurrent
 import Control.Concurrent.STM
@@ -26,7 +27,6 @@ import qualified Data.Map as Map
 import Data.Map (Map)
 import qualified Data.Set as Set
 import Data.Set (Set)
-import Data.List
 import Data.Default 
 
 import Physics.Bullet
@@ -111,7 +111,12 @@ main = do
 -- continuously listened to on a new thread and passed along to the new socket
 newClientThread :: SockAddr -> TChan ByteString -> MVar (Set SockAddr) -> IO ThreadId
 newClientThread clientAddr messageChan clients = forkIO $ do
-  toClientSock <- connectedSocketToAddr clientAddr
+
+  -- (hostName, serviceName) <- getSockAddrAddress clientAddr
+  toClientSock <- boundSocket Nothing 0
+  -- print =<< getSocketName toClientSock
+
+  -- toClientSock <- connectedSocketToAddr clientAddr
 
   -- Have the thread close the socket and remove the client
   -- from the broadcast queue when an exception occurs
@@ -122,10 +127,11 @@ newClientThread clientAddr messageChan clients = forkIO $ do
         close toClientSock
         modifyMVar_ clients $ return . Set.delete clientAddr
         throwIO e
+  putStrLn $ "Sending messages to " ++ displayName
 
   handle finisher . forever $ do    
     message <- atomically $ readTChan messageChan
-    _bytesSent <- send toClientSock message
+    _bytesSent <- sendTo toClientSock message clientAddr
     return ()
 
 
