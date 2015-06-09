@@ -34,7 +34,7 @@ makeReceiveChan client = liftIO $ do
   messageChan <- newTChanIO
   
   void . forkIO . forever $ 
-    atomically . writeTChan messageChan =<< receiveDecoded client
+    atomically . writeTChan messageChan =<< fst <$> receiveFromDecoded client
 
   return messageChan
 
