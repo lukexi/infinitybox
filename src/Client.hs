@@ -74,7 +74,7 @@ main = asClient $ \s -> do
 
   -- Set up our cube resources
   cubeProg <- createShaderProgram "src/shaders/cube.vert" "src/shaders/cube.frag"
-  cubeGeometry <- cubeGeometry ( V3 0.1 0.1 0.1 ) ( V3 20 20 20 )
+  cubeGeometry <- cubeGeometry ( V3 3 3 3 ) ( V3 1 1 1 )
 
   cube <- entity cubeGeometry cubeProg 
 
@@ -87,7 +87,7 @@ main = asClient $ \s -> do
   -- Set up GL state
   glEnable GL_DEPTH_TEST
   glClearColor 0 0 0.1 1
-  glPolygonMode GL_FRONT_AND_BACK GL_LINE 
+  --glPolygonMode GL_FRONT_AND_BACK GL_LINE 
 
   eyeVar <- newMVar 0
 
@@ -203,8 +203,8 @@ render cube plane projection view eyeVar = do
 drawEntity :: MonadIO m => M44 GLfloat -> M44 GLfloat -> Entity -> m ()
 drawEntity model projectionView anEntity = do 
 
-  --glEnable GL_CULL_FACE
-  --glCullFace GL_BACK
+  glEnable GL_CULL_FACE
+  glCullFace GL_BACK
 
   let Uniforms{..} = uniforms anEntity
 

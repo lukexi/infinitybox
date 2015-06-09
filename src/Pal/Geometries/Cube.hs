@@ -65,13 +65,12 @@ makeCubePoints (n1,n2,n3,n4,n5,n6) (u1,u2,u3,u4,u5,u6) (s1,s2,s3,s4,s5,s6) (d1,d
     plane5 = planeShape s5 n5 u5 d5
     plane6 = planeShape s6 n6 u6 d6
 
-    f1 = updatePlanePos plane1 n1 0 size
-    f2 = updatePlanePos plane2 n2 1 size
-    f3 = updatePlanePos plane3 n3 2 size
-    f4 = updatePlanePos plane4 n4 3 size
-    f5 = updatePlanePos plane5 n5 4 size
-    f6 = updatePlanePos plane6 n6 5 size
-
+    f1 = updatePlanePos plane1 n1 0
+    f2 = updatePlanePos plane2 n2 1
+    f3 = updatePlanePos plane3 n3 2
+    f4 = updatePlanePos plane4 n4 3
+    f5 = updatePlanePos plane5 n5 4
+    f6 = updatePlanePos plane6 n6 5
     fs = [f1,f2,f3,f4,f5,f6]
 
     finalShape = Shape 
@@ -80,15 +79,15 @@ makeCubePoints (n1,n2,n3,n4,n5,n6) (u1,u2,u3,u4,u5,u6) (s1,s2,s3,s4,s5,s6) (d1,d
       , uvList       = concatMap uvList fs
       , normalList   = concatMap normalList fs
       , tangentList  = concatMap tangentList fs
-      , numVerts     = 6 * fI( numVerts f1 )
+      , numVerts     = sum $ map numVerts fs
       } 
 
-    updatePlanePos :: Shape -> V3 GLfloat -> GLuint -> V3 GLfloat -> Shape
-    updatePlanePos plane normal index size = plane { positionList = fPos, indexList = fIndex }
+    updatePlanePos :: Shape -> V3 GLfloat -> GLuint -> Shape
+    updatePlanePos plane normal index = plane { positionList = fPos, indexList = fIndex }
       where
         pos    = positionList plane
-        posX   = take ( length pos ) $ cycle ( toList ( normal * size ) )
+        posX   = take ( 12 ) $ cycle ( toList ( normal * size * V3 0.5 0.5 0.5 ) )
         fPos   = zipWith (+) pos posX
-        fIndex = map ( + (index * fI (numVerts plane) )) ( indexList plane )
+        fIndex = traceShowId $ map ( + (index * 4 )) ( indexList plane )
          
 cubeGeometry size subdivisions = geometryFromShape $ cubeShape size subdivisions 
