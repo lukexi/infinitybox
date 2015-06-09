@@ -24,7 +24,7 @@ executable client
     free, stm, binary, linear, bytestring,
     base,
     gl, gl-pal, 
-    glfw-pal, 
+    glfw-pal, udp-pal,
     halive, linear, 
     lens, mtl, random, MonadRandom,
     containers, oculus-mini, 
@@ -41,7 +41,7 @@ executable server
     free, stm, binary, linear, bytestring,
     base,
     gl, gl-pal, 
-    glfw-pal, 
+    glfw-pal, udp-pal,
     halive, linear, 
     lens, mtl, random, MonadRandom,
     containers, bullet-mini, data-default

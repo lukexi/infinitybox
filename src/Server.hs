@@ -9,7 +9,6 @@ import Control.Monad.Free.Binary ()
 import Control.Monad.Free.FromFreeT
 import Control.Monad.Free
 
-import Network.Sox
 import Network.ReceiveChan
 
 import Types
@@ -40,13 +39,16 @@ makeLenses ''ServerState
 main :: IO ()
 main = do
   putStrLn "Server engaged..."
-  sock <- listenSocket serverPort
+  server <- makeServer serverName serverPort
+  -- Receive messages on a background thread so we don't block
+  receiveChan <- makeBinaryReceiveFromChan server
   
+
+  -- Initialize physics
   dynamicsWorld  <- createDynamicsWorld
   _              <- addGroundPlane dynamicsWorld
   
-  -- Receive messages on a background thread so we don't block
-  receiveChan <- makeBinaryReceiveFromChan sockRef
+  
 
   void . flip runStateT newServerState . flip runStateT newWorld . forever $ do
     -- Receive updates from clients

@@ -16,7 +16,7 @@ import Control.Lens
 import Linear
 import Graphics.GL
 import Data.Map (Map)
-import Network.Sox
+
 import Control.Monad.Free.Binary ()
 
 compile :: (Traversable f, RandomGen g) => g -> FT.FreeT f (RandT g Identity) a -> Free f a
@@ -83,9 +83,5 @@ update a b = liftF (Update a b ())
 
 connect :: (Monad m) => String -> FT.FreeT Op m ()
 connect n = liftF (Connect n ())
-
-
-sendInstrs :: (MonadIO m) => Socket -> Instructions -> m Int
-sendInstrs s = sendB s
 
 
