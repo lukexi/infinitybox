@@ -39,7 +39,7 @@ enableVR = False
 main :: IO ()
 main = do
 
-  client <- makeClient serverName serverPort 4096
+  client <- makeClient serverName serverPort packetSize
   -- Create a UDP receive thread
   receiveChan <- makeReceiveChan client
 

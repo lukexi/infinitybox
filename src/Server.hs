@@ -10,6 +10,8 @@ import Control.Monad.Free.FromFreeT
 import Control.Monad.Free
 
 import Network.ReceiveChan
+import Network.Socket (SockAddr)
+import Network.UDP.Pal
 
 import Types
 
@@ -39,7 +41,7 @@ makeLenses ''ServerState
 main :: IO ()
 main = do
   putStrLn "Server engaged..."
-  server <- makeServer serverName serverPort
+  server <- makeServer serverName serverPort packetSize
   -- Receive messages on a background thread so we don't block
   receiveChan <- makeBinaryReceiveFromChan server
   
@@ -86,7 +88,7 @@ main = do
     
     -- Encode and broadcast the simulation results
     let encoded = encode' tickInstructions
-    lift $ sendInstructions sockRef encoded Nothing
+    lift $ sendInstructions server encoded Nothing
 
     -- Run at 60 FPS
     liftIO $ threadDelay (1000000 `div` 60)
@@ -120,15 +122,14 @@ interpretS dynamicsWorld = iterM interpret'
     interpret' (Connect _ n)     = n
 
 sendInstructions :: (MonadIO m, MonadState ServerState m) 
-                 => IORef Socket
+                 => Server
                  -> ByteString
                  -> Maybe SockAddr
                  -> m ()
-sendInstructions sockRef message fromAddress = do
+sendInstructions server message fromAddress = do
   clients <- use ssClients
   liftIO $ forM_ clients $ \clientAddr -> 
     when (Just clientAddr /= fromAddress) $ do
-      sock <- readIORef sockRef
-      _bytesSent <- sendTo sock message clientAddr
+      _bytesSent <- sendTo (serverSocket server) message clientAddr
       return ()
   
