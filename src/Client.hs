@@ -16,8 +16,8 @@ import Control.Lens
 import Control.Monad.Random
 
 import Pal.Pal
-import Pal.Geometries.CubeInfo
-import Pal.Geometries.PlaneInfo
+--import Pal.Geometries.CubeInfo
+import Pal.Geometries.Plane
 
 
 import Network.Sox
@@ -73,19 +73,20 @@ main = asClient $ \s -> do
 
   -- Set up our cube resources
   cubeProg <- createShaderProgram "src/shaders/cube.vert" "src/shaders/cube.frag"
-  cubeGeometry <- initCubeGeometry 0.2
+  cubeGeometry <- planeGeometry ( V2 1 1 ) ( V3 0 1 0 ) ( V3 1 0 0 ) ( V2 1 1 )
 
   cube <- entity cubeGeometry cubeProg 
 
   -- Set up our cube resources
   planeProg <- createShaderProgram "src/shaders/cube.vert" "src/shaders/cube.frag"
-  planeGeometry <- initPlaneGeometry 50
+  planeGeometry <- planeGeometry ( V2 100 100 ) ( V3 0 1 0 ) ( V3 1 0 0 ) ( V2 20 20 )
 
   plane <- entity planeGeometry planeProg 
 
   -- Set up GL state
   glEnable GL_DEPTH_TEST
   glClearColor 0 0 0.1 1
+  --glPolygonMode GL_FRONT_AND_BACK GL_LINE 
 
   eyeVar <- newMVar 0
 
@@ -192,7 +193,7 @@ render cube plane projection view eyeVar = do
   withVAO (vAO plane) $ do
 
     let model = mkTransformation 
-            ( axisAngle ( V3 1 0 0 ) ((-pi)/2) )
+            ( axisAngle ( V3 1 0 0 ) 0 )
             ( V3 0 0 0 )
 
     drawEntity model projectionView plane
@@ -210,7 +211,8 @@ drawEntity model projectionView anEntity = do
   uniformM44 uInverseModel (fromMaybe model (inv44 model))
   uniformM44 uModel model
 
-  glDrawArrays GL_TRIANGLES 0 ( vertCount ( geometry anEntity ) )
+  glDrawElements GL_TRIANGLES ( vertCount ( geometry anEntity ) ) GL_UNSIGNED_INT nullPtr
+
 
 
 addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Socket -> m ()

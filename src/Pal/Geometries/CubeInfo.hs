@@ -7,8 +7,10 @@ import Graphics.GL
 import Pal.ArrayBuffer
 import Pal.Types
 
-initCubeGeometry :: GLfloat -> IO Geometry
-initCubeGeometry scale = do
+import Pal.Geometries.Plane
+
+cubeGeometry :: GLfloat -> IO Geometry
+cubeGeometry scale  = do
 
 
   -----------------
@@ -262,11 +264,12 @@ initCubeGeometry scale = do
       -- bottom
       ,  0.0 ,  1.0
       ,  0.0 ,  0.0
-      ,  1.0 ,  1.0
+      ,  1.0 ,  0.0
 
+
+      ,  1.0 ,  0.0
       ,  1.0 ,  1.0 
-      ,  1.0 ,  0.0 
-      ,  0.0 ,  0.0 ]
+      ,  0.0 ,  1.0  ]
 
   let vertCount = 3 * 2 * 6
 

@@ -13,6 +13,11 @@ out vec2 vUV;
 out vec3 vNormal;
 out vec3 vEye;
 out vec3 vPos;
+out vec3 vCam;
+out vec3 vMPos;
+out vec3 vTang;
+out vec3 vNorm;
+out vec3 vBino;
 
 
 mat3 m3( mat4 mIn ) {
@@ -43,19 +48,32 @@ void main() {
   vec3 n = m3( uModel ) * aNormal; 
   vec3 t = m3( uModel ) * aTangent.xyz;
   vec3 b = m3( uModel ) * cross( n, t );
+
+  vNorm = n ;
+  vTang = t ;
+  vBino = b ;
+
+  vNorm = aNormal;
+  vTang = aTangent;
+  vBino = cross( vNorm , vTang );
+
+
+  vMPos = ( uModel * vec4( aPosition, 1. ) ).xyz;
+  vCam = uCamera;
   
-  vec3 eyeVec = ( uModel * vec4( aPosition, 1. ) ).xyz - uCamera;
+  /*vec3 eyeVec = ( uModel * vec4( aPosition, 1. ) ).xyz - uCamera;
   //eyeVec = ( modelViewMatrix * vec4( eyeVec, 1. ) ).xyz;
   vec3 v = vec3(
     dot( eyeVec, t ),
     dot( eyeVec, b ),
     dot( eyeVec, n )
   );
+
   eyeVec = normalize( v );
 
   vEye = eyeVec;
   vPos = ( uModel * vec4( aPosition, 1. ) ).xyz;
-  vNormal = normalize( ( uModel * vec4( aNormal , 0. ) ).xyz );
+  vNormal = normalize( ( uModel * vec4( aNormal , 0. ) ).xyz );*/
 
 }
 

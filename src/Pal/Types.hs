@@ -3,22 +3,26 @@ module Pal.Types where
 import Graphics.GL
 import Control.Monad.Trans
 import Foreign
+import Linear
 
 
-newtype Program           = Program             { unProgram             :: GLuint }
+newtype Program             = Program             { unProgram             :: GLuint }
 
-newtype AttributeLocation = AttributeLocation   { unAttributeLocation   :: GLint  }
-newtype UniformLocation   = UniformLocation     { unUniformLocation     :: GLint  }
-newtype TextureID         = TextureID           { unTextureID           :: GLuint }
+newtype AttributeLocation   = AttributeLocation   { unAttributeLocation   :: GLint  }
+newtype UniformLocation     = UniformLocation     { unUniformLocation     :: GLint  }
+newtype TextureID           = TextureID           { unTextureID           :: GLuint }
 
-newtype VertexArrayObject = VertexArrayObject   { unVertexArrayObject   :: GLuint }
-newtype ArrayBuffer       = ArrayBuffer         { unArrayBuffer         :: GLuint }
+newtype VertexArrayObject   = VertexArrayObject   { unVertexArrayObject   :: GLuint }
+newtype ArrayBuffer         = ArrayBuffer         { unArrayBuffer         :: GLuint }
+newtype ElementArrayBuffer  = ElementArrayBuffer  { unElementArrayBuffer  :: GLuint }
 
-newtype TextureObject     = TextureObject       { unTextureObject       :: GLuint }
+newtype TextureObject       = TextureObject       { unTextureObject       :: GLuint }
 
 data ColorSpace = SRGB | Linear
 
+
 data Uniforms = Uniforms
+
   { uMVP          :: UniformLocation
   , uInverseModel :: UniformLocation
   , uModel        :: UniformLocation
@@ -27,13 +31,24 @@ data Uniforms = Uniforms
 
 
 data Geometry = Geometry
+
   { positions     :: ArrayBuffer
   , normals       :: ArrayBuffer
   , tangents      :: ArrayBuffer
   , uvs           :: ArrayBuffer
+  , indices       :: ElementArrayBuffer
   , vertCount     :: GLsizei
   }
 
+data Shape = Shape
+
+  { positionList  :: [ GLfloat ]
+  , normalList    :: [ GLfloat ]
+  , tangentList   :: [ GLfloat ]
+  , uvList        :: [ GLfloat ]
+  , indexList     :: [ GLuint  ]
+  , numVerts      :: GLsizei
+  }
 {-
 data Body = Body
 
@@ -45,6 +60,7 @@ data Body = Body
 -}
 
 data Entity = Entity
+
   { program   :: Program
   , uniforms  :: Uniforms
   , geometry  :: Geometry

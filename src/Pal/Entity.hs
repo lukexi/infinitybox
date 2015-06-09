@@ -16,17 +16,16 @@ entity geometry program = do
   vAO <- VertexArrayObject <$> overPtr ( glGenVertexArrays 1 )
 
   withVAO vAO $ do
-    withArrayBuffer ( positions geometry ) $
-      assignAttribute program "aPosition" 3 
-    withArrayBuffer ( normals geometry ) $
-      assignAttribute program "aNormal"   3 
-    withArrayBuffer ( tangents geometry ) $ 
-      assignAttribute program "aTangent"  3
-    withArrayBuffer ( uvs  geometry ) $
-      assignAttribute program "aUV"       2 
+
+    withArrayBuffer ( positions   geometry ) $ assignAttribute program "aPosition" 3 
+    withArrayBuffer ( normals     geometry ) $ assignAttribute program "aNormal"   3 
+    withArrayBuffer ( tangents    geometry ) $ assignAttribute program "aTangent"  3
+    withArrayBuffer ( uvs         geometry ) $ assignAttribute program "aUV"       2 
+
+    glBindBuffer GL_ELEMENT_ARRAY_BUFFER ( unElementArrayBuffer ( indices geometry ))
+
 
   uniforms <- assignUniforms program
-
 
   return Entity{..}
 

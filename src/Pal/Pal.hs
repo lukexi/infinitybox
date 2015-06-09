@@ -1,7 +1,8 @@
-module Pal.Pal (
-    module Exports, 
-    (.|.)
-    ) where
+module Pal.Pal 
+  ( module Exports 
+  , (.|.)
+  , nullPtr
+  ) where
 
 import Pal.Shader           as Exports
 import Pal.Types            as Exports
@@ -13,3 +14,4 @@ import Pal.AssignAttribute  as Exports
 import Pal.Entity           as Exports
 
 import Data.Bits ((.|.))
+import Foreign   (nullPtr)

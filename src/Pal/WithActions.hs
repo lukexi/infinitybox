@@ -23,3 +23,12 @@ withArrayBuffer buffer action = do
   action
   
   glBindBuffer GL_ARRAY_BUFFER 0
+
+
+withElementArrayBuffer buffer action = do
+
+  glBindBuffer GL_ELEMENT_ARRAY_BUFFER ( unElementArrayBuffer buffer )
+
+  action
+  
+  glBindBuffer GL_ELEMENT_ARRAY_BUFFER 0
