@@ -129,8 +129,6 @@ newClientThread clientAddr messageChan clients = forkIO $ do
         throwIO e
   putStrLn $ "Sending messages to " ++ displayName
 
-  --clientAddr <- addrAddress <$> addressInfo (Just hostName) (Just serviceName)
-
   handle finisher . forever $ do    
     message <- atomically $ readTChan messageChan
     _bytesSent <- sendTo toClientSock message clientAddr
