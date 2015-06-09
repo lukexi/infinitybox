@@ -11,30 +11,32 @@ import Control.Monad.Free
 
 import Network.ReceiveChan
 import Network.Socket (SockAddr)
-import Network.UDP.Pal
+import Network.UDP.Pal hiding (newClientThread)
+import Network.Socket (close)
+import Control.Exception
 
 import Types
 
 import Control.Concurrent
+import Control.Concurrent.STM
 import Linear
-
-
 
 import Control.Lens
 import qualified Data.Map as Map
 import Data.Map (Map)
+import qualified Data.Set as Set
+import Data.Set (Set)
 import Data.List
 import Data.Default 
 
 import Physics.Bullet
 
 data ServerState = ServerState 
-  { _ssClients :: [SockAddr]
-  , _ssRigidBodies :: Map ObjectID RigidBody
+  { _ssRigidBodies :: Map ObjectID RigidBody
   }
 
 newServerState :: ServerState
-newServerState = ServerState mempty mempty
+newServerState = ServerState mempty
 
 makeLenses ''ServerState
 
@@ -44,6 +46,9 @@ main = do
   server <- makeServer serverName serverPort packetSize
   -- Receive messages on a background thread so we don't block
   receiveChan <- makeBinaryReceiveFromChan server
+
+  clients       <- newMVar mempty
+  broadcastChan <- newBroadcastTChanIO
   
 
   -- Initialize physics
@@ -59,11 +64,17 @@ main = do
       -- liftIO $ putStrLn $ "Got instructions " ++ show instructions
       -- Apply to our state
       interpret instructions
-      lift $ do
-        interpretS dynamicsWorld instructions
+      
+      lift $ interpretS dynamicsWorld instructions
 
-        -- Update our clients list
-        ssClients %= nub . (fromAddress:)
+      -- Update our clients list
+      liftIO $ modifyMVar_ clients $ \currentClients -> 
+        if Set.member fromAddress currentClients
+        then return currentClients
+        else do
+          messageChan <- atomically $ dupTChan broadcastChan
+          _ <- newClientThread fromAddress messageChan clients
+          return $ Set.insert fromAddress currentClients
 
         -- Rebroadcast to other clients
         -- sendInstructions sock message (Just fromAddress)
@@ -88,11 +99,34 @@ main = do
     
     -- Encode and broadcast the simulation results
     let encoded = encode' tickInstructions
-    lift $ sendInstructions server encoded Nothing
+
+    -- Broadcast the message to all clients
+    liftIO . atomically $ writeTChan broadcastChan encoded
 
     -- Run at 60 FPS
     liftIO $ threadDelay (1000000 `div` 60)
 
+
+-- | Creates a new socket to the client's address, and creates a Chan that's
+-- continuously listened to on a new thread and passed along to the new socket
+newClientThread :: SockAddr -> TChan ByteString -> MVar (Set SockAddr) -> IO ThreadId
+newClientThread clientAddr messageChan clients = forkIO $ do
+  toClientSock <- connectedSocketToAddr clientAddr
+
+  -- Have the thread close the socket and remove the client
+  -- from the broadcast queue when an exception occurs
+  (hostName, serviceName) <- getSockAddrAddress clientAddr
+  let displayName = "->" ++ hostName ++ ":" ++ serviceName
+      finisher e = do
+        putStrLn $ displayName ++ " removing self due to " ++ show (e::SomeException)
+        close toClientSock
+        modifyMVar_ clients $ return . Set.delete clientAddr
+        throwIO e
+
+  handle finisher . forever $ do    
+    message <- atomically $ readTChan messageChan
+    _bytesSent <- send toClientSock message
+    return ()
 
 
 -- | Interpret a client message 'updating' an object as creating that object
@@ -120,16 +154,4 @@ interpretS dynamicsWorld = iterM interpret'
       n
     interpret' (Echo    _ n)     = n
     interpret' (Connect _ n)     = n
-
-sendInstructions :: (MonadIO m, MonadState ServerState m) 
-                 => Server
-                 -> ByteString
-                 -> Maybe SockAddr
-                 -> m ()
-sendInstructions server message fromAddress = do
-  clients <- use ssClients
-  liftIO $ forM_ clients $ \clientAddr -> 
-    when (Just clientAddr /= fromAddress) $ do
-      _bytesSent <- sendTo (serverSocket server) message clientAddr
-      return ()
   
