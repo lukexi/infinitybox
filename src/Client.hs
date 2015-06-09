@@ -30,11 +30,15 @@ import Control.Monad.Free.Binary ()
 import Control.Monad.Free.FromFreeT
 import qualified Data.Map as Map
 import Data.Maybe
+
+
 import Control.Concurrent
 
+import Debug.Trace
+
 enableVR :: Bool
-enableVR = False
---enableVR = True
+--enableVR = False
+enableVR = True
 
 main :: IO ()
 main = do
@@ -74,15 +78,16 @@ main = do
 
   -- Set up our cube resources
   cubeProg   <- createShaderProgram "src/shaders/cube.vert" "src/shaders/cube.frag"
-  cubeGeo    <- cubeGeometry ( V3 3 3 3 ) ( V3 1 1 1 )
+  cubeGeo    <- cubeGeometry ( 0.2 :: V3 GLfloat ) ( V3 1 1 1 )
 
-  cube       <- entity cubeGeo cubeProg 
+  
 
   -- Set up our cube resources
-  planeProg  <- createShaderProgram "src/shaders/cube.vert" "src/shaders/cube.frag"
-  planeGeo   <- planeGeometry ( V2 100 100 ) ( V3 0 1 0 ) ( V3 1 0 0 ) ( V2 20 20 )
+  planeProg  <- createShaderProgram "src/shaders/plane.vert" "src/shaders/plane.frag"
+  planeGeo   <- cubeGeometry ( V3 20 20 20 ) ( V3 1 1 1 )
 
   plane      <- entity planeGeo planeProg 
+  cube       <- entity cubeGeo cubeProg 
 
   -- Set up GL state
   glEnable GL_DEPTH_TEST
@@ -180,6 +185,9 @@ render cube plane projection view eyeVar = do
 
   withVAO ( vAO cube ) $ do
 
+    glEnable GL_CULL_FACE
+    glCullFace GL_BACK
+
     -- let cubes = lerp 0.5 newCubes lastCubes
     let cubes = Map.unionWith interpolateObjects lastCubes newCubes
     forM_ cubes $ \obj -> do
@@ -189,10 +197,29 @@ render cube plane projection view eyeVar = do
       drawEntity model projectionView cube
 
 
+  useProgram (program plane)
+
+  let projectionView = projection !*! view
+
+  let eyePos = fromMaybe view (inv44 view) ^. translation
+
+  --liftIO $ swapMVar eyeVar eyePos
+  liftIO $ swapMVar eyeVar eyePos
+
+  -- logOut (show view )
+  let cam = uCamera ( uniforms cube )
+  glUniform3f ( unUniformLocation  cam )
+      ( eyePos ^. _x )
+      ( eyePos ^. _y )
+      ( eyePos ^. _z )
+
   withVAO (vAO plane) $ do
 
+    glEnable GL_CULL_FACE
+    glCullFace GL_FRONT
+
     let model = mkTransformation 
-            ( axisAngle ( V3 1 0 0 ) 0 )
+            ( axisAngle ( V3 1 0 0 ) 0.0 )
             ( V3 0 0 0 )
 
     drawEntity model projectionView plane
@@ -201,16 +228,14 @@ render cube plane projection view eyeVar = do
 drawEntity :: MonadIO m => M44 GLfloat -> M44 GLfloat -> Entity -> m ()
 drawEntity model projectionView anEntity = do 
 
-  glEnable GL_CULL_FACE
-  glCullFace GL_BACK
-
   let Uniforms{..} = uniforms anEntity
 
   uniformM44 uMVP ( projectionView !*! model)
   uniformM44 uInverseModel (fromMaybe model (inv44 model))
   uniformM44 uModel model
 
-  glDrawElements GL_TRIANGLES ( vertCount ( geometry anEntity ) ) GL_UNSIGNED_INT nullPtr
+  let vc = vertCount ( geometry anEntity ) 
+  glDrawElements GL_TRIANGLES ( vc ) GL_UNSIGNED_INT nullPtr
 
 
 
@@ -221,7 +246,7 @@ addCube client = do
     playerPos <- use (wldPlayer . plrPosition)
     playerRot <- use (wldPlayer . plrOrientation)
     let spawnPoint = rotate playerRot (V3 0 0.1 0) + playerPos
-        object = Object spawnPoint playerRot 0.2
+        object = Object spawnPoint playerRot 0.1
     
     objID <- getRandom'
     update objID object

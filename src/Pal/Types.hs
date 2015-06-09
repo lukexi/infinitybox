@@ -48,6 +48,7 @@ data Shape = Shape
   , uvList        :: ![ GLfloat ]
   , indexList     :: ![ GLuint  ]
   , numVerts      :: !GLsizei
+  , numPoints     :: !GLuint
   }
 {-
 data Body = Body

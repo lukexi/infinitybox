@@ -20,7 +20,8 @@ planeShape size normal up subdivisions = Shape{..}
 
   where
 
-    numVerts      = 3 * 2 * ( fI subdivisionsX  ) * ( fI subdivisionsY )
+    numVerts      = traceShowId $ 3 * 2 * ( fI subdivisionsX  ) * ( fI subdivisionsY )
+    numPoints     = traceShowId $ ( fI subdivisionsX + 1 ) * ( fI subdivisionsY + 1 )
 
     subdivisionsX = subdivisions ^. _x 
     subdivisionsY = subdivisions ^. _y 
@@ -31,8 +32,8 @@ planeShape size normal up subdivisions = Shape{..}
     tangent       = normalize $ cross normal up 
     binormal      = normalize $ cross tangent normal
     
-    norArray      = take ( fI numVerts * 3 ) $ cycle [ normal  ^. _x , normal  ^. _y , normal  ^. _z ]
-    tanArray      = take ( fI numVerts * 3 ) $ cycle [ tangent ^. _x , tangent ^. _y , tangent ^. _z ]
+    norArray      = take ( fI numPoints * 3 ) $ cycle [ normal  ^. _x , normal  ^. _y , normal  ^. _z ]
+    tanArray      = take ( fI numPoints * 3 ) $ cycle [ tangent ^. _x , tangent ^. _y , tangent ^. _z ]
 
     posArray      = makePlanePositions sizeX sizeY tangent binormal subdivisionsX subdivisionsY
     uvArray       = makePlaneUVs                                    subdivisionsX subdivisionsY
