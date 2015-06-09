@@ -15,7 +15,7 @@ import Debug.Trace
 fI :: ( Integral a , Num b ) => a -> b
 fI = fromIntegral
 
--- planeGeometry :: V3 GLfloat -> V3 GLfloat -> V2 Int ->  IO Geometry
+planeShape :: V2 GLfloat -> V3 GLfloat -> V3 GLfloat -> V2 Int -> Shape
 planeShape size normal up subdivisions = Shape{..}
 
   where
@@ -49,17 +49,17 @@ planeShape size normal up subdivisions = Shape{..}
 planeGeometry size normal up subdivisions = geometryFromShape $ planeShape size normal up subdivisions 
 
 
--- makePlanePositions :: V3 GLfloat -> V3 GLfloat -> Int -> Int -> [ GLfloat ]
+makePlanePositions :: GLfloat -> GLfloat -> V3 GLfloat -> V3 GLfloat -> Int -> Int -> [ GLfloat ]
 makePlanePositions xSize ySize xVec yVec subdivisionsX subdivisionsY = positions
   where
 
     positions = concat [ getPoint x  y | x <- [ 0 .. subdivisionsX ] , y <- [ 0 .. subdivisionsY ] ]
     getPoint x y = toList p
       where 
-        p = xVec * ( fI x / fI subdivisionsX ) * xSize
-          + yVec * ( fI y / fI subdivisionsY ) * ySize
-          - 0.5 * xVec * xSize
-          - 0.5 * yVec * ySize
+        p = xVec * ( fI x / fI subdivisionsX ) * (realToFrac xSize)
+          + yVec * ( fI y / fI subdivisionsY ) * (realToFrac ySize)
+          - 0.5 * xVec * (realToFrac xSize)
+          - 0.5 * yVec * (realToFrac ySize)
 
 
 makePlaneUVs :: Int -> Int -> [ GLfloat ]

@@ -40,7 +40,7 @@ movePlayer vec = do
 
 applyMovement :: (MonadIO m, MonadState World m) => Window -> m ()
 applyMovement win = do
-    let pos = 0.01
+    let pos = 0.1
         neg = -pos
     whenKeyPressed win Key'W           $ movePlayer (V3 0   0   neg)
     whenKeyPressed win Key'S           $ movePlayer (V3 0   0   pos)

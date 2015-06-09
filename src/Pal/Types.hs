@@ -32,22 +32,22 @@ data Uniforms = Uniforms
 
 data Geometry = Geometry
 
-  { positions     :: ArrayBuffer
-  , normals       :: ArrayBuffer
-  , tangents      :: ArrayBuffer
-  , uvs           :: ArrayBuffer
-  , indices       :: ElementArrayBuffer
-  , vertCount     :: GLsizei
+  { positions     :: !ArrayBuffer
+  , normals       :: !ArrayBuffer
+  , tangents      :: !ArrayBuffer
+  , uvs           :: !ArrayBuffer
+  , indices       :: !ElementArrayBuffer
+  , vertCount     :: !GLsizei
   }
 
 data Shape = Shape
 
-  { positionList  :: [ GLfloat ]
-  , normalList    :: [ GLfloat ]
-  , tangentList   :: [ GLfloat ]
-  , uvList        :: [ GLfloat ]
-  , indexList     :: [ GLuint  ]
-  , numVerts      :: GLsizei
+  { positionList  :: ![ GLfloat ]
+  , normalList    :: ![ GLfloat ]
+  , tangentList   :: ![ GLfloat ]
+  , uvList        :: ![ GLfloat ]
+  , indexList     :: ![ GLuint  ]
+  , numVerts      :: !GLsizei
   }
 {-
 data Body = Body
@@ -61,10 +61,10 @@ data Body = Body
 
 data Entity = Entity
 
-  { program   :: Program
-  , uniforms  :: Uniforms
-  , geometry  :: Geometry
-  , vAO       :: VertexArrayObject
+  { program   :: !Program
+  , uniforms  :: !Uniforms
+  , geometry  :: !Geometry
+  , vAO       :: !VertexArrayObject
   }
 
 

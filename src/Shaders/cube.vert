@@ -10,7 +10,7 @@ in vec2 aUV;
 in vec3 aTangent;
 
 out vec2 vUV;
-out vec3 vNormal;
+out vec3 vMNorm;
 out vec3 vEye;
 out vec3 vPos;
 out vec3 vCam;
@@ -60,6 +60,8 @@ void main() {
 
   vMPos = ( uModel * vec4( aPosition, 1. ) ).xyz;
   vCam = uCamera;
+
+  vMNorm = m3( uModel ) * aNormal; 
   
   /*vec3 eyeVec = ( uModel * vec4( aPosition, 1. ) ).xyz - uCamera;
   //eyeVec = ( modelViewMatrix * vec4( eyeVec, 1. ) ).xyz;

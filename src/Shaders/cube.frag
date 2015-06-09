@@ -4,7 +4,7 @@ uniform vec3 uCamera;
 
 in vec2 vUV;
 in mat3 vINormMat;
-in vec3 vNormal; 
+in vec3 vNormal;
 in vec3 vEye;
 in vec3 vPos;
 
@@ -12,6 +12,7 @@ in vec3 vCam;
 in vec3 vMPos;
 in vec3 vTang;
 in vec3 vNorm;
+in vec3 vMNorm;
 in vec3 vBino;
 
 out vec4 color;
@@ -136,7 +137,7 @@ col /= layers ;
   //col = vec3( match );
   //col = uCamera;
   //col = vec3( nor );
-  //col = vec3( 1. );
+  col = vMNorm * .5 + .5;
   color = vec4( col , 1. );
   //if( found == 1 ) gl_FragColor = vec4( c, 0., c, 1. );
 
