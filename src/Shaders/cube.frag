@@ -10,16 +10,18 @@ in vec3 vLight3;
 in vec3 vLight4;
 in vec3 vPos;
 in vec3 vNorm;
+in vec3 vCamera;
 in mat3 iTBN;
 
 
 out vec4 color;
 
 
-const float oscillationSize = .04;
-const float stepDepth = .04;
+
+const float stepDepth = .05;
 const float layers = 10.;
 const float PI2 = 3.14159 * 2.;
+const float oscillationSize =  4. * PI2 / 10. ;
 
 
 // Taken from https://www.shadertoy.com/view/4ts3z2
@@ -67,69 +69,126 @@ float posToFloat( vec3 p ){
     
 }
 
+const float MAX_TRACE_DISTANCE = 1.0;           // max trace distance
+const float INTERSECTION_PRECISION = .0001;        // precision of the intersection
+const int NUM_OF_TRACE_STEPS = 10;
+  
+
+float sdSphere( vec3 p, float s ){
+  return length(p)-s;
+}
+
+float repSphere( vec3 p, vec3 c , float r){
+  vec3 q = mod( p , c ) - 0.5 * c ;
+  return sdSphere( q , r);
+}
+
+float opU( float d1, float d2 ){
+  return min(d1,d2);
+}
+
+
+vec2 map( vec3 pos  , vec3 ro ){  
+    
+    vec2 res = vec2( 10000. , 0.);// vec2( sdPlane( pos - vec3( 0. , -1. , 0. )), 0.0 );
+  
+    vec2 res2 = vec2( repSphere( pos - vec3( 0. , 0. , ro.z) , vec3( .1 , .1 , .01 ) ,  abs( pos.z - ro.z )), 1.);
+    
+    res.x = opU( res.x , res2.x );
+    
+    return res;
+    
+}
+
+// Calculates the normal by taking a very small distance,
+// remapping the function, and getting normal for that
+vec3 calcNormal( in vec3 pos , in vec3 ro ){
+    
+  vec3 eps = vec3( 0.001, 0.0, 0.0 );
+  vec3 nor = vec3(
+      map(pos+eps.xyy , ro ).x - map(pos-eps.xyy, ro).x,
+      map(pos+eps.yxy , ro ).x - map(pos-eps.yxy, ro).x,
+      map(pos+eps.yyx , ro ).x - map(pos-eps.yyx, ro).x );
+  return normalize(nor);
+}
+
+
+vec2 calcIntersection( in vec3 ro, in vec3 rd ){
+
+    
+  float h =  INTERSECTION_PRECISION*2.0;
+  float t = 0.0;
+  float res = -1.0;
+  float id = -1.;
+    
+  for( int i=0; i< NUM_OF_TRACE_STEPS ; i++ ){
+      
+    if( h < INTERSECTION_PRECISION || t > MAX_TRACE_DISTANCE ) break;
+    vec2 m = map( ro+rd*t , ro);
+    h = m.x;
+    t += h;
+    id = m.y;
+      
+  }
+
+  if( t < MAX_TRACE_DISTANCE ) res = t;
+  if( t > MAX_TRACE_DISTANCE ) id =-1.0;
+  
+  return vec2( res , id );
+    
+}
+
 void main( void ) {
 
-  float step = .01;
+  vec3 ro = iTBN * vPos;
+  //ro.z = 0.;
+  vec3 rd = iTBN * -normalize( vEye );
 
   vec3 col = vec3( 0. );
-  float lum = 0.;
+  vec2 res = calcIntersection( ro , rd );
 
-  vec3 ro = vPos;
-  vec3 rd = normalize( vEye );
-  for( float j = 0.; j < layers; j ++ ){
-     
-    vec3 p = ro - rd * j * stepDepth;
 
-    p = iTBN * p;
-
-    p.z = j * stepDepth;
-    vec3 offset =   p + vec3( sin(cos(p.z * 100.) + sin( p.x * 20.) + sin( p.z * 50 )) );
-
-    lum += posToFloat( p );
-
-    col += hsv( lum , 1. , 1. ) / (( 1. + j ));
-
-  }
-  
-  vec3 fCol = col;
-
-  col /= layers;
+    // If we have hit something lets get real!
+  if( res.y > -.5 ){
   //col *= 20.;  
 
-  vec3 l1 = normalize( vLight1 );
-  vec3 l2 = normalize( vLight2 );
-  vec3 l3 = normalize( vLight3 );  
-  vec3 l4 = normalize( vLight4 );
+    vec3 pos = ro + rd * res.x;
+    vec3 nor = calcNormal( pos , ro );
+    vec3 eye = ( iTBN * vCamera ) - pos;
 
-  float lamb1 = max( 0. , dot( l1 , vNorm ) );
-  float lamb2 = max( 0. , dot( l2 , vNorm ) );
-  float lamb3 = max( 0. , dot( l3 , vNorm ) );
-  float lamb4 = max( 0. , dot( l4 , vNorm ) );
+    
+    vec3 l1 = normalize( iTBN *  vLight1 - pos );
+    vec3 l2 = normalize( iTBN *  vLight2 - pos );
+    vec3 l3 = normalize( iTBN *  vLight3 - pos );  
+    vec3 l4 = normalize( iTBN *  vLight4 - pos );
 
-  vec3 refl1 = reflect( l1 , vNorm );
-  vec3 refl2 = reflect( l2 , vNorm );
-  vec3 refl3 = reflect( l3 , vNorm );
-  vec3 refl4 = reflect( l4 , vNorm );
+    float lamb1 = max( 0. , dot( l1 , nor ) );
+    float lamb2 = max( 0. , dot( l2 , nor ) );
+    float lamb3 = max( 0. , dot( l3 , nor ) );
+    float lamb4 = max( 0. , dot( l4 , nor ) );
 
-  float spec1 = pow( max( 0. , dot( refl1 , -normalize( vEye ))), 60.);
-  float spec2 = pow( max( 0. , dot( refl2 , -normalize( vEye ))), 60.);
-  float spec3 = pow( max( 0. , dot( refl3 , -normalize( vEye ))), 60.);
-  float spec4 = pow( max( 0. , dot( refl4 , -normalize( vEye ))), 60.);
-  
-  vec3 c1 =  vec3( 1. , 0.4 , 0.4 ); 
-  vec3 c2 =  vec3( .9 , .7 , 0.2 );
-  vec3 c3 =  vec3( 0.4 , 0.2 , .9 );
-  vec3 c4 =  vec3( .3 , .7 , 1. ); 
+    vec3 refl1 = reflect( l1 , nor );
+    vec3 refl2 = reflect( l2 , nor );
+    vec3 refl3 = reflect( l3 , nor );
+    vec3 refl4 = reflect( l4 , nor );
 
-  vec3 col1 = c1 * ( lamb1 + spec1 * .00001 ) * ( 5. / length( vLight1 ));
-  vec3 col2 = c2 * ( lamb2 + spec2 * .00001 ) * ( 5. / length( vLight2 ));
-  vec3 col3 = c3 * ( lamb3 + spec3 * .00001 ) * ( 5. / length( vLight3 ));
-  vec3 col4 = c4 * ( lamb4 + spec4 * .00001 ) * ( 5. / length( vLight4 ));
+    float spec1 = pow( max( 0. , dot( normalize( refl1 ) , -normalize( eye ))), 60.);
+    float spec2 = pow( max( 0. , dot( normalize( refl2 ) , -normalize( eye ))), 60.);
+    float spec3 = pow( max( 0. , dot( normalize( refl3 ) , -normalize( eye ))), 60.);
+    float spec4 = pow( max( 0. , dot( normalize( refl4 ) , -normalize( eye ))), 60.);
 
-  col =  ( fCol * ( col1 + col2 + col3 + col4 )) /layers;
+    vec3 c1 =  vec3( 1. , 0.4 , 0.4 ); 
+    vec3 c2 =  vec3( .9 , .7 , 0.2 );
+    vec3 c3 =  vec3( 0.4 , 0.2 , .9 );
+    vec3 c4 =  vec3( .3 , .7 , 1. ); 
 
-  if( vUV.x > .95 || vUV.x < .05 || vUV.y > .95 || vUV.y < .05  ){
-    col = fCol * ( spec1  + spec2  + spec3  + spec4  + .1 ) * 5. * (lum/layers);
+    vec3 col1 = c1 * ( lamb1* .1+ spec1 * 1.1 ); //* ( 5. / length( vLight1 ));
+    vec3 col2 = c2 * ( lamb2* .1+ spec2 * 1.1 ); //* ( 5. / length( vLight2 ));
+    vec3 col3 = c3 * ( lamb3* .1+ spec3 * 1.1 ); //* ( 5. / length( vLight3 ));
+    vec3 col4 = c4 * ( lamb4* .1+ spec4 * 1.1 ); //* ( 5. / length( vLight4 ));
+
+    col = col1 + col2 + col3 + col4;
+
   }
 
   color = vec4( col , 1. );

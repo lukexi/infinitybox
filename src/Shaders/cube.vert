@@ -23,6 +23,8 @@ out vec3 vLight2;
 out vec3 vLight3;
 out vec3 vLight4;
 
+out vec3 vCamera;
+
 out vec3 vPos;
 out vec3 vNorm;
 out mat3 iTBN;
@@ -62,14 +64,14 @@ void main() {
   iTBN = transpose( TBN );
 
   vec3 iCamPos = ( uInverseModel * vec4( uCamera , 1. ) ).xyz;
-  vLight1 = ( ( uInverseModel * vec4( uLight1 , 1. ) ).xyz - aPosition );
-  vLight2 = ( ( uInverseModel * vec4( uLight2 , 1. ) ).xyz - aPosition );
-  vLight3 = ( ( uInverseModel * vec4( uLight3 , 1. ) ).xyz - aPosition );
-  vLight4 = ( ( uInverseModel * vec4( uLight4 , 1. ) ).xyz - aPosition );
+  vLight1 = ( ( uInverseModel * vec4( uLight1 , 1. ) ).xyz );
+  vLight2 = ( ( uInverseModel * vec4( uLight2 , 1. ) ).xyz );
+  vLight3 = ( ( uInverseModel * vec4( uLight3 , 1. ) ).xyz );
+  vLight4 = ( ( uInverseModel * vec4( uLight4 , 1. ) ).xyz );
   vEye = iCamPos - aPosition;
+  vCamera = iCamPos;
   vPos = aPosition;
   vNorm = aNormal;
-
 
 }
 
