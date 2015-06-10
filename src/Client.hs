@@ -262,7 +262,7 @@ render cube plane light projection view = do
     handPoses <- use $ wldPlayer . plrHandPoses
     forM_ handPoses $ \(Pose posit orient) -> do
       let model = mkTransformation orient posit
-      drawEntity model projectionView cube
+      drawEntity model projectionView 0 cube 
 
 
 
@@ -272,9 +272,9 @@ render cube plane light projection view = do
     localPlayerID <- use wldPlayerID
     forM_ players $ \(playerID, player) -> 
       when (playerID /= localPlayerID) $ do
-        drawEntity (poseToMatrix (player ^. plrPose)) projectionView cube
+        drawEntity (poseToMatrix (player ^. plrPose)) projectionView 0 cube
         forM_ (player ^. plrHandPoses) $ \handPose -> do
-          drawEntity (poseToMatrix handPose) projectionView cube
+          drawEntity (poseToMatrix handPose) projectionView 0 cube 
   
 
   --------------------
