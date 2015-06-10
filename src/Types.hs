@@ -36,8 +36,8 @@ data Player = Player
     }
 
 data World = World
-    { _wldPlayer :: Player
-    , _wldCubes  :: Map ObjectID Object
+    { _wldPlayer    :: Player
+    , _wldCubes     :: Map ObjectID Object
     , _wldLastCubes :: Map ObjectID Object
     }
 

@@ -11,7 +11,7 @@ import Linear
 import Control.Monad
 import Control.Monad.State
 import System.Random
-import Control.Lens
+import Control.Lens hiding (view)
 
 import Control.Monad.Random
 
@@ -66,23 +66,23 @@ main = do
     return renderHMD
 
   -- Get a stdgen for Entity ID generation
-  stdGen <- getStdGen
+  stdGen     <- getStdGen
   
   -- Connect to the server
   _bytesSent <- sendEncoded client (compile stdGen (connect "player"))
 
 
   -- Set up our cube resources
-  cubeProg <- createShaderProgram "src/shaders/cube.vert" "src/shaders/cube.frag"
-  cubeGeometry <- cubeGeometry ( V3 3 3 3 ) ( V3 1 1 1 )
+  cubeProg   <- createShaderProgram "src/shaders/cube.vert" "src/shaders/cube.frag"
+  cubeGeo    <- cubeGeometry ( V3 3 3 3 ) ( V3 1 1 1 )
 
-  cube <- entity cubeGeometry cubeProg 
+  cube       <- entity cubeGeo cubeProg 
 
   -- Set up our cube resources
-  planeProg <- createShaderProgram "src/shaders/cube.vert" "src/shaders/cube.frag"
-  planeGeometry <- planeGeometry ( V2 100 100 ) ( V3 0 1 0 ) ( V3 1 0 0 ) ( V2 20 20 )
+  planeProg  <- createShaderProgram "src/shaders/cube.vert" "src/shaders/cube.frag"
+  planeGeo   <- planeGeometry ( V2 100 100 ) ( V3 0 1 0 ) ( V3 1 0 0 ) ( V2 20 20 )
 
-  plane <- entity planeGeometry planeProg 
+  plane      <- entity planeGeo planeProg 
 
   -- Set up GL state
   glEnable GL_DEPTH_TEST
@@ -159,8 +159,6 @@ render cube plane projection view eyeVar = do
 
   newCubes  <- use wldCubes
   lastCubes <- use wldLastCubes
-
-  cameraPos <- use (wldPlayer . plrPosition)
 
   -- Begin cube batch
   useProgram (program cube)
