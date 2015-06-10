@@ -32,9 +32,6 @@ import Control.Monad.Free.FromFreeT
 import qualified Data.Map as Map
 import Data.Maybe
 
-
-import Control.Concurrent
-
 enableVR :: Bool
 --enableVR = False
 enableVR = True
@@ -107,7 +104,7 @@ main = do
   -- Begin game loop
   let world = newWorld playerID
   void . flip runRandT stdGen . flip runStateT world . whileWindow window $ do
-    
+    frameNumber <- wldFrameNumber <+= 1
 
     -- Update interpolation buffer
     wldLastCubes <~ use wldCubes
@@ -147,7 +144,8 @@ main = do
             orientWorld = playerRot * handOrient
     wldPlayer . plrHandPoses .= handWorldPoses
     forM_ (zip hands handWorldPoses) $ \(hand, Pose posit orient) -> do
-      when (trigger hand > 0.5) $ addCube client posit orient
+      when (trigger hand > 0.5 && frameNumber `mod` 30 == 0) $ 
+        addCube client posit orient
 
     -- Send player position
     player <- use wldPlayer
