@@ -27,24 +27,25 @@ data Pose = Pose
   } deriving (Generic, Binary, Show)
 
 data Object = Object
-    { _objPosition    :: V3 GLfloat
-    , _objOrientation :: Quaternion GLfloat
-    , _objScale       :: GLfloat
-    } deriving (Generic, Binary, Show)
+  { _objPosition    :: V3 GLfloat
+  , _objOrientation :: Quaternion GLfloat
+  , _objScale       :: GLfloat
+  } deriving (Generic, Binary, Show)
 
 data Player = Player 
-    { _plrPose :: Pose    
-    , _plrHandPoses :: [Pose]
-    } deriving (Generic, Binary, Show)
+  { _plrPose :: Pose    
+  , _plrHandPoses :: [Pose]
+  } deriving (Generic, Binary, Show)
 
 data World = World
-    { _wldPlayer       :: Player
-    , _wldPlayerID     :: PlayerID
-    , _wldPlayers      :: Map PlayerID Player
-    , _wldCubes        :: Map ObjectID Object
-    , _wldLastCubes    :: Map ObjectID Object
-    , _wldEyeDebug     :: V3 GLfloat
-    }
+  { _wldPlayer       :: Player
+  , _wldPlayerID     :: PlayerID
+  , _wldPlayers      :: Map PlayerID Player
+  , _wldCubes        :: Map ObjectID Object
+  , _wldLastCubes    :: Map ObjectID Object
+  , _wldEyeDebug     :: V3 GLfloat
+  , _wldFrameNumber  :: Integer
+  }
 
 makeLenses ''Pose
 makeLenses ''Object
@@ -53,21 +54,21 @@ makeLenses ''World
 
 interpolateObjects :: Object -> Object -> Object
 (Object p1 o1 s1) `interpolateObjects` (Object p2 o2 s2) = 
-    Object (lerp 0.5 p1 p2) (slerp o1 o2 0.5) (s1 + (s2 - s1) / 2)
+  Object (lerp 0.5 p1 p2) (slerp o1 o2 0.5) (s1 + (s2 - s1) / 2)
 
 newPlayer :: Player
 newPlayer = Player (Pose (V3 0 5 0) (axisAngle (V3 0 1 0) 0)) []
 
 newWorld :: PlayerID -> World
-newWorld playerID = World newPlayer playerID mempty mempty mempty 0
+newWorld playerID = World newPlayer playerID mempty mempty mempty 0 0
 
 interpret :: (MonadIO m, MonadState World m) => Free Op () -> m ()
 interpret = iterM interpret'
-    where
-        interpret' :: (MonadIO m, MonadState World m) => Op (m t) -> m t
-        interpret' (UpdateObject objID obj n)       = wldCubes   . at objID    ?= obj    >> n
-        interpret' (UpdatePlayer playerID player n) = wldPlayers . at playerID ?= player >> n
-        interpret' (Connect name n)                 = (liftIO . putStrLn $ name ++ " connected") >> n
+  where
+    interpret' :: (MonadIO m, MonadState World m) => Op (m t) -> m t
+    interpret' (UpdateObject objID obj n)       = wldCubes   . at objID    ?= obj    >> n
+    interpret' (UpdatePlayer playerID player n) = wldPlayers . at playerID ?= player >> n
+    interpret' (Connect name n)                 = (liftIO . putStrLn $ name ++ " connected") >> n
 
 
 -- Get a regular Free value out of a FreeT
@@ -79,7 +80,7 @@ compile stdgen randInstrs = runIdentity $ evalRandT (fromFreeT randInstrs) stdge
 data Op next = UpdateObject ObjectID Object next
              | UpdatePlayer PlayerID Player next
              | Connect      String next
-    deriving (Functor, Foldable, Traversable, Generic, Binary, Show)
+  deriving (Functor, Foldable, Traversable, Generic, Binary, Show)
 
 type Instructions = Free Op ()
 
