@@ -30,6 +30,7 @@ import Data.Set (Set)
 import Data.Default 
 
 import Physics.Bullet
+import Pal.Physics
 
 data ServerState = ServerState 
   { _ssRigidBodies :: Map ObjectID RigidBody
@@ -52,8 +53,9 @@ main = do
   
 
   -- Initialize physics
-  dynamicsWorld  <- createDynamicsWorld
-  _              <- addGroundPlane dynamicsWorld
+  dynamicsWorld  <- createDynamicsWorld def { gravity = 0.0 }
+  _              <- addBox dynamicsWorld (-10.0)
+
   
   
 
@@ -91,7 +93,7 @@ main = do
     tickInstructions <- fromFreeT . forM_ rigidBodies $ 
       \(objID, rigidBody) -> do
         (pos, orient) <- getBodyState rigidBody
-        let scale' = 0.05
+        let scale' = 1.0
         update objID (Object pos orient scale')
     
     -- Apply to our own copy of the world
@@ -163,3 +165,5 @@ interpretS dynamicsWorld = iterM interpret'
     interpret' (Echo    _ n)     = n
     interpret' (Connect _ n)     = n
   
+
+

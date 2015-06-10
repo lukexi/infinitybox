@@ -3,6 +3,7 @@ module Pal.Geometry where
 import Pal.Types
 import Pal.ArrayBuffer
 import Linear
+import Debug.Trace
 geometryFromShape Shape{..} = do
 
   positions   <- bufferData         positionList
@@ -11,6 +12,6 @@ geometryFromShape Shape{..} = do
   uvs         <- bufferData         uvList
   indices     <- bufferElementData  indexList
   
-  let vertCount = numVerts
+  let vertCount = traceShowId $ numVerts
 
   return Geometry{..}

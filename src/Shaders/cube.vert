@@ -2,6 +2,7 @@
 
 uniform mat4 uModelViewProjection;
 uniform mat4 uModel;
+uniform mat4 uInverseModel;
 uniform vec3 uCamera;
 
 in vec3 aPosition;
@@ -10,14 +11,10 @@ in vec2 aUV;
 in vec3 aTangent;
 
 out vec2 vUV;
-out vec3 vMNorm;
 out vec3 vEye;
 out vec3 vPos;
-out vec3 vCam;
-out vec3 vMPos;
-out vec3 vTang;
 out vec3 vNorm;
-out vec3 vBino;
+out mat3 iTBN;
 
 
 mat3 m3( mat4 mIn ) {
@@ -45,37 +42,18 @@ void main() {
 
   vUV = aUV;
 
-  vec3 n = m3( uModel ) * aNormal; 
-  vec3 t = m3( uModel ) * aTangent.xyz;
-  vec3 b = m3( uModel ) * cross( n, t );
-
-  vNorm = n ;
-  vTang = t ;
-  vBino = b ;
-
-  vNorm = aNormal;
-  vTang = aTangent;
-  vBino = cross( vNorm , vTang );
-
-
-  vMPos = ( uModel * vec4( aPosition, 1. ) ).xyz;
-  vCam = uCamera;
-
-  vMNorm = m3( uModel ) * aNormal; 
-  
-  /*vec3 eyeVec = ( uModel * vec4( aPosition, 1. ) ).xyz - uCamera;
-  //eyeVec = ( modelViewMatrix * vec4( eyeVec, 1. ) ).xyz;
-  vec3 v = vec3(
-    dot( eyeVec, t ),
-    dot( eyeVec, b ),
-    dot( eyeVec, n )
+  mat3 TBN = mat3(
+    aTangent,
+    cross( aNormal , aTangent ),
+    aNormal
   );
 
-  eyeVec = normalize( v );
+  iTBN = transpose( TBN );
 
-  vEye = eyeVec;
-  vPos = ( uModel * vec4( aPosition, 1. ) ).xyz;
-  vNormal = normalize( ( uModel * vec4( aNormal , 0. ) ).xyz );*/
+  vec3 iCamPos = ( uInverseModel * vec4( uCamera , 1. ) ).xyz;
+  vEye = iCamPos - aPosition;
+  vPos = aPosition;
+
 
 }
 
