@@ -21,22 +21,22 @@ makeProjection win = do
 
 playerViewMat :: MonadState World m => m (M44 GLfloat)
 playerViewMat = do
-    playerPos    <- use $ wldPlayer . plrPosition
-    playerOrient <- use $ wldPlayer . plrOrientation
+    playerPos    <- use $ wldPlayer . plrPose . posPosition
+    playerOrient <- use $ wldPlayer . plrPose . posOrientation
     return $ viewMatrix playerPos playerOrient
 
 applyMouseLook :: (MonadIO m, MonadState World m) => Window -> m ()
 applyMouseLook win = do
     (x,y) <- getCursorPos win
-    wldPlayer . plrOrientation .= axisAngle (V3 0 1 0) (-x/500)
-                                * axisAngle (V3 1 0 0) (-y/500)
+    wldPlayer . plrPose . posOrientation .= axisAngle (V3 0 1 0) (-x/500)
+                                          * axisAngle (V3 1 0 0) (-y/500)
 
 -- | Move player by the given vector, 
 -- rotated to be relative to their current orientation
 movePlayer :: MonadState World m => V3 GLfloat -> m ()
 movePlayer vec = do
-    orient <- use (wldPlayer . plrOrientation)
-    wldPlayer . plrPosition += rotate orient vec
+    orient <- use (wldPlayer . plrPose . posOrientation)
+    wldPlayer . plrPose . posPosition += rotate orient vec
 
 applyMovement :: (MonadIO m, MonadState World m) => Window -> m ()
 applyMovement win = do
