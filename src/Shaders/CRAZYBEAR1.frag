@@ -69,9 +69,9 @@ float posToFloat( vec3 p ){
     
 }
 
-const float MAX_TRACE_DISTANCE = 10.0;           // max trace distance
+const float MAX_TRACE_DISTANCE = 4.0;           // max trace distance
 const float INTERSECTION_PRECISION = .1;        // precision of the intersection
-const int NUM_OF_TRACE_STEPS = 10;
+const int NUM_OF_TRACE_STEPS = 100;
   
 
 float sdSphere( vec3 p, float s ){
@@ -88,11 +88,11 @@ float opU( float d1, float d2 ){
 }
 
 
-vec2 map( vec3 pos  , vec3 ro ){  
+vec2 map( vec3 pos ){  
     
     vec2 res = vec2( 10000. , 0.);// vec2( sdPlane( pos - vec3( 0. , -1. , 0. )), 0.0 );
   
-    vec2 res2 = vec2( repSphere( pos - vec3( 0. , 0., ro.z), vec3(1. , 1. , .1 ) , pos.z - ro.z ) , 1.);
+    vec2 res2 = vec2( repSphere( pos , vec3(  4. , 4. , .5 ) ,  length( pos )) );
     
     res.x = opU( res.x , res2.x );
     
@@ -102,13 +102,13 @@ vec2 map( vec3 pos  , vec3 ro ){
 
 // Calculates the normal by taking a very small distance,
 // remapping the function, and getting normal for that
-vec3 calcNormal( in vec3 pos , in vec3 ro ){
+vec3 calcNormal( in vec3 pos ){
     
   vec3 eps = vec3( 0.001, 0.0, 0.0 );
   vec3 nor = vec3(
-      map(pos+eps.xyy , ro ).x - map(pos-eps.xyy, ro).x,
-      map(pos+eps.yxy , ro ).x - map(pos-eps.yxy, ro).x,
-      map(pos+eps.yyx , ro ).x - map(pos-eps.yyx, ro).x );
+      map(pos+eps.xyy).x - map(pos-eps.xyy).x,
+      map(pos+eps.yxy).x - map(pos-eps.yxy).x,
+      map(pos+eps.yyx).x - map(pos-eps.yyx).x );
   return normalize(nor);
 }
 
@@ -124,7 +124,7 @@ vec2 calcIntersection( in vec3 ro, in vec3 rd ){
   for( int i=0; i< NUM_OF_TRACE_STEPS ; i++ ){
       
     if( h < INTERSECTION_PRECISION || t > MAX_TRACE_DISTANCE ) break;
-    vec2 m = map( ro+rd*t , ro);
+    vec2 m = map( ro+rd*t );
     h = m.x;
     t += h;
     id = m.y;
@@ -140,26 +140,25 @@ vec2 calcIntersection( in vec3 ro, in vec3 rd ){
 
 void main( void ) {
 
-  vec3 ro = iTBN * vPos;
-  vec3 rd = iTBN * -normalize( vEye );
+  vec3 ro = vPos;
+  vec3 rd = -normalize( vEye );
 
   vec3 col = vec3( 0. );
   vec2 res = calcIntersection( ro , rd );
-
 
     // If we have hit something lets get real!
   if( res.y > -.5 ){
   //col *= 20.;  
 
     vec3 pos = ro + rd * res.x;
-    vec3 nor = calcNormal( pos , ro );
-    vec3 eye = iTBN * vCamera - pos;
+    vec3 nor = calcNormal( pos );
+    vec3 eye = vCamera - pos;
 
     
-    vec3 l1 = normalize( iTBN *  vLight1 - pos );
-    vec3 l2 = normalize( iTBN *  vLight2 - pos );
-    vec3 l3 = normalize( iTBN *  vLight3 - pos );  
-    vec3 l4 = normalize( iTBN *  vLight4 - pos );
+    vec3 l1 = normalize( vLight1 - pos );
+    vec3 l2 = normalize( vLight2 - pos );
+    vec3 l3 = normalize( vLight3 - pos );  
+    vec3 l4 = normalize( vLight4 - pos );
 
     float lamb1 = max( 0. , dot( l1 , nor ) );
     float lamb2 = max( 0. , dot( l2 , nor ) );
@@ -171,10 +170,10 @@ void main( void ) {
     vec3 refl3 = reflect( l3 , nor );
     vec3 refl4 = reflect( l4 , nor );
 
-    float spec1 = pow( max( 0. , dot( refl1 , -normalize( eye ))), 60.);
-    float spec2 = pow( max( 0. , dot( refl2 , -normalize( eye ))), 60.);
-    float spec3 = pow( max( 0. , dot( refl3 , -normalize( eye ))), 60.);
-    float spec4 = pow( max( 0. , dot( refl4 , -normalize( eye ))), 60.);
+    float spec1 = pow( max( 0. , dot( refl1 , -normalize( eye ))), 6.);
+    float spec2 = pow( max( 0. , dot( refl2 , -normalize( eye ))), 6.);
+    float spec3 = pow( max( 0. , dot( refl3 , -normalize( eye ))), 6.);
+    float spec4 = pow( max( 0. , dot( refl4 , -normalize( eye ))), 6.);
 
     vec3 c1 =  vec3( 1. , 0.4 , 0.4 ); 
     vec3 c2 =  vec3( .9 , .7 , 0.2 );
@@ -186,7 +185,7 @@ void main( void ) {
     vec3 col3 = c3 * ( lamb3*.1 + spec3 * 1.1 ); //* ( 5. / length( vLight3 ));
     vec3 col4 = c4 * ( lamb4*.1 + spec4 * 1.1 ); //* ( 5. / length( vLight4 ));
 
-    col = col1+ col2 + col3 + col4 ; //layers;
+    col = col1 + col2 + col3 + col4 ; //layers;
 
   }
 

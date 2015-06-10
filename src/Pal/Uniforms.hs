@@ -22,6 +22,11 @@ assignUniforms program = do
   uInverseModel   <- getShaderUniform program "uInverseModel"
   uModel          <- getShaderUniform program "uModel"
   uCamera         <- getShaderUniform program "uCamera"
+  uLight1         <- getShaderUniform program "uLight1"
+  uLight2         <- getShaderUniform program "uLight2"
+  uLight3         <- getShaderUniform program "uLight3"
+  uLight4         <- getShaderUniform program "uLight4"
+  uID             <- getShaderUniform program "uID"
 
   return Uniforms{..}
 

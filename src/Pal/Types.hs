@@ -27,6 +27,11 @@ data Uniforms = Uniforms
   , uInverseModel :: UniformLocation
   , uModel        :: UniformLocation
   , uCamera       :: UniformLocation
+  , uLight1       :: UniformLocation
+  , uLight2       :: UniformLocation
+  , uLight3       :: UniformLocation
+  , uLight4       :: UniformLocation
+  , uID           :: UniformLocation
   } 
 
 
