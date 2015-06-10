@@ -47,6 +47,8 @@ planeShape size normal up subdivisions = Shape{..}
 
     indexList     = indexArray   
 
+
+planeGeometry :: V2 GLfloat -> V3 GLfloat -> V3 GLfloat -> V2 Int -> IO Geometry
 planeGeometry size normal up subdivisions = geometryFromShape $ planeShape size normal up subdivisions 
 
 
