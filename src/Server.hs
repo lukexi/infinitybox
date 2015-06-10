@@ -57,8 +57,8 @@ main = do
 
   
   
-
-  void . flip runStateT newServerState . flip runStateT newWorld . forever $ do
+  let world = newWorld 0
+  void . flip runStateT newServerState . flip runStateT world . forever $ do
     -- Receive updates from clients
     readChanAll receiveChan $ \(message, fromAddress) -> do
       let instructions = decode' message :: Instructions
