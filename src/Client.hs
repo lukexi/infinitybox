@@ -124,9 +124,8 @@ main = do
 
     case hands of
       [left, right] -> do
-        movePlayer (V3 (joystickX left) 0 (-(joystickY left)))
-
-        wldPlayer . plrPose . posOrientation *= axisAngle (V3 0 1 0) (joystickX right)
+        movePlayer (V3 (joystickX left / 10) 0 (-(joystickY left / 10)))
+        -- wldPlayer . plrPose . posOrientation *= axisAngle (V3 0 1 0) (joystickX right)
       _ -> return ()
     
     
