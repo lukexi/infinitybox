@@ -112,12 +112,24 @@ main = do
     -- Handle network events
     readChanAll receiveChan interpret
 
+    -- Get Hydra update
+    hands <- getHands
+
     -- Handle mouse events
     isFocused <- getWindowFocused window
     when isFocused $ applyMouseLook window
 
     -- Handle movement events
     applyMovement window
+
+    case hands of
+      [left, right] -> do
+        movePlayer (V3 (joystickX left) 0 (-(joystickY left)))
+
+        wldPlayer . plrPose . posOrientation *= axisAngle (V3 0 1 0) (joystickX right)
+      _ -> return ()
+    
+    
 
     -- Get player pose
     playerPos <- use (wldPlayer . plrPose . posPosition)
@@ -134,7 +146,7 @@ main = do
       keyDown Key'Y e ( liftIO . print =<< use wldEyeDebug )
 
     -- Update hand positions
-    hands <- getHands
+    
     let handWorldPoses = map handWorldPose hands
         handWorldPose hand = Pose positWorld orientWorld
           where

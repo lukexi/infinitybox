@@ -13,7 +13,7 @@ import Control.Lens hiding ( indices )
 import Data.Foldable
 import Debug.Trace
 
--- planeGeometry :: V3 GLfloat -> V3 GLfloat -> V2 Int ->  IO Geometry
+cubeShape :: V3 GLfloat -> V3 Int -> Shape
 cubeShape size subdivisions =
 
   let n1 = V3 0 0 1 
@@ -54,7 +54,28 @@ cubeShape size subdivisions =
                     ( d1 , d2 , d3 , d4 , d5 , d6 )
                     size
 
-
+-- Cool type signature holmes
+makeCubePoints :: (V3 GLfloat,
+                         V3 GLfloat,
+                         V3 GLfloat,
+                         V3 GLfloat,
+                         V3 GLfloat,
+                         V3 GLfloat)
+                        -> (V3 GLfloat,
+                            V3 GLfloat,
+                            V3 GLfloat,
+                            V3 GLfloat,
+                            V3 GLfloat,
+                            V3 GLfloat)
+                        -> (V2 GLfloat,
+                            V2 GLfloat,
+                            V2 GLfloat,
+                            V2 GLfloat,
+                            V2 GLfloat,
+                            V2 GLfloat)
+                        -> (V2 Int, V2 Int, V2 Int, V2 Int, V2 Int, V2 Int)
+                        -> V3 GLfloat
+                        -> Shape
 makeCubePoints (n1,n2,n3,n4,n5,n6) (u1,u2,u3,u4,u5,u6) (s1,s2,s3,s4,s5,s6) (d1,d2,d3,d4,d5,d6) size = finalShape
   where 
 
@@ -92,6 +113,8 @@ makeCubePoints (n1,n2,n3,n4,n5,n6) (u1,u2,u3,u4,u5,u6) (s1,s2,s3,s4,s5,s6) (d1,d
         newI   = startIndex + 0
         fIndex = map ( + newI ) ( indexList plane )
 
+traceL :: Show a => String -> a -> a
 traceL label value = trace (label ++ ": " ++ show value) value
-         
+      
+cubeGeometry :: V3 GLfloat -> V3 Int -> IO Geometry   
 cubeGeometry size subdivisions = geometryFromShape $ cubeShape size subdivisions 

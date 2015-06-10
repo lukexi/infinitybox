@@ -2,8 +2,10 @@
 module Pal.Geometry where 
 import Pal.Types
 import Pal.ArrayBuffer
-import Linear
+
 import Debug.Trace
+
+geometryFromShape :: Shape -> IO Geometry
 geometryFromShape Shape{..} = do
 
   positions   <- bufferData         positionList
