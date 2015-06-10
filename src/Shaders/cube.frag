@@ -138,7 +138,7 @@ col /= layers ;
   //col = uCamera;
   //col = vec3( nor );
   col = vTang * .5 + .5;
-  //color = vec4( col , 1. );
+  color = vec4( col , 1. );
   //if( found == 1 ) gl_FragColor = vec4( c, 0., c, 1. );
 
 }
