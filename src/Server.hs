@@ -32,10 +32,11 @@ import Pal.Physics
 
 data ServerState = ServerState 
   { _ssRigidBodies :: Map ObjectID RigidBody
+  , _ssPlayers     :: Map PlayerID Player
   }
 
 newServerState :: ServerState
-newServerState = ServerState mempty
+newServerState = ServerState mempty mempty
 
 makeLenses ''ServerState
 
@@ -88,11 +89,15 @@ main = do
     -- Generate a list of instructions updating 
     -- each object with the state from the physics sim
     rigidBodies <- lift $ use (ssRigidBodies . to Map.toList)
-    tickInstructions <- fromFreeT . forM_ rigidBodies $ 
-      \(objID, rigidBody) -> do
+    players     <- lift $ use (ssPlayers     . to Map.toList)
+    tickInstructions <- fromFreeT $ do 
+      forM_ rigidBodies $  \(objID, rigidBody) -> do
         (pos, orient) <- getBodyState rigidBody
         let scale' = 1.0
-        update objID (Object pos orient scale')
+        updateObject objID (Object pos orient scale')
+      forM_ players $ \(playerID, player) -> 
+        updatePlayer playerID player
+
     
     -- Apply to our own copy of the world
     interpret tickInstructions
@@ -141,25 +146,23 @@ interpretS :: (MonadIO m, MonadState ServerState m) => DynamicsWorld -> Free Op 
 interpretS dynamicsWorld = iterM interpret'
   where
     interpret' :: (MonadIO m, MonadState ServerState m) => Op (m t) -> m t
-    interpret' (Update objID obj n) = do
-
-      let p = ( obj ^. objPosition    )
-      let r = ( obj ^. objOrientation )
-      let s = ( obj ^. objScale       )
+    interpret' (UpdateObject objID obj next) = do
       
-      rigidBody <- addCube  dynamicsWorld
-                            def { position = p
-                                , rotation = r 
-                                , scale    = V3 s s s
-                                }
+      rigidBody <- addCube dynamicsWorld
+                           def { position = obj ^. objPosition
+                               , rotation = obj ^. objOrientation
+                               , scale    = realToFrac (obj ^. objScale)
+                               }
 
       -- Shoot the cube outwards
       let v = rotate ( obj ^. objOrientation ) ( V3 0 0 ( -3 ) )
       _ <- applyCentralForce rigidBody v
       ssRigidBodies . at objID ?= rigidBody
-      n
-    interpret' (Echo    _ n)     = n
-    interpret' (Connect _ n)     = n
+      next
+    interpret' (UpdatePlayer playerID player next) = do
+      ssPlayers . at playerID ?= player
+      next
+    interpret' (Connect _ next)     = next
   
 
 

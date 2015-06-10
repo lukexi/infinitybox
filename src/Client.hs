@@ -8,6 +8,7 @@ import Graphics.Oculus
 import Linear
 
 import System.Hardware.Hydra
+import Hydra
 
 import Control.Monad
 import Control.Monad.State
@@ -17,8 +18,7 @@ import Control.Lens hiding (view)
 import Control.Monad.Random
 
 import Pal.Pal
---import Pal.Geometries.CubeInfo
--- import Pal.Geometries.Plane
+
 import Pal.Geometries.Cube
 
 import Network.UDP.Pal
@@ -39,24 +39,7 @@ enableVR :: Bool
 --enableVR = False
 enableVR = True
 
-initHydra :: IO ()
-initHydra = do
-  _          <- sixenseInit
-  _          <- setActiveBase 0
-  _          <- autoEnableHemisphereTracking 0 
-  return ()
 
-quatFromV4 :: RealFrac a => V4 a -> Quaternion a
-quatFromV4 (V4 x y z w) = fmap realToFrac (Quaternion w $ V3 x y z)
-
-getHands :: MonadIO m => m [ControllerData]
-getHands = liftIO $ do
-  leftHand   <- getNewestData 0
-  rightHand  <- getNewestData 1
-  return (catMaybes [leftHand, rightHand])
-
-handButtons :: ControllerData -> [Button]
-handButtons = activeButtons . buttons
 
 main :: IO ()
 main = do
@@ -99,9 +82,7 @@ main = do
 
   -- Set up our cube resources
   cubeProg   <- createShaderProgram "src/shaders/cube.vert" "src/shaders/cube.frag"
-  cubeGeo    <- cubeGeometry ( 0.2 :: V3 GLfloat ) ( V3 1 1 1 )
-
-  
+  cubeGeo    <- cubeGeometry ( 0.2 :: V3 GLfloat ) ( V3 1 1 1 )  
 
   -- Set up our cube resources
   planeProg  <- createShaderProgram "src/shaders/plane.vert" "src/shaders/plane.frag"
@@ -115,10 +96,10 @@ main = do
   glClearColor 0 0 0.1 1
   --glPolygonMode GL_FRONT_AND_BACK GL_LINE 
 
-  eyeVar <- newMVar 0
-
+  playerID <- randomIO
   -- Begin game loop
-  void . flip runRandT stdGen . flip runStateT newWorld . whileWindow window $ do
+  let world = newWorld playerID
+  void . flip runRandT stdGen . flip runStateT world . whileWindow window $ do
     
 
     -- Update interpolation buffer
@@ -135,8 +116,8 @@ main = do
     applyMovement window
 
     -- Get player pose
-    playerPos <- use (wldPlayer . plrPosition)
-    playerRot <- use (wldPlayer . plrOrientation)
+    playerPos <- use (wldPlayer . plrPose . posPosition)
+    playerRot <- use (wldPlayer . plrPose . posOrientation)
 
     -- Handle key events
     processEvents events $ \e -> do
@@ -146,36 +127,37 @@ main = do
       keyDown Key'F e (setCursorInputMode window CursorInputMode'Disabled)
       keyDown Key'G e (setCursorInputMode window CursorInputMode'Normal)
 
-      keyDown Key'Y e ( liftIO $ withMVar eyeVar print )
-
-    
+      keyDown Key'Y e ( liftIO . print =<< use wldEyeDebug )
 
     -- Update hand positions
     hands <- getHands
     let handWorldPoses = map handWorldPose hands
-        handWorldPose hand = (positWorld, orientWorld)
+        handWorldPose hand = Pose positWorld orientWorld
           where
             handPosit   = fmap (realToFrac . (/500)) (pos hand) + V3 0 (-1) (-1)
             handOrient  = quatFromV4 (rotQuat hand)
             positWorld  = rotate playerRot handPosit + playerPos
             orientWorld = playerRot * handOrient
-    wldHandPoses .= handWorldPoses
-    forM_ (zip hands handWorldPoses) $ \(hand, (posit, orient)) -> do
+    wldPlayer . plrHandPoses .= handWorldPoses
+    forM_ (zip hands handWorldPoses) $ \(hand, Pose posit orient) -> do
       when (trigger hand > 0.5) $ addCube client posit orient
 
+    -- Send player position
+    player <- use wldPlayer
+    playerMoveInstruct <- fromFreeT $ updatePlayer playerID player
+    _bytesSent <- sendEncoded client playerMoveInstruct
 
     -- Render the scene
     case maybeRenderHMD of
-      Nothing        -> renderFlat window    cube plane eyeVar
-      Just renderHMD -> renderVR   renderHMD cube plane eyeVar
+      Nothing        -> renderFlat window    cube plane
+      Just renderHMD -> renderVR   renderHMD cube plane
 
 renderVR :: (MonadIO m, MonadState World m) 
-         => RenderHMD -> Entity -> Entity -> MVar (V3 GLfloat) -> m ()
-renderVR renderHMD cube plane eyeVar = do
+         => RenderHMD -> Entity -> Entity -> m ()
+renderVR renderHMD cube plane = do
   renderHMDFrame renderHMD $ \eyePoses -> do
 
     glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
-
 
     view <- playerViewMat
 
@@ -183,27 +165,29 @@ renderVR renderHMD cube plane eyeVar = do
 
       let finalView = eyeView !*! view 
 
-      render cube plane projection finalView eyeVar
+      render cube plane projection finalView
 
 renderFlat :: (MonadIO m, MonadState World m) 
-           => Window -> Entity -> Entity -> MVar (V3 GLfloat) -> m ()
-renderFlat win cube plane eyeVar = do
+           => Window -> Entity -> Entity -> m ()
+renderFlat win cube plane = do
 
   glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
   
   projection  <- makeProjection win
   view        <- playerViewMat
 
-  render cube plane projection view eyeVar
+  render cube plane projection view
   swapBuffers win
 
 
 logOut :: MonadIO m => String -> m ()
 logOut = liftIO . putStrLn
 
+poseToMatrix (Pose posit orient) = mkTransformation orient posit
+
 render :: ( MonadIO m, MonadState World m ) 
-       => Entity -> Entity -> M44 GLfloat -> M44 GLfloat -> MVar (V3 GLfloat) -> m ()
-render cube plane projection view eyeVar = do
+       => Entity -> Entity -> M44 GLfloat -> M44 GLfloat -> m ()
+render cube plane projection view = do
 
   
   --liftIO $ print hands
@@ -219,7 +203,7 @@ render cube plane projection view eyeVar = do
 
   let eyePos = fromMaybe view (inv44 view) ^. translation
 
-  _ <- liftIO $ swapMVar eyeVar eyePos
+  wldEyeDebug .= eyePos
 
   -- logOut (show view )
   let cam = uCamera ( uniforms cube )
@@ -241,10 +225,21 @@ render cube plane projection view eyeVar = do
 
       drawEntity model projectionView cube
 
-    handPoses <- use wldHandPoses
-    forM_ handPoses $ \(posit, orient) -> do
+    -- Draw the local player's hands
+    handPoses <- use $ wldPlayer . plrHandPoses
+    forM_ handPoses $ \(Pose posit orient) -> do
       let model = mkTransformation orient posit
       drawEntity model projectionView cube
+
+    -- Draw all remote players' bodies and hands
+    players <- use $ wldPlayers . to Map.toList
+    localPlayerID <- use wldPlayerID
+    forM_ players $ \(playerID, player) -> 
+      when (playerID /= localPlayerID) $ do
+        drawEntity (poseToMatrix (player ^. plrPose)) projectionView cube
+        forM_ (player ^. plrHandPoses) $ \handPose -> do
+          drawEntity (poseToMatrix handPose) projectionView cube
+  
 
   useProgram (program plane)
 
@@ -285,10 +280,8 @@ addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Client -> V3 GLfloa
 addCube client posit orient = do
   -- Spawn a cube at the player's position and orientation
   instructions <- fromFreeT $ do
-    let object = Object posit orient 0.1
-    
     objID <- getRandom'
-    update objID object
+    updateObject objID (Object posit orient 0.1)
 
   -- instructions <- randomCube
   

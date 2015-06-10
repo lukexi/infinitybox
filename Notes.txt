@@ -1,3 +1,7 @@
 [ ] Fix bunk movement
 
-[ ] Fire cube on trigger
+[x] Fire cube on trigger
+  [ ] Restrict rate
+
+[ ] Transmit player/hand positions
+[ ] Cube expiration

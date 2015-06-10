@@ -28,5 +28,4 @@ randomCube = fromFreeT $ do
     let orientation = axisAngle axis angle'
         object = Object position orientation 0.05
     objID <- getRandom'
-    update objID object
-    echo (show object)
+    updateObject objID object
