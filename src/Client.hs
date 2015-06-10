@@ -90,9 +90,19 @@ main = do
   planeProg  <- createShaderProgram "src/shaders/plane.vert" "src/shaders/plane.frag"
   planeGeo   <- cubeGeometry ( V3 20 20 20 ) ( V3 1 1 1 )
 
+  -- Set up our cube resources
+  handProg  <- createShaderProgram "src/shaders/plane.vert" "src/shaders/plane.frag"
+  handGeo   <- cubeGeometry ( V3 0.2 0.2 1 ) ( V3 1 1 1 )
+
+  -- Set up our cube resources
+  faceProg  <- createShaderProgram "src/shaders/plane.vert" "src/shaders/plane.frag"
+  faceGeo   <- cubeGeometry ( V3 0.5 0.8 0.1 ) ( V3 1 1 1 )
+
   plane      <- entity planeGeo planeProg 
   cube       <- entity cubeGeo  cubeProg 
   light      <- entity lightGeo lightProg 
+  hand       <- entity handGeo  handProg 
+  face       <- entity faceGeo  faceProg 
 
 
   -- Set up GL state
@@ -142,6 +152,7 @@ main = do
             handOrient  = quatFromV4 (rotQuat hand)
             positWorld  = rotate playerRot handPosit + playerPos
             orientWorld = playerRot * handOrient
+
     wldPlayer . plrHandPoses .= handWorldPoses
     forM_ (zip hands handWorldPoses) $ \(hand, Pose posit orient) -> do
       when (trigger hand > 0.5 && frameNumber `mod` 30 == 0) $ 
@@ -155,8 +166,8 @@ main = do
     -- Render the scene
     case maybeRenderHMD of
 
-      Nothing        -> renderFlat window    cube plane light
-      Just renderHMD -> renderVR   renderHMD cube plane light
+      Nothing        -> renderFlat window    cube plane light hand face
+      Just renderHMD -> renderVR   renderHMD cube plane light hand face
 
 
 
@@ -164,7 +175,7 @@ main = do
 
 -- renderVR :: (MonadIO m, MonadState World m) 
 --          => RenderHMD -> Entity -> Entity -> m ()
-renderVR renderHMD cube plane light = do
+renderVR renderHMD cube plane light hand face = do
 
   renderHMDFrame renderHMD $ \eyePoses -> do
 
@@ -176,11 +187,11 @@ renderVR renderHMD cube plane light = do
 
       let finalView = eyeView !*! view 
 
-      render cube plane light projection finalView 
+      render cube plane light hand face projection finalView 
 
 -- renderFlat :: (MonadIO m, MonadState World m) 
 --            => Window -> Entity -> Entity -> m ()
-renderFlat win cube plane light = do
+renderFlat win cube plane light hand face = do
 
 
   glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
@@ -188,7 +199,7 @@ renderFlat win cube plane light = do
   projection  <- makeProjection win
   view        <- playerViewMat
 
-  render cube plane light projection view
+  render cube plane light hand face projection view
 
   swapBuffers win
 
@@ -199,7 +210,7 @@ logOut = liftIO . putStrLn
 poseToMatrix (Pose posit orient) = mkTransformation orient posit
 
 -- render :: ( MonadIO m, MonadState World m ) => Entity -> Entity -> M44 GLfloat -> M44 GLfloat -> m ()
-render cube plane light projection view = do
+render cube plane light hand face projection view = do
 
 
 
@@ -215,12 +226,24 @@ render cube plane light projection view = do
 
   wldEyeDebug .= eyePos
 
+  -- (lukexi) FIXME fix this horrible abomination
+  localHandPoses <- use $ wldPlayer . plrHandPoses
+  let (light1, light2)  = case map (^. posPosition) localHandPoses of
+        [left,right] -> (left, right)
+        _            -> (0, 0)
 
+  localPlayerID <- use wldPlayerID
+  remoteHandPoses <- use $ wldPlayers . to Map.toList . to (filter (\(playerID, _) -> playerID /= localPlayerID))
+  let (light3, light4) = case remoteHandPoses of
+        ((_,x):_) -> case map (^. posPosition) (x ^. plrHandPoses) of
+           [left,right] -> (left, right)
+           _            -> (0, 0)
+        _ -> (0,0)
 
-  let light1 = V3 9 0 0 
-  let light2 = V3 (-5) 0 0 
-  let light3 = V3 0 5 0 
-  let light4 = V3 0 (-5) 0 
+  -- let light1 = V3 9 0 0 
+  -- let light2 = V3 (-5) 0 0 
+  -- let light3 = V3 0 5 0 
+  -- let light4 = V3 0 (-5) 0 
 
   ------------
   -- LIGHTS --
@@ -256,6 +279,11 @@ render cube plane light projection view = do
 
       drawEntity model projectionView i cube
 
+  withVAO ( vAO hand ) $ do
+
+    glEnable GL_CULL_FACE
+    glCullFace GL_BACK
+
     -- Draw the local player's hands
     handPoses <- use $ wldPlayer . plrHandPoses
     forM_ handPoses $ \(Pose posit orient) -> do
@@ -270,9 +298,18 @@ render cube plane light projection view = do
     localPlayerID <- use wldPlayerID
     forM_ players $ \(playerID, player) -> 
       when (playerID /= localPlayerID) $ do
-        drawEntity (poseToMatrix (player ^. plrPose)) projectionView 0 cube
         forM_ (player ^. plrHandPoses) $ \handPose -> do
           drawEntity (poseToMatrix handPose) projectionView 0 cube 
+
+
+  withVAO ( vAO face ) $ do
+          -- Draw all remote players' bodies and hands
+    players <- use $ wldPlayers . to Map.toList
+    localPlayerID <- use wldPlayerID
+    forM_ players $ \(playerID, player) -> 
+      when (playerID /= localPlayerID) $ do
+        drawEntity (poseToMatrix (player ^. plrPose)) projectionView 0 cube
+
   
 
   --------------------
