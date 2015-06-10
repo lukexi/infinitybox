@@ -15,7 +15,7 @@ withVAO aVAO action = do
   glBindVertexArray 0
 
 
-
+withArrayBuffer :: MonadIO m => ArrayBuffer -> m a -> m ()
 withArrayBuffer buffer action = do
 
   glBindBuffer GL_ARRAY_BUFFER ( unArrayBuffer buffer )
@@ -24,7 +24,7 @@ withArrayBuffer buffer action = do
   
   glBindBuffer GL_ARRAY_BUFFER 0
 
-
+withElementArrayBuffer :: MonadIO m => ElementArrayBuffer -> m a -> m ()
 withElementArrayBuffer buffer action = do
 
   glBindBuffer GL_ELEMENT_ARRAY_BUFFER ( unElementArrayBuffer buffer )
