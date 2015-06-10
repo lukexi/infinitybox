@@ -20,8 +20,7 @@ import Pal.Pal
 import Pal.Geometries.Plane
 import Pal.Geometries.Cube
 
-
-import Network.Sox
+import Network.UDP.Pal
 import Network.ReceiveChan
 
 import Types
@@ -38,7 +37,11 @@ enableVR = False
 --enableVR = True
 
 main :: IO ()
-main = asClient $ \s -> do
+main = do
+
+  client <- makeClient serverName serverPort 4096
+  -- Create a UDP receive thread
+  receiveChan <- makeReceiveChan client
 
   -- Initialize GLFW
 
@@ -64,12 +67,9 @@ main = asClient $ \s -> do
 
   -- Get a stdgen for Entity ID generation
   stdGen <- getStdGen
-
-  -- Create a UDP receive thread
-  receiveChan <- makeReceiveChan s
-
+  
   -- Connect to the server
-  _bytesSent <- sendInstrs s (compile stdGen (connect "player"))
+  _bytesSent <- sendEncoded client (compile stdGen (connect "player"))
 
 
   -- Set up our cube resources
@@ -104,7 +104,7 @@ main = asClient $ \s -> do
     -- Handle key events
     processEvents events $ \e -> do
       closeOnEscape window e
-      keyDown Key'E e (addCube s)
+      keyDown Key'E e (addCube client)
       keyDown Key'F e (setCursorInputMode window CursorInputMode'Disabled)
       keyDown Key'G e (setCursorInputMode window CursorInputMode'Normal)
 
@@ -119,8 +119,8 @@ main = asClient $ \s -> do
 
     -- Render the scene
     case maybeRenderHMD of
-      Nothing -> renderFlat window cube plane eyeVar
-      Just renderHMD -> renderVR renderHMD cube plane eyeVar
+      Nothing        -> renderFlat window    cube plane eyeVar
+      Just renderHMD -> renderVR   renderHMD cube plane eyeVar
 
 -- renderVR :: (MonadIO m, MonadState World m) 
 --          => RenderHMD -> Entity -> Entity -> m ()
@@ -216,8 +216,8 @@ drawEntity model projectionView anEntity = do
 
 
 
-addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Socket -> m ()
-addCube s = do
+addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Client -> m ()
+addCube client = do
   -- Spawn a cube at the player's position and orientation
   instructions <- fromFreeT $ do
     playerPos <- use (wldPlayer . plrPosition)
@@ -232,7 +232,7 @@ addCube s = do
   
   interpret instructions
 
-  _bytesSent <- sendInstrs s instructions
+  _bytesSent <- sendEncoded client instructions
   return ()
 
   

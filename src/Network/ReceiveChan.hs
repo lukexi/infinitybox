@@ -6,46 +6,36 @@ import Control.Concurrent
 import Control.Concurrent.STM
 import Control.Monad
 import Control.Monad.Trans
-import Control.Exception 
-import Network.Socket.ByteString
 import Network.Socket hiding (send, sendTo, recv, recvFrom)
 
-import Network.Sox
 import Data.ByteString (ByteString)
 import Data.Monoid
-import Data.IORef
+
+import Network.UDP.Pal
 
 packetSize :: Int
 packetSize = 4096
+serverName :: HostName
+serverName = "127.0.0.1"
+serverPort :: PortNumber
+serverPort = 3000
 
-makeBinaryReceiveFromChan :: (MonadIO m) => IORef Socket -> m (TChan (ByteString, SockAddr))
-makeBinaryReceiveFromChan sockRef = liftIO $ do
+makeBinaryReceiveFromChan :: (MonadIO m) => Server -> m (TChan (ByteString, SockAddr))
+makeBinaryReceiveFromChan server = liftIO $ do
   messageChan <- newTChanIO
 
-
-  void . forkIO . forever $ do
-    s <- readIORef sockRef
-    try (recvFrom s packetSize) >>= \case
-        Left err -> do
-          putStrLn $ "Exception: " ++ show (err::SomeException)
-          sClose s
-          newSocket <- listenSocket serverPort
-          writeIORef sockRef newSocket
-          -- go newSocket
-        Right message -> do
-          
-          atomically . writeTChan messageChan $ message
-    
+  void . forkIO . forever $ 
+    atomically . writeTChan messageChan =<< receiveFromRaw server    
 
   return messageChan
 
-makeReceiveChan :: (MonadIO m, Binary a) => Socket -> m (TChan a)
-makeReceiveChan s = liftIO $ do
+makeReceiveChan :: (MonadIO m, Binary a) => Client -> m (TChan a)
+makeReceiveChan client = liftIO $ do
   messageChan <- newTChanIO
-  void . forkIO . forever $ do
-    message <- recv s packetSize
-    let decoded = decode' message
-    atomically $ writeTChan messageChan decoded
+  
+  void . forkIO . forever $ 
+    atomically . writeTChan messageChan =<< receiveDecoded client
+
   return messageChan
 
 readChanAll :: (MonadIO m, Monoid b) => TChan a -> (a -> m b) -> m b
