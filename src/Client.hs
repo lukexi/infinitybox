@@ -7,6 +7,7 @@ import Graphics.GL
 import Graphics.Oculus
 import Linear
 
+import System.Hardware.Hydra
 
 import Control.Monad
 import Control.Monad.State
@@ -17,7 +18,7 @@ import Control.Monad.Random
 
 import Pal.Pal
 --import Pal.Geometries.CubeInfo
-import Pal.Geometries.Plane
+-- import Pal.Geometries.Plane
 import Pal.Geometries.Cube
 
 import Network.UDP.Pal
@@ -34,11 +35,24 @@ import Data.Maybe
 
 import Control.Concurrent
 
-import Debug.Trace
-
 enableVR :: Bool
 --enableVR = False
 enableVR = True
+
+initHydra :: IO ()
+initHydra = do
+  _          <- sixenseInit
+  _          <- setActiveBase 0
+  return ()
+
+quatFromV4 :: RealFrac a => V4 a -> Quaternion a
+quatFromV4 (V4 x y z w) = fmap realToFrac (Quaternion w $ V3 x y z)
+
+getHands :: MonadIO m => m [ControllerData]
+getHands = liftIO $ do
+  leftHand   <- getNewestData 0
+  rightHand  <- getNewestData 1
+  return (catMaybes [leftHand, rightHand])
 
 main :: IO ()
 main = do
@@ -68,6 +82,10 @@ main = do
     dismissHSWDisplay hmd
     recenterPose hmd
     return renderHMD
+
+  -- Set up Hydra
+  initHydra
+
 
   -- Get a stdgen for Entity ID generation
   stdGen     <- getStdGen
@@ -127,8 +145,8 @@ main = do
       Nothing        -> renderFlat window    cube plane eyeVar
       Just renderHMD -> renderVR   renderHMD cube plane eyeVar
 
--- renderVR :: (MonadIO m, MonadState World m) 
---          => RenderHMD -> Entity -> Entity -> m ()
+renderVR :: (MonadIO m, MonadState World m) 
+         => RenderHMD -> Entity -> Entity -> MVar (V3 GLfloat) -> m ()
 renderVR renderHMD cube plane eyeVar = do
   renderHMDFrame renderHMD $ \eyePoses -> do
 
@@ -143,8 +161,8 @@ renderVR renderHMD cube plane eyeVar = do
 
       render cube plane projection finalView eyeVar
 
--- renderFlat :: (MonadIO m, MonadState World m) 
---            => Window -> Entity -> Entity -> m ()
+renderFlat :: (MonadIO m, MonadState World m) 
+           => Window -> Entity -> Entity -> MVar (V3 GLfloat) -> m ()
 renderFlat win cube plane eyeVar = do
 
   glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
@@ -159,8 +177,11 @@ renderFlat win cube plane eyeVar = do
 logOut :: MonadIO m => String -> m ()
 logOut = liftIO . putStrLn
 
--- render :: ( MonadIO m, MonadState World m ) => Entity -> Entity -> M44 GLfloat -> M44 GLfloat -> m ()
+render :: ( MonadIO m, MonadState World m ) 
+       => Entity -> Entity -> M44 GLfloat -> M44 GLfloat -> MVar (V3 GLfloat) -> m ()
 render cube plane projection view eyeVar = do
+
+  hands <- getHands
 
   newCubes  <- use wldCubes
   lastCubes <- use wldLastCubes
@@ -173,8 +194,7 @@ render cube plane projection view eyeVar = do
 
   let eyePos = fromMaybe view (inv44 view) ^. translation
 
-  --liftIO $ swapMVar eyeVar eyePos
-  liftIO $ swapMVar eyeVar eyePos
+  _ <- liftIO $ swapMVar eyeVar eyePos
 
   -- logOut (show view )
   let cam = uCamera ( uniforms cube )
@@ -196,6 +216,11 @@ render cube plane projection view eyeVar = do
 
       drawEntity model projectionView cube
 
+    forM_ hands $ \hand -> do
+      let posit = fmap realToFrac (pos hand)
+          orient = quatFromV4 (rotQuat hand)
+      let model = mkTransformation orient posit
+      drawEntity model projectionView cube
 
   useProgram (program plane)
 
@@ -203,8 +228,7 @@ render cube plane projection view eyeVar = do
 
   let eyePos = fromMaybe view (inv44 view) ^. translation
 
-  --liftIO $ swapMVar eyeVar eyePos
-  liftIO $ swapMVar eyeVar eyePos
+  _ <- liftIO $ swapMVar eyeVar eyePos
 
   -- logOut (show view )
   let cam = uCamera ( uniforms cube )

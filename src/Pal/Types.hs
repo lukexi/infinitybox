@@ -3,7 +3,6 @@ module Pal.Types where
 import Graphics.GL
 import Control.Monad.Trans
 import Foreign
-import Linear
 
 
 newtype Program             = Program             { unProgram             :: GLuint }
