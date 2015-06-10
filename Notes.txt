@@ -1,12 +1,3 @@
-[x] Fix flashing oculus
-[x] Turn off cmder new tab dialog
-[x] Fix isaac HSW display
-[x] Fix server crashes when client disconnects
+[ ] Fix bunk movement
 
-[ ] Fix isaac sandboxing for dependent packages
-
-[ ] Have client attempt reconnects
-
-[ ] Fix server crashes when too many cubes
-
-[ ] Open cmder in the correct directory
+[ ] Fire cube on trigger

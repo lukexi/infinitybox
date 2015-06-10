@@ -10,9 +10,7 @@ import Control.Monad.Free.FromFreeT
 import Control.Monad.Free
 
 import Network.ReceiveChan
-import Network.Socket (SockAddr)
 import Network.UDP.Pal hiding (newClientThread)
-import Network.Socket (close, getSocketName)
 import Network.Socket hiding (sendTo)
 import Control.Exception
 

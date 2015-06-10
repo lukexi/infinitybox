@@ -43,6 +43,7 @@ initHydra :: IO ()
 initHydra = do
   _          <- sixenseInit
   _          <- setActiveBase 0
+  _          <- autoEnableHemisphereTracking 0 
   return ()
 
 quatFromV4 :: RealFrac a => V4 a -> Quaternion a
@@ -54,8 +55,14 @@ getHands = liftIO $ do
   rightHand  <- getNewestData 1
   return (catMaybes [leftHand, rightHand])
 
+handButtons :: ControllerData -> [Button]
+handButtons = activeButtons . buttons
+
 main :: IO ()
 main = do
+
+  -- Set up Hydra
+  initHydra
 
   client <- makeClient serverName serverPort packetSize
   -- Create a UDP receive thread
@@ -82,10 +89,6 @@ main = do
     dismissHSWDisplay hmd
     recenterPose hmd
     return renderHMD
-
-  -- Set up Hydra
-  initHydra
-
 
   -- Get a stdgen for Entity ID generation
   stdGen     <- getStdGen
@@ -124,21 +127,42 @@ main = do
     -- Handle network events
     readChanAll receiveChan interpret
 
-    -- Handle key events
-    processEvents events $ \e -> do
-      closeOnEscape window e
-      keyDown Key'E e (addCube client)
-      keyDown Key'F e (setCursorInputMode window CursorInputMode'Disabled)
-      keyDown Key'G e (setCursorInputMode window CursorInputMode'Normal)
-
-      keyDown Key'Y e ( liftIO $ withMVar eyeVar print )
-
     -- Handle mouse events
     isFocused <- getWindowFocused window
     when isFocused $ applyMouseLook window
 
     -- Handle movement events
     applyMovement window
+
+    -- Get player pose
+    playerPos <- use (wldPlayer . plrPosition)
+    playerRot <- use (wldPlayer . plrOrientation)
+
+    -- Handle key events
+    processEvents events $ \e -> do
+      closeOnEscape window e
+      -- Spawn a cube offset by 0.1 y
+      keyDown Key'E e (addCube client (rotate playerRot (V3 0 0.1 0) + playerPos) playerRot)
+      keyDown Key'F e (setCursorInputMode window CursorInputMode'Disabled)
+      keyDown Key'G e (setCursorInputMode window CursorInputMode'Normal)
+
+      keyDown Key'Y e ( liftIO $ withMVar eyeVar print )
+
+    
+
+    -- Update hand positions
+    hands <- getHands
+    let handWorldPoses = map handWorldPose hands
+        handWorldPose hand = (positWorld, orientWorld)
+          where
+            handPosit   = fmap (realToFrac . (/500)) (pos hand) + V3 0 (-1) (-1)
+            handOrient  = quatFromV4 (rotQuat hand)
+            positWorld  = rotate playerRot handPosit + playerPos
+            orientWorld = playerRot * handOrient
+    wldHandPoses .= handWorldPoses
+    forM_ (zip hands handWorldPoses) $ \(hand, (posit, orient)) -> do
+      when (trigger hand > 0.5) $ addCube client posit orient
+
 
     -- Render the scene
     case maybeRenderHMD of
@@ -181,7 +205,8 @@ render :: ( MonadIO m, MonadState World m )
        => Entity -> Entity -> M44 GLfloat -> M44 GLfloat -> MVar (V3 GLfloat) -> m ()
 render cube plane projection view eyeVar = do
 
-  hands <- getHands
+  
+  --liftIO $ print hands
 
   newCubes  <- use wldCubes
   lastCubes <- use wldLastCubes
@@ -216,19 +241,12 @@ render cube plane projection view eyeVar = do
 
       drawEntity model projectionView cube
 
-    forM_ hands $ \hand -> do
-      let posit = fmap realToFrac (pos hand)
-          orient = quatFromV4 (rotQuat hand)
+    handPoses <- use wldHandPoses
+    forM_ handPoses $ \(posit, orient) -> do
       let model = mkTransformation orient posit
       drawEntity model projectionView cube
 
   useProgram (program plane)
-
-  let projectionView = projection !*! view
-
-  let eyePos = fromMaybe view (inv44 view) ^. translation
-
-  _ <- liftIO $ swapMVar eyeVar eyePos
 
   -- logOut (show view )
   let cam = uCamera ( uniforms cube )
@@ -263,14 +281,11 @@ drawEntity model projectionView anEntity = do
 
 
 
-addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Client -> m ()
-addCube client = do
+addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Client -> V3 GLfloat -> Quaternion GLfloat -> m ()
+addCube client posit orient = do
   -- Spawn a cube at the player's position and orientation
   instructions <- fromFreeT $ do
-    playerPos <- use (wldPlayer . plrPosition)
-    playerRot <- use (wldPlayer . plrOrientation)
-    let spawnPoint = rotate playerRot (V3 0 0.1 0) + playerPos
-        object = Object spawnPoint playerRot 0.1
+    let object = Object posit orient 0.1
     
     objID <- getRandom'
     update objID object

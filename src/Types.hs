@@ -39,6 +39,7 @@ data World = World
     { _wldPlayer    :: Player
     , _wldCubes     :: Map ObjectID Object
     , _wldLastCubes :: Map ObjectID Object
+    , _wldHandPoses :: [(V3 GLfloat, Quaternion GLfloat)]
     }
 
 makeLenses ''World
@@ -53,7 +54,7 @@ newPlayer :: Player
 newPlayer = Player (V3 0 5 0) (axisAngle (V3 0 1 0) 0)
 
 newWorld :: World
-newWorld = World newPlayer mempty mempty
+newWorld = World newPlayer mempty mempty mempty
 
 
 
