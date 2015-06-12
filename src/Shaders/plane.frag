@@ -92,7 +92,7 @@ vec2 map( vec3 pos  , vec3 ro ){
     
     vec2 res = vec2( 10000. , 0.);// vec2( sdPlane( pos - vec3( 0. , -1. , 0. )), 0.0 );
   
-    vec2 res2 = vec2( repSphere( pos - vec3( 0. , 0., ro.z), vec3(1. , 1. , .1 ) , pos.z - ro.z ) , 1.);
+    vec2 res2 = vec2( repSphere( pos - vec3( 0. , 0., ro.z), vec3(1. , 1. , 1. ) , ( pos.z - ro.z) * .01 ) , 1.);
     
     res.x = opU( res.x , res2.x );
     
@@ -187,6 +187,8 @@ void main( void ) {
     vec3 col4 = c4 * ( lamb4*.1 + spec4 * 1.1 ); //* ( 5. / length( vLight4 ));
 
     col = col1+ col2 + col3 + col4 ; //layers;
+
+    col *= -nor * .5 + .5;
 
   }
 
