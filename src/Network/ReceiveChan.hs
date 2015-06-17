@@ -16,7 +16,8 @@ import Network.UDP.Pal
 packetSize :: Int
 packetSize = 64000
 serverName :: HostName
-serverName = "192.168.0.14"
+--serverName = "192.168.0.14"
+serverName = "127.0.0.1"
 serverPort :: PortNumber
 serverPort = 3000
 

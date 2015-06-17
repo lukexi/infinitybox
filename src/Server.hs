@@ -119,9 +119,6 @@ newClientThread clientAddr messageChan clients = forkIO $ do
 
   -- (hostName, serviceName) <- getSockAddrAddress clientAddr
   toClientSock <- boundSocket Nothing 0
-  -- print =<< getSocketName toClientSock
-
-  -- toClientSock <- connectedSocketToAddr clientAddr
 
   -- Have the thread close the socket and remove the client
   -- from the broadcast queue when an exception occurs
