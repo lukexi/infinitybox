@@ -112,16 +112,17 @@ main = do
     -- Handle network events
     readChanAll receiveChan interpret
 
-    -- Get Hydra update
+    -- Get latest Hydra data
     hands <- getHands
 
     -- Handle mouse events
     isFocused <- getWindowFocused window
     when isFocused $ applyMouseLook window
 
-    -- Handle movement events
+    -- Handle keyboard movement events
     applyMovement window
 
+    -- Handle Hydra movement events
     case hands of
       [left, right] -> do
         movePlayer (V3 (joystickX left) 0 (-(joystickY left)))

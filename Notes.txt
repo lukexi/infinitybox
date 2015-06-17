@@ -7,4 +7,4 @@
   [ ] Transmit head position
 [ ] Cube expiration
 
-[ ] 
+[ ] Hydra calibration
