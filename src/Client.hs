@@ -8,7 +8,6 @@ import Graphics.Oculus
 import Linear
 
 import System.Hardware.Hydra
-import Hydra
 
 import Control.Monad
 import Control.Monad.State
@@ -41,7 +40,7 @@ enableVR = True
 main :: IO ()
 main = do
   -- Set up Hydra
-  initHydra
+  sixenseBase <- initSixense
 
   client <- makeClient serverName serverPort packetSize
   -- Create a UDP receive thread
@@ -121,7 +120,7 @@ main = do
     readChanAll receiveChan interpret
 
     -- Get latest Hydra data
-    hands <- getHands
+    hands <- getHands sixenseBase
 
     -- Handle mouse events
     isFocused <- getWindowFocused window
@@ -159,7 +158,7 @@ main = do
         handWorldPose handData = Pose positWorld orientWorld
           where
             handPosit   = fmap (realToFrac . (/500)) (pos handData) + V3 0 (-1) (-1)
-            handOrient  = quatFromV4 (rotQuat handData)
+            handOrient  = rotQuat handData
             positWorld  = rotate playerRot handPosit + playerPos
             orientWorld = playerRot * handOrient
 
