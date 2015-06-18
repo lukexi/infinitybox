@@ -3,7 +3,7 @@
 
 module Types where
 
-import qualified Control.Monad.Trans.Free as FT
+import Control.Monad.Trans.Free (FreeT)
 import Control.Monad.Free
 import Control.Monad.Identity
 import Control.Monad.Random
@@ -66,13 +66,13 @@ interpret :: (MonadIO m, MonadState World m) => Free Op () -> m ()
 interpret = iterM interpret'
   where
     interpret' :: (MonadIO m, MonadState World m) => Op (m t) -> m t
-    interpret' (UpdateObject objID obj n)       = wldCubes   . at objID    ?= obj    >> n
-    interpret' (UpdatePlayer playerID player n) = wldPlayers . at playerID ?= player >> n
-    interpret' (Connect name n)                 = (liftIO . putStrLn $ name ++ " connected") >> n
+    interpret' (UpdateObject objID obj n)       = wldCubes   . at objID    ?= obj            >> n
+    interpret' (UpdatePlayer playerID player n) = wldPlayers . at playerID ?= player         >> n
+    interpret' (Connect name n)                 = (liftIO . putStrLn) (name ++ " connected") >> n
 
 
 -- Get a regular Free value out of a FreeT
-compile :: (Traversable f, RandomGen g) => g -> FT.FreeT f (RandT g Identity) a -> Free f a
+compile :: (Traversable f, RandomGen g) => g -> FreeT f (RandT g Identity) a -> Free f a
 compile stdgen randInstrs = runIdentity $ evalRandT (fromFreeT randInstrs) stdgen
 
 -- | Deriving Generics
@@ -84,13 +84,19 @@ data Op next = UpdateObject ObjectID Object next
 
 type Instructions = Free Op ()
 
-updateObject :: (Monad m) => ObjectID -> Object -> FT.FreeT Op m ()
+updateObject :: (Monad m) => ObjectID -> Object -> FreeT Op m ()
 updateObject a b = liftF (UpdateObject a b ())
 
-updatePlayer :: (Monad m) => PlayerID -> Player -> FT.FreeT Op m ()
+updatePlayer :: (Monad m) => PlayerID -> Player -> FreeT Op m ()
 updatePlayer a b = liftF (UpdatePlayer a b ())
 
-connect :: (Monad m) => String -> FT.FreeT Op m ()
+connect :: (Monad m) => String -> FreeT Op m ()
 connect n = liftF (Connect n ())
 
+-- Util
 
+putStrLnIO :: MonadIO m => String -> m ()
+putStrLnIO = liftIO . putStrLn
+
+printIO :: (Show s, MonadIO m) => s -> m ()
+printIO = putStrLnIO . show

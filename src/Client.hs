@@ -40,7 +40,6 @@ enableVR = True
 
 main :: IO ()
 main = do
-
   -- Set up Hydra
   initHydra
 
@@ -49,7 +48,6 @@ main = do
   receiveChan <- makeReceiveChan client
 
   -- Initialize GLFW
-
   (resX, resY, maybeHMD) <- if enableVR 
     then do
       hmd <- createHMD
@@ -134,7 +132,7 @@ main = do
 
     -- Handle Hydra movement events
     case hands of
-      [left, right] -> do
+      [left, _right] -> do
         movePlayer (V3 (joystickX left / 10) 0 (-(joystickY left / 10)))
         -- wldPlayer . plrPose . posOrientation *= axisAngle (V3 0 1 0) (joystickX right)
       _ -> return ()
@@ -158,16 +156,16 @@ main = do
     -- Update hand positions
     
     let handWorldPoses = map handWorldPose hands
-        handWorldPose hand = Pose positWorld orientWorld
+        handWorldPose handData = Pose positWorld orientWorld
           where
-            handPosit   = fmap (realToFrac . (/500)) (pos hand) + V3 0 (-1) (-1)
-            handOrient  = quatFromV4 (rotQuat hand)
+            handPosit   = fmap (realToFrac . (/500)) (pos handData) + V3 0 (-1) (-1)
+            handOrient  = quatFromV4 (rotQuat handData)
             positWorld  = rotate playerRot handPosit + playerPos
             orientWorld = playerRot * handOrient
 
     wldPlayer . plrHandPoses .= handWorldPoses
-    forM_ (zip hands handWorldPoses) $ \(hand, Pose posit orient) -> do
-      when (trigger hand > 0.5 && frameNumber `mod` 30 == 0) $ 
+    forM_ (zip hands handWorldPoses) $ \(handData, Pose posit orient) -> do
+      when (trigger handData > 0.5 && frameNumber `mod` 30 == 0) $ 
         addCube client posit orient
 
     -- Send player position
@@ -185,8 +183,8 @@ main = do
 
 
 
--- renderVR :: (MonadIO m, MonadState World m) 
---          => RenderHMD -> Entity -> Entity -> m ()
+renderVR :: (MonadIO m, MonadState World m) 
+         => RenderHMD -> Entity -> Entity -> Entity -> Entity -> Entity -> m ()
 renderVR renderHMD cube plane light hand face = do
 
   renderHMDFrame renderHMD $ \eyePoses -> do
@@ -201,10 +199,9 @@ renderVR renderHMD cube plane light hand face = do
 
       render cube plane light hand face projection finalView 
 
--- renderFlat :: (MonadIO m, MonadState World m) 
---            => Window -> Entity -> Entity -> m ()
+renderFlat :: (MonadIO m, MonadState World m) 
+           => Window -> Entity -> Entity -> Entity -> Entity -> Entity -> m ()
 renderFlat win cube plane light hand face = do
-
 
   glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
   
@@ -215,13 +212,18 @@ renderFlat win cube plane light hand face = do
 
   swapBuffers win
 
-
-logOut :: MonadIO m => String -> m ()
-logOut = liftIO . putStrLn
-
+poseToMatrix :: Pose -> M44 GLfloat
 poseToMatrix (Pose posit orient) = mkTransformation orient posit
 
--- render :: ( MonadIO m, MonadState World m ) => Entity -> Entity -> M44 GLfloat -> M44 GLfloat -> m ()
+render :: (MonadIO m, MonadState World m) 
+       => Entity
+       -> Entity
+       -> Entity
+       -> Entity
+       -> Entity
+       -> M44 GLfloat
+       -> M44 GLfloat
+       -> m ()
 render cube plane light hand face projection view = do
 
 
@@ -238,7 +240,7 @@ render cube plane light hand face projection view = do
 
   wldEyeDebug .= eyePos
 
-  -- (lukexi) FIXME fix this horrible abomination
+  -- FIXME(lukexi) fix this horrible abomination
   localHandPoses <- use $ wldPlayer . plrHandPoses
   let (light1, light2)  = case map (^. posPosition) localHandPoses of
         [left,right] -> (left, right)
@@ -268,7 +270,7 @@ render cube plane light hand face projection view = do
   -----------
   useProgram (program cube)
 
-    -- logOut (show view )
+  -- putStrLnIO (show view )
   let cam = uCamera ( uniforms cube )
   glUniform3f ( unUniformLocation  cam )
       ( eyePos ^. _x )
@@ -307,7 +309,6 @@ render cube plane light hand face projection view = do
 
     -- Draw all remote players' bodies and hands
     players <- use $ wldPlayers . to Map.toList
-    localPlayerID <- use wldPlayerID
     forM_ players $ \(playerID, player) -> 
       when (playerID /= localPlayerID) $ do
         forM_ (player ^. plrHandPoses) $ \handPose -> do
@@ -315,9 +316,8 @@ render cube plane light hand face projection view = do
 
 
   withVAO ( vAO face ) $ do
-          -- Draw all remote players' bodies and hands
+    -- Draw all remote players' bodies and hands
     players <- use $ wldPlayers . to Map.toList
-    localPlayerID <- use wldPlayerID
     forM_ players $ \(playerID, player) -> 
       when (playerID /= localPlayerID) $ do
         drawEntity (poseToMatrix (player ^. plrPose)) projectionView 0 cube
@@ -329,9 +329,9 @@ render cube plane light hand face projection view = do
   --------------------
   useProgram (program plane)
 
-  -- logOut (show view )
-  let cam = uCamera ( uniforms plane )
-  glUniform3f ( unUniformLocation  cam )
+  -- printIO view
+  let planeCamU = uCamera ( uniforms plane )
+  glUniform3f ( unUniformLocation  planeCamU )
       ( eyePos ^. _x )
       ( eyePos ^. _y )
       ( eyePos ^. _z )
@@ -356,19 +356,21 @@ render cube plane light hand face projection view = do
 
 
 
+setLightUniforms :: (MonadIO m) 
+                 => Entity
+                 -> V3 GLfloat -> V3 GLfloat -> V3 GLfloat -> V3 GLfloat -> m ()
+setLightUniforms anEntity l1 l2 l3 l4 = do 
 
-setLightUniforms entity l1 l2 l3 l4 = do 
-
-  let light1 = uLight1 ( uniforms entity )
+  let light1 = uLight1 ( uniforms anEntity )
   glUniform3f ( unUniformLocation  light1 ) ( l1 ^. _x ) ( l1 ^. _y ) ( l1 ^. _z )
 
-  let light2 = uLight2 ( uniforms entity )
+  let light2 = uLight2 ( uniforms anEntity )
   glUniform3f ( unUniformLocation  light2 ) ( l2 ^. _x ) ( l2 ^. _y ) ( l2 ^. _z )
 
-  let light3 = uLight3 ( uniforms entity )
+  let light3 = uLight3 ( uniforms anEntity )
   glUniform3f ( unUniformLocation  light3 ) ( l3 ^. _x ) ( l3 ^. _y ) ( l3 ^. _z )
 
-  let light4 = uLight4 ( uniforms entity )
+  let light4 = uLight4 ( uniforms anEntity )
   glUniform3f ( unUniformLocation  light4 ) ( l4 ^. _x ) ( l4 ^. _y ) ( l4 ^. _z )
 
 
@@ -376,40 +378,45 @@ setLightUniforms entity l1 l2 l3 l4 = do
 
 
 
+drawLights :: MonadIO m => Entity
+           -> M44 GLfloat
+           -> V3 GLfloat
+           -> V3 GLfloat
+           -> V3 GLfloat
+           -> V3 GLfloat
+           -> m ()
+drawLights anEntity projectionView l1 l2 l3 l4 = do
 
-drawLights entity projectionView l1 l2 l3 l4 = do
+  useProgram (program anEntity )
 
-  useProgram (program entity )
-
-  withVAO ( vAO entity  ) $ do
+  withVAO ( vAO anEntity  ) $ do
 
     glEnable GL_CULL_FACE
     glCullFace GL_BACK
 
-    let model = mkTransformation 
+    let model0 = mkTransformation 
             ( axisAngle ( V3 1 0 0 ) 0.0 )
             l1
 
-    drawEntity model projectionView 0 entity
+    drawEntity model0 projectionView 0 anEntity
 
-    let model = mkTransformation 
+    let model1 = mkTransformation 
             ( axisAngle ( V3 1 0 0 ) 0.0 )
             l2
 
-    drawEntity model projectionView 1 entity
+    drawEntity model1 projectionView 1 anEntity
 
-
-    let model = mkTransformation 
+    let model2 = mkTransformation 
             ( axisAngle ( V3 1 0 0 ) 0.0 )
             l3
 
-    drawEntity model projectionView 2 entity
+    drawEntity model2 projectionView 2 anEntity
 
-    let model = mkTransformation 
+    let model3 = mkTransformation 
             ( axisAngle ( V3 1 0 0 ) 0.0 )
             l4
 
-    drawEntity model projectionView 3 entity
+    drawEntity model3 projectionView 3 anEntity
 
 
 
@@ -440,8 +447,6 @@ addCube client posit orient = do
 
     objID <- getRandom'
     updateObject objID (Object posit orient 0.25)
-
-  -- instructions <- randomCube
   
   interpret instructions
 
