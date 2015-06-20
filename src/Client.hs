@@ -131,9 +131,10 @@ main = do
 
     -- Handle Hydra movement events
     case hands of
-      [left, _right] -> do
+      [left, right] -> do
         movePlayer (V3 (joystickX left / 10) 0 (-(joystickY left / 10)))
-        -- wldPlayer . plrPose . posOrientation *= axisAngle (V3 0 1 0) (joystickX right)
+        -- Quat rotation must be rotation * original rather than vice versa
+        wldPlayer . plrPose . posOrientation %= \old -> axisAngle (V3 0 1 0) (joystickX right) * old
       _ -> return ()
     
     
