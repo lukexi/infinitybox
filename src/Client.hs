@@ -122,16 +122,16 @@ main = do
     -- Get latest Hydra data
     hands <- getHands sixenseBase
 
-    
-
-    
-
     -- Handle Hydra movement events, or mouse if no Hydra present
     case hands of
       [left, right] -> do
+        -- Move player forward/back/left/right with left joystick
         movePlayer (V3 (joystickX left / 10) 0 (-(joystickY left / 10)))
         -- Quat rotation must be rotation * original rather than vice versa
-        wldPlayer . plrPose . posOrientation %= \old -> axisAngle (V3 0 1 0) (-joystickX right) * old
+        wldPlayer . plrPose . posOrientation %= \old -> axisAngle ( V3 0 1 0 ) (-joystickX right * 0.1) * old
+        -- Move player down and up with left and right joystick clicks
+        when (ButtonJoystick `elem` handButtons left)  $ movePlayer ( V3 0 (-0.1) 0  )
+        when (ButtonJoystick `elem` handButtons right) $ movePlayer ( V3 0   0.1  0  )
       _ -> do
         -- Handle mouse events
         isFocused <- getWindowFocused window
@@ -165,6 +165,8 @@ main = do
             orientWorld = playerRot * handOrient
 
     wldPlayer . plrHandPoses .= handWorldPoses
+
+    -- Fire cubes from each hand when their triggers are held down
     forM_ (zip hands handWorldPoses) $ \(handData, Pose posit orient) -> do
       when (trigger handData > 0.5 && frameNumber `mod` 30 == 0) $ 
         addCube client posit orient

@@ -1,4 +1,6 @@
-[ ] Fix bunk movement
+[x] Fix bunk movement
+
+[x] Hydra calibration
 
 [x] Fire cube on trigger
   [x] Restrict rate
@@ -6,5 +8,3 @@
 [x] Transmit player/hand positions
   [ ] Transmit head position
 [ ] Cube expiration
-
-[ ] Hydra calibration
