@@ -122,22 +122,23 @@ main = do
     -- Get latest Hydra data
     hands <- getHands sixenseBase
 
-    -- Handle mouse events
-    isFocused <- getWindowFocused window
-    when isFocused $ applyMouseLook window
+    
 
-    -- Handle keyboard movement events
-    applyMovement window
+    
 
-    -- Handle Hydra movement events
+    -- Handle Hydra movement events, or mouse if no Hydra present
     case hands of
       [left, right] -> do
         movePlayer (V3 (joystickX left / 10) 0 (-(joystickY left / 10)))
         -- Quat rotation must be rotation * original rather than vice versa
-        wldPlayer . plrPose . posOrientation %= \old -> axisAngle (V3 0 1 0) (joystickX right) * old
-      _ -> return ()
+        wldPlayer . plrPose . posOrientation %= \old -> axisAngle (V3 0 1 0) (-joystickX right) * old
+      _ -> do
+        -- Handle mouse events
+        isFocused <- getWindowFocused window
+        when isFocused $ applyMouseLook window
     
-    
+    -- Handle keyboard movement events
+    applyMovement window
 
     -- Get player pose
     playerPos <- use (wldPlayer . plrPose . posPosition)
