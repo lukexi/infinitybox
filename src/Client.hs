@@ -144,9 +144,21 @@ main = do
     playerPos <- use (wldPlayer . plrPose . posPosition)
     playerRot <- use (wldPlayer . plrPose . posOrientation)
 
-    -- Handle key events
+    -- Handle UI events
     processEvents events $ \e -> do
       closeOnEscape window e
+
+      case e of
+        GamepadAxes GamepadAllAxes{..} -> do
+          movePlayer (V3 (realToFrac gaxLeftStickX / 10) 0 (realToFrac gaxLeftStickY / 10))
+          -- Quat rotation must be rotation * original rather than vice versa
+          wldPlayer . plrPose . posOrientation %= \old -> axisAngle ( V3 0 1 0 ) (-(realToFrac gaxRightStickY) * 0.1) * old
+
+          -- Use the right trigger to fire a cube
+          when (gaxTriggers < (-0.5) && frameNumber `mod` 30 == 0) $ 
+            addCube client (rotate playerRot (V3 0 0.1 0) + playerPos) playerRot
+        _ -> return ()
+      -- Handle key events
       -- Spawn a cube offset by 0.1 y
       keyDown Key'E e (addCube client (rotate playerRot (V3 0 0.1 0) + playerPos) playerRot)
       keyDown Key'F e (setCursorInputMode window CursorInputMode'Disabled)
