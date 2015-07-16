@@ -1,0 +1,20 @@
+flags:
+packages:
+- '.'
+- ../gl-pal2
+- ../Thop/modules/glfw-pal
+- ../Thop/modules/oculus-mini
+- ../bullet-mini
+- ../Thop/modules/gl-pal
+- ../udp-pal
+- ../Thop/modules/hydra-hs
+extra-deps:
+- fsnotify-0.1.0.3
+- halive-0.1.0.5
+- hfsevents-0.1.5
+- GLFW-b-1.4.7.2
+- bindings-GLFW-3.1.1.3
+- Win32-notify-0.3.0.1
+- inline-c-0.5.3.4
+- inline-c-cpp-0.1.0.0
+resolver: nightly-2015-06-28

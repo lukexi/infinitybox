@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts, LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
+module Client where
 import Graphics.UI.GLFW.Pal
 
 -- import Halive.Utils
@@ -16,35 +17,30 @@ import Control.Lens hiding (view)
 
 import Control.Monad.Random
 
-import Pal.Pal
-
-import Pal.Geometries.Cube
+import Graphics.GL.Pal2
 
 import Network.UDP.Pal
-import Network.ReceiveChan
 
 import Types
-import Randoms
 import Movement
-import Control.Monad.Free.Binary ()
-import Control.Monad.Free.FromFreeT
 import qualified Data.Map as Map
 import Data.Maybe
+import Control.Concurrent.STM
 
 enableVR :: Bool
 --enableVR = False
 enableVR = True
 
-
+writeTransceiver :: MonadIO m => Transceiver r -> AppPacket r -> m ()
+writeTransceiver transceiver = liftIO . atomically . writeTChan (tcOutgoingPackets transceiver)
 
 main :: IO ()
 main = do
   -- Set up Hydra
   sixenseBase <- initSixense
 
-  client <- makeClient serverName serverPort packetSize
   -- Create a UDP receive thread
-  receiveChan <- makeReceiveChan client
+  transceiver@Transceiver{..} <- createTransceiverToAddress serverName serverPort packetSize
 
   -- Initialize GLFW
   (resX, resY, maybeHMD) <- if enableVR 
@@ -71,7 +67,9 @@ main = do
   stdGen     <- getStdGen
   
   -- Connect to the server
-  _bytesSent <- sendEncoded client (compile stdGen (connect "player"))
+  -- Initial connection to the server
+  playerID <- randomName
+  writeTransceiver transceiver $ Reliable (Connect playerID)
 
 
   -- Set up our cube resources
@@ -106,8 +104,7 @@ main = do
   glEnable GL_DEPTH_TEST
   glClearColor 0 0 0.1 1
   --glPolygonMode GL_FRONT_AND_BACK GL_LINE 
-
-  playerID <- randomIO
+  
   -- Begin game loop
   let world = newWorld playerID
   void . flip runRandT stdGen . flip runStateT world . whileWindow window $ do
@@ -117,7 +114,7 @@ main = do
     wldLastCubes <~ use wldCubes
 
     -- Handle network events
-    readChanAll receiveChan interpret
+    interpretNetworkPackets tcVerifiedPackets interpret
 
     -- Get latest Hydra data
     hands <- getHands sixenseBase
@@ -147,7 +144,7 @@ main = do
     processEvents events $ \e -> do
       closeOnEscape window e
       -- Spawn a cube offset by 0.1 y
-      keyDown Key'E e (addCube client (rotate playerRot (V3 0 0.1 0) + playerPos) playerRot)
+      keyDown Key'E e (addCube transceiver (rotate playerRot (V3 0 0.1 0) + playerPos) playerRot)
       keyDown Key'F e (setCursorInputMode window CursorInputMode'Disabled)
       keyDown Key'G e (setCursorInputMode window CursorInputMode'Normal)
 
@@ -166,12 +163,11 @@ main = do
     wldPlayer . plrHandPoses .= handWorldPoses
     forM_ (zip hands handWorldPoses) $ \(handData, Pose posit orient) -> do
       when (trigger handData > 0.5 && frameNumber `mod` 30 == 0) $ 
-        addCube client posit orient
+        addCube transceiver posit orient
 
     -- Send player position
     player <- use wldPlayer
-    playerMoveInstruct <- fromFreeT $ updatePlayer playerID player
-    _bytesSent <- sendEncoded client playerMoveInstruct
+    writeTransceiver transceiver $ Reliable $ UpdatePlayer playerID player
 
     -- Render the scene
     case maybeRenderHMD of
@@ -184,7 +180,7 @@ main = do
 
 
 renderVR :: (MonadIO m, MonadState World m) 
-         => RenderHMD -> Entity -> Entity -> Entity -> Entity -> Entity -> m ()
+         => RenderHMD -> Entity Uniforms -> Entity Uniforms -> Entity Uniforms -> Entity Uniforms -> Entity Uniforms -> m ()
 renderVR renderHMD cube plane light hand face = do
 
   renderHMDFrame renderHMD $ \eyePoses -> do
@@ -200,7 +196,7 @@ renderVR renderHMD cube plane light hand face = do
       render cube plane light hand face projection finalView 
 
 renderFlat :: (MonadIO m, MonadState World m) 
-           => Window -> Entity -> Entity -> Entity -> Entity -> Entity -> m ()
+           => Window -> Entity Uniforms -> Entity Uniforms -> Entity Uniforms -> Entity Uniforms -> Entity Uniforms -> m ()
 renderFlat win cube plane light hand face = do
 
   glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
@@ -216,11 +212,11 @@ poseToMatrix :: Pose -> M44 GLfloat
 poseToMatrix (Pose posit orient) = mkTransformation orient posit
 
 render :: (MonadIO m, MonadState World m) 
-       => Entity
-       -> Entity
-       -> Entity
-       -> Entity
-       -> Entity
+       => Entity Uniforms
+       -> Entity Uniforms
+       -> Entity Uniforms
+       -> Entity Uniforms
+       -> Entity Uniforms
        -> M44 GLfloat
        -> M44 GLfloat
        -> m ()
@@ -357,7 +353,7 @@ render cube plane light hand face projection view = do
 
 
 setLightUniforms :: (MonadIO m) 
-                 => Entity
+                 => Entity Uniforms
                  -> V3 GLfloat -> V3 GLfloat -> V3 GLfloat -> V3 GLfloat -> m ()
 setLightUniforms anEntity l1 l2 l3 l4 = do 
 
@@ -378,7 +374,7 @@ setLightUniforms anEntity l1 l2 l3 l4 = do
 
 
 
-drawLights :: MonadIO m => Entity
+drawLights :: MonadIO m => Entity Uniforms
            -> M44 GLfloat
            -> V3 GLfloat
            -> V3 GLfloat
@@ -423,7 +419,7 @@ drawLights anEntity projectionView l1 l2 l3 l4 = do
 
 
 
-drawEntity :: MonadIO m => M44 GLfloat -> M44 GLfloat -> GLfloat -> Entity -> m ()
+drawEntity :: MonadIO m => M44 GLfloat -> M44 GLfloat -> GLfloat -> Entity Uniforms -> m ()
 drawEntity model projectionView drawID anEntity = do 
 
   let Uniforms{..} = uniforms anEntity
@@ -440,17 +436,17 @@ drawEntity model projectionView drawID anEntity = do
 
 
 
-addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Client -> V3 GLfloat -> Quaternion GLfloat -> m ()
-addCube client posit orient = do
+addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Transceiver Op -> V3 GLfloat -> Quaternion GLfloat -> m ()
+addCube transceiver posit orient = do
   -- Spawn a cube at the player's position and orientation
-  instructions <- fromFreeT $ do
-
-    objID <- getRandom'
-    updateObject objID (Object posit orient 0.25)
+  instruction <- do
+    objID <- getRandom
+    return $ UpdateObject objID (Object posit orient 0.25)
   
-  interpret instructions
+  interpret instruction
 
-  _bytesSent <- sendEncoded client instructions
+
+  writeTransceiver transceiver $ Reliable instruction
   return ()
 
   

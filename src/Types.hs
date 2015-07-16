@@ -1,25 +1,24 @@
 {-# LANGUAGE DeriveFunctor, DeriveTraversable, DeriveAnyClass, DeriveGeneric, FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 
 module Types where
 
-import Control.Monad.Trans.Free (FreeT)
-import Control.Monad.Free
-import Control.Monad.Identity
-import Control.Monad.Random
 import Data.Binary
 import GHC.Generics
-import Control.Monad.Free.FromFreeT
-import Control.Monad.Free.Binary ()
 import Control.Monad.State
 
 import Control.Lens
 import Linear
 import Graphics.GL
+import Graphics.GL.Pal2
 import Data.Map (Map)
+import System.Random
+import Network.Socket (PortNumber)
+import Data.Data
 
 type ObjectID = Int
-type PlayerID = Int
+type PlayerID = String
 
 data Pose = Pose
   { _posPosition    :: V3 GLfloat
@@ -62,36 +61,19 @@ newPlayer = Player (Pose (V3 0 5 0) (axisAngle (V3 0 1 0) 0)) []
 newWorld :: PlayerID -> World
 newWorld playerID = World newPlayer playerID mempty mempty mempty 0 0
 
-interpret :: (MonadIO m, MonadState World m) => Free Op () -> m ()
-interpret = iterM interpret'
-  where
-    interpret' :: (MonadIO m, MonadState World m) => Op (m t) -> m t
-    interpret' (UpdateObject objID obj n)       = wldCubes   . at objID    ?= obj            >> n
-    interpret' (UpdatePlayer playerID player n) = wldPlayers . at playerID ?= player         >> n
-    interpret' (Connect name n)                 = (liftIO . putStrLn) (name ++ " connected") >> n
 
-
--- Get a regular Free value out of a FreeT
-compile :: (Traversable f, RandomGen g) => g -> FreeT f (RandT g Identity) a -> Free f a
-compile stdgen randInstrs = runIdentity $ evalRandT (fromFreeT randInstrs) stdgen
+interpret :: (MonadIO m, MonadState World m) => Op -> m ()
+interpret (UpdateObject objID obj)       = wldCubes   . at objID    ?= obj
+interpret (UpdatePlayer playerID player) = wldPlayers . at playerID ?= player
+interpret (Connect name)                 = (liftIO . putStrLn) (name ++ " connected")
 
 -- | Deriving Generics
 
-data Op next = UpdateObject ObjectID Object next
-             | UpdatePlayer PlayerID Player next
-             | Connect      String next
-  deriving (Functor, Foldable, Traversable, Generic, Binary, Show)
-
-type Instructions = Free Op ()
-
-updateObject :: (Monad m) => ObjectID -> Object -> FreeT Op m ()
-updateObject a b = liftF (UpdateObject a b ())
-
-updatePlayer :: (Monad m) => PlayerID -> Player -> FreeT Op m ()
-updatePlayer a b = liftF (UpdatePlayer a b ())
-
-connect :: (Monad m) => String -> FreeT Op m ()
-connect n = liftF (Connect n ())
+data Op = UpdateObject ObjectID Object
+        | UpdatePlayer PlayerID Player
+        | Connect      PlayerID
+        | Disconnect   PlayerID
+  deriving (Generic, Binary, Show)
 
 -- Util
 
@@ -100,3 +82,35 @@ putStrLnIO = liftIO . putStrLn
 
 printIO :: (Show s, MonadIO m) => s -> m ()
 printIO = putStrLnIO . show
+
+data Uniforms = Uniforms
+  { uMVP          :: UniformLocation (M44 GLfloat)
+  , uInverseModel :: UniformLocation (M44 GLfloat)
+  , uModel        :: UniformLocation (M44 GLfloat)
+  , uCamera       :: UniformLocation (V3  GLfloat)
+  , uLight1       :: UniformLocation (V3  GLfloat)
+  , uLight2       :: UniformLocation (V3  GLfloat)
+  , uLight3       :: UniformLocation (V3  GLfloat)
+  , uLight4       :: UniformLocation (V3  GLfloat)
+  , uID           :: UniformLocation GLfloat
+  } deriving (Data)
+
+serverPort :: PortNumber
+serverPort = 3000
+
+serverName :: String
+serverName = "127.0.0.1"
+
+packetSize :: Int
+packetSize = 4096
+
+randomName :: IO String
+randomName = concat <$> replicateM 3 randomPair
+  where
+    randomPair = (\(x,y) -> [x,y]) . (pairs !!) <$> randomRIO (0, length pairs - 1)
+    pairs = zip "bcdfghjklmnpqrstvwxz" (cycle "aeiouy")
+
+randomColor :: MonadIO m => m (V4 GLfloat)
+randomColor = liftIO $ V4 <$> randomRIO (0, 1) <*> randomRIO (0, 1) <*> randomRIO (0, 1) <*> pure 1
+
+
