@@ -14,7 +14,9 @@ import Control.Monad
 import Control.Monad.State
 import System.Random
 import Control.Lens hiding (view)
-
+import qualified Data.Map as Map
+import Data.Maybe
+import Control.Concurrent.STM
 import Control.Monad.Random
 
 import Graphics.GL.Pal2
@@ -23,9 +25,8 @@ import Network.UDP.Pal
 
 import Types
 import Movement
-import qualified Data.Map as Map
-import Data.Maybe
-import Control.Concurrent.STM
+import Resources
+
 
 enableVR :: Bool
 enableVR = False
@@ -73,32 +74,7 @@ main = do
   writeTransceiver transceiver $ Reliable (Connect playerID)
 
 
-  -- Set up our cube resources
-  cubeProg   <- createShaderProgram "src/shaders/cube.vert" "src/shaders/cube.frag"
-  cubeGeo    <- cubeGeometry ( 0.5 :: V3 GLfloat ) ( V3 1 1 1 )
-
-
-  -- Set up our cube resources
-  lightProg  <- createShaderProgram "src/shaders/light.vert" "src/shaders/light.frag"
-  lightGeo   <- cubeGeometry ( V3 0.1 0.1 0.1 ) ( V3 1 1 1 )
-
-  -- Set up our cube resources
-  planeProg  <- createShaderProgram "src/shaders/plane.vert" "src/shaders/plane.frag"
-  planeGeo   <- cubeGeometry ( V3 20 20 20 ) ( V3 1 1 1 )
-
-  -- Set up our cube resources
-  handProg  <- createShaderProgram "src/shaders/plane.vert" "src/shaders/plane.frag"
-  handGeo   <- cubeGeometry ( V3 0.2 0.2 1 ) ( V3 1 1 1 )
-
-  -- Set up our cube resources
-  faceProg  <- createShaderProgram "src/shaders/plane.vert" "src/shaders/plane.frag"
-  faceGeo   <- cubeGeometry ( V3 0.5 0.8 0.1 ) ( V3 1 1 1 )
-
-  plane      <- entity planeGeo planeProg 
-  cube       <- entity cubeGeo  cubeProg 
-  light      <- entity lightGeo lightProg 
-  hand       <- entity handGeo  handProg 
-  face       <- entity faceGeo  faceProg 
+  resources@Resources{..} <- loadResources
 
 
   -- Set up GL state
@@ -173,16 +149,16 @@ main = do
     -- Render the scene
     case maybeRenderHMD of
 
-      Nothing        -> renderFlat window    cube plane light hand face
-      Just renderHMD -> renderVR   renderHMD cube plane light hand face
+      Nothing        -> renderFlat window    resources
+      Just renderHMD -> renderVR   renderHMD resources
 
 
 
 
 
 renderVR :: (MonadIO m, MonadState World m) 
-         => RenderHMD -> Entity Uniforms -> Entity Uniforms -> Entity Uniforms -> Entity Uniforms -> Entity Uniforms -> m ()
-renderVR renderHMD cube plane light hand face = do
+         => RenderHMD -> Resources -> m ()
+renderVR renderHMD resources = do
 
   renderHMDFrame renderHMD $ \eyePoses -> do
 
@@ -194,18 +170,18 @@ renderVR renderHMD cube plane light hand face = do
 
       let finalView = eyeView !*! view 
 
-      render cube plane light hand face projection finalView 
+      render resources projection finalView 
 
 renderFlat :: (MonadIO m, MonadState World m) 
-           => Window -> Entity Uniforms -> Entity Uniforms -> Entity Uniforms -> Entity Uniforms -> Entity Uniforms -> m ()
-renderFlat win cube plane light hand face = do
+           => Window -> Resources -> m ()
+renderFlat win resources = do
 
   glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
   
   projection  <- makeProjection win
   view        <- playerViewMat
 
-  render cube plane light hand face projection view
+  render resources projection view
 
   swapBuffers win
 
@@ -213,17 +189,11 @@ poseToMatrix :: Pose -> M44 GLfloat
 poseToMatrix (Pose posit orient) = mkTransformation orient posit
 
 render :: (MonadIO m, MonadState World m) 
-       => Entity Uniforms
-       -> Entity Uniforms
-       -> Entity Uniforms
-       -> Entity Uniforms
-       -> Entity Uniforms
+       => Resources
        -> M44 GLfloat
        -> M44 GLfloat
        -> m ()
-render cube plane light hand face projection view = do
-
-
+render Resources{..} projection view = do
 
 
   newCubes  <- use wldCubes
@@ -269,10 +239,7 @@ render cube plane light hand face projection view = do
 
   -- putStrLnIO (show view )
   let cam = uCamera ( uniforms cube )
-  glUniform3f ( unUniformLocation  cam )
-      ( eyePos ^. _x )
-      ( eyePos ^. _y )
-      ( eyePos ^. _z )
+  uniformV3 cam eyePos
 
   setLightUniforms cube light1 light2 light3 light4
 
@@ -328,10 +295,7 @@ render cube plane light hand face projection view = do
 
   -- printIO view
   let planeCamU = uCamera ( uniforms plane )
-  glUniform3f ( unUniformLocation  planeCamU )
-      ( eyePos ^. _x )
-      ( eyePos ^. _y )
-      ( eyePos ^. _z )
+  uniformV3 planeCamU eyePos
 
   setLightUniforms plane light1 light2 light3 light4
 
@@ -348,31 +312,22 @@ render cube plane light hand face projection view = do
     drawEntity model projectionView 0 plane
 
 
-
-
-
-
-
 setLightUniforms :: (MonadIO m) 
                  => Entity Uniforms
                  -> V3 GLfloat -> V3 GLfloat -> V3 GLfloat -> V3 GLfloat -> m ()
-setLightUniforms anEntity l1 l2 l3 l4 = do 
+setLightUniforms anEntity l1 l2 l3 l4 = do
 
   let light1 = uLight1 ( uniforms anEntity )
-  glUniform3f ( unUniformLocation  light1 ) ( l1 ^. _x ) ( l1 ^. _y ) ( l1 ^. _z )
+  uniformV3 light1 l1
 
   let light2 = uLight2 ( uniforms anEntity )
-  glUniform3f ( unUniformLocation  light2 ) ( l2 ^. _x ) ( l2 ^. _y ) ( l2 ^. _z )
+  uniformV3 light2 l2
 
   let light3 = uLight3 ( uniforms anEntity )
-  glUniform3f ( unUniformLocation  light3 ) ( l3 ^. _x ) ( l3 ^. _y ) ( l3 ^. _z )
+  uniformV3 light3 l3
 
   let light4 = uLight4 ( uniforms anEntity )
-  glUniform3f ( unUniformLocation  light4 ) ( l4 ^. _x ) ( l4 ^. _y ) ( l4 ^. _z )
-
-
-
-
+  uniformV3 light4 l4
 
 
 drawLights :: MonadIO m => Entity Uniforms
@@ -384,39 +339,16 @@ drawLights :: MonadIO m => Entity Uniforms
            -> m ()
 drawLights anEntity projectionView l1 l2 l3 l4 = do
 
-  useProgram (program anEntity )
+  useProgram (program anEntity)
 
-  withVAO ( vAO anEntity  ) $ do
+  withVAO (vAO anEntity) $ do
 
     glEnable GL_CULL_FACE
     glCullFace GL_BACK
 
-    let model0 = mkTransformation 
-            ( axisAngle ( V3 1 0 0 ) 0.0 )
-            l1
-
-    drawEntity model0 projectionView 0 anEntity
-
-    let model1 = mkTransformation 
-            ( axisAngle ( V3 1 0 0 ) 0.0 )
-            l2
-
-    drawEntity model1 projectionView 1 anEntity
-
-    let model2 = mkTransformation 
-            ( axisAngle ( V3 1 0 0 ) 0.0 )
-            l3
-
-    drawEntity model2 projectionView 2 anEntity
-
-    let model3 = mkTransformation 
-            ( axisAngle ( V3 1 0 0 ) 0.0 )
-            l4
-
-    drawEntity model3 projectionView 3 anEntity
-
-
-
+    forM_ (zip [0..] [l1, l2, l3, l4]) $ \(i, lightPos) -> do
+      let model = mkTransformation (axisAngle (V3 1 0 0) 0.0) lightPos
+      drawEntity model projectionView i anEntity
 
 
 

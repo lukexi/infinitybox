@@ -26,6 +26,7 @@ library
     Physics
     Movement
     Randoms
+    Resources
     Types
   build-depends:       
     network, 
