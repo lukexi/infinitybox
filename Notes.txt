@@ -6,5 +6,5 @@
   [x] Restrict rate
 
 [x] Transmit player/hand positions
-  [ ] Transmit head position
+  [x] Add head pose field to Player and transmit to server
 [ ] Cube expiration

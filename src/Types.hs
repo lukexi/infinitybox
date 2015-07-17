@@ -34,6 +34,7 @@ data Object = Object
 data Player = Player 
   { _plrPose :: Pose    
   , _plrHandPoses :: [Pose]
+  , _plrHeadPose :: Pose
   } deriving (Generic, Binary, Show)
 
 data World = World
@@ -56,7 +57,11 @@ interpolateObjects :: Object -> Object -> Object
   Object (lerp 0.5 p1 p2) (slerp o1 o2 0.5) (s1 + (s2 - s1) / 2)
 
 newPlayer :: Player
-newPlayer = Player (Pose (V3 0 5 0) (axisAngle (V3 0 1 0) 0)) []
+newPlayer = Player
+  { _plrPose = Pose (V3 0 5 0) (axisAngle (V3 0 1 0) 0)
+  , _plrHandPoses = []
+  , _plrHeadPose = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
+  }
 
 newWorld :: PlayerID -> World
 newWorld playerID = World newPlayer playerID mempty mempty mempty 0 0

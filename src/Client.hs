@@ -16,7 +16,6 @@ import System.Random
 import Control.Lens hiding (view)
 import qualified Data.Map as Map
 import Data.Maybe
-import Control.Concurrent.STM
 import Control.Monad.Random
 
 import Graphics.GL.Pal2
@@ -31,9 +30,6 @@ import Resources
 enableVR :: Bool
 enableVR = False
 --enableVR = True
-
-writeTransceiver :: MonadIO m => Transceiver r -> AppPacket r -> m ()
-writeTransceiver transceiver = liftIO . atomically . writeTChan (tcOutgoingPackets transceiver)
 
 main :: IO ()
 main = do
@@ -66,7 +62,7 @@ main = do
     return renderHMD
 
   -- Get a stdgen for Entity ID generation
-  stdGen     <- getStdGen
+  stdGen   <- getStdGen
   
   -- Connect to the server
   -- Initial connection to the server
@@ -152,6 +148,11 @@ main = do
 
     wldPlayer . plrHandPoses .= handWorldPoses
 
+    -- Update head position
+    (headOrient, headPosit) <- maybe (return (axisAngle (V3 0 1 0) 0, V3 0 0 0)) (liftIO . getHMDPose) maybeHMD
+    wldPlayer . plrHeadPose .= Pose headPosit headOrient
+    -- TODO pass this to OpenAL to update the listener after adding it to the player pose
+
     -- Fire cubes from each hand when their triggers are held down
     forM_ (zip hands handWorldPoses) $ \(handData, Pose posit orient) -> do
       when (trigger handData > 0.5 && frameNumber `mod` 30 == 0) $ 
@@ -232,8 +233,8 @@ render Resources{..} projection view = do
   remoteHandPoses <- use $ wldPlayers . to Map.toList . to (filter (\(playerID, _) -> playerID /= localPlayerID))
   let (light3, light4) = case remoteHandPoses of
         ((_,x):_) -> case map (^. posPosition) (x ^. plrHandPoses) of
-           [left,right] -> (left, right)
-           _            -> (0, 0)
+          [left,right] -> (left, right)
+          _            -> (0, 0)
         _ -> (0,0)
 
   -- let light1 = V3 9 0 0 
@@ -286,16 +287,16 @@ render Resources{..} projection view = do
 
 
 
-    -- Draw all remote players' bodies and hands
+    -- Draw all remote players' hands
     players <- use $ wldPlayers . to Map.toList
     forM_ players $ \(playerID, player) -> 
       when (playerID /= localPlayerID) $ do
         forM_ (player ^. plrHandPoses) $ \handPose -> do
           drawEntity (poseToMatrix handPose) projectionView 0 cube 
 
-
+  -- Draw all remote players' heads 
+  -- (we don't draw the local player's head)
   withVAO ( vAO face ) $ do
-    -- Draw all remote players' bodies and hands
     players <- use $ wldPlayers . to Map.toList
     forM_ players $ \(playerID, player) -> 
       when (playerID /= localPlayerID) $ do
