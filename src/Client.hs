@@ -130,7 +130,7 @@ main = do
 
           -- Use the right trigger to fire a cube
           when (gaxTriggers < (-0.5) && frameNumber `mod` 30 == 0) $ 
-            addCube client (rotate playerRot (V3 0 0.1 0) + playerPos) playerRot
+            addCube transceiver (rotate playerRot (V3 0 0.1 0) + playerPos) playerRot
         _ -> return ()
       -- Handle key events
       -- Spawn a cube offset by 0.1 y
