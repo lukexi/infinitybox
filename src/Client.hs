@@ -96,30 +96,43 @@ main = do
     -- Get latest Hydra data
     hands <- maybe (return []) (getHands) sixenseBase
 
-    -- Handle mouse events
-    isFocused <- getWindowFocused window
-    when isFocused $ applyMouseLook window
-
-    -- Handle keyboard movement events
-    applyMovement window
-
-    -- Handle Hydra movement events
+    -- Handle Hydra movement events, or mouse if no Hydra present
     case hands of
       [left, right] -> do
+        -- Move player forward/back/left/right with left joystick
         movePlayer (V3 (joystickX left / 10) 0 (-(joystickY left / 10)))
         -- Quat rotation must be rotation * original rather than vice versa
-        wldPlayer . plrPose . posOrientation %= \old -> axisAngle (V3 0 1 0) (joystickX right) * old
-      _ -> return ()
+        wldPlayer . plrPose . posOrientation %= \old -> axisAngle ( V3 0 1 0 ) (-joystickX right * 0.1) * old
+        -- Move player down and up with left and right joystick clicks
+        when (ButtonJoystick `elem` handButtons left)  $ movePlayer ( V3 0 (-0.1) 0  )
+        when (ButtonJoystick `elem` handButtons right) $ movePlayer ( V3 0   0.1  0  )
+      _ -> do
+        -- Handle mouse events
+        isFocused <- getWindowFocused window
+        when isFocused $ applyMouseLook window
     
-    
+    -- Handle keyboard movement events
+    applyMovement window
 
     -- Get player pose
     playerPos <- use (wldPlayer . plrPose . posPosition)
     playerRot <- use (wldPlayer . plrPose . posOrientation)
 
-    -- Handle key events
+    -- Handle UI events
     processEvents events $ \e -> do
       closeOnEscape window e
+
+      case e of
+        GamepadAxes GamepadAllAxes{..} -> do
+          movePlayer (V3 (realToFrac gaxLeftStickX / 10) 0 (realToFrac gaxLeftStickY / 10))
+          -- Quat rotation must be rotation * original rather than vice versa
+          wldPlayer . plrPose . posOrientation %= \old -> axisAngle ( V3 0 1 0 ) (-(realToFrac gaxRightStickY) * 0.1) * old
+
+          -- Use the right trigger to fire a cube
+          when (gaxTriggers < (-0.5) && frameNumber `mod` 30 == 0) $ 
+            addCube client (rotate playerRot (V3 0 0.1 0) + playerPos) playerRot
+        _ -> return ()
+      -- Handle key events
       -- Spawn a cube offset by 0.1 y
       keyDown Key'E e (addCube transceiver (rotate playerRot (V3 0 0.1 0) + playerPos) playerRot)
       keyDown Key'F e (setCursorInputMode window CursorInputMode'Disabled)
@@ -138,6 +151,8 @@ main = do
             orientWorld = playerRot * handOrient
 
     wldPlayer . plrHandPoses .= handWorldPoses
+
+    -- Fire cubes from each hand when their triggers are held down
     forM_ (zip hands handWorldPoses) $ \(handData, Pose posit orient) -> do
       when (trigger handData > 0.5 && frameNumber `mod` 30 == 0) $ 
         addCube transceiver posit orient
