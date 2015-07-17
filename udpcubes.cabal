@@ -37,10 +37,10 @@ library
     lens, mtl, random, MonadRandom,
     containers, oculus-mini, 
     text, JuicyPixels, vector,
-    hydra-hs
+    hydra-hs, bullet-mini, data-default
 
 executable client
-  main-is:             Client.hs
+  main-is:             Main.hs
   -- other-modules:
   build-depends:       
     network, 
@@ -52,13 +52,14 @@ executable client
     lens, mtl, random, MonadRandom,
     containers, oculus-mini, 
     text, JuicyPixels, vector,
-    hydra-hs
-  hs-source-dirs:      src
+    hydra-hs,
+    udpcubes
+  hs-source-dirs:      app/client
   default-language:    Haskell2010
   ghc-options:         -Wall -O2 -threaded
 
 executable server
-  main-is:             Server.hs
+  main-is:             Main.hs
   -- other-modules:
   build-depends:       
     network, 
@@ -68,7 +69,8 @@ executable server
     glfw-pal, udp-pal,
     halive, linear, 
     lens, mtl, random, MonadRandom,
-    containers, bullet-mini, data-default
-  hs-source-dirs:      src
+    containers, bullet-mini, data-default,
+    udpcubes
+  hs-source-dirs:      app/server
   default-language:    Haskell2010
   ghc-options:         -Wall -O2 -threaded

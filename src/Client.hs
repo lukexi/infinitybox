@@ -28,8 +28,8 @@ import Data.Maybe
 import Control.Concurrent.STM
 
 enableVR :: Bool
---enableVR = False
-enableVR = True
+enableVR = False
+--enableVR = True
 
 writeTransceiver :: MonadIO m => Transceiver r -> AppPacket r -> m ()
 writeTransceiver transceiver = liftIO . atomically . writeTChan (tcOutgoingPackets transceiver)
@@ -37,7 +37,8 @@ writeTransceiver transceiver = liftIO . atomically . writeTChan (tcOutgoingPacke
 main :: IO ()
 main = do
   -- Set up Hydra
-  sixenseBase <- initSixense
+  --sixenseBase <- initSixense
+  let sixenseBase = Nothing
 
   -- Create a UDP receive thread
   transceiver@Transceiver{..} <- createTransceiverToAddress serverName serverPort packetSize
@@ -117,7 +118,7 @@ main = do
     interpretNetworkPackets tcVerifiedPackets interpret
 
     -- Get latest Hydra data
-    hands <- getHands sixenseBase
+    hands <- maybe (return []) (getHands) sixenseBase
 
     -- Handle mouse events
     isFocused <- getWindowFocused window
@@ -424,8 +425,8 @@ drawEntity model projectionView drawID anEntity = do
 
   let Uniforms{..} = uniforms anEntity
 
-  uniformM44 uMVP ( projectionView !*! model)
-  uniformM44 uInverseModel (fromMaybe model (inv44 model))
+  uniformM44 uModelViewProjection ( projectionView !*! model)
+  uniformM44 uInverseModel        (fromMaybe model (inv44 model))
   uniformM44 uModel model
 
   let dID = uID 
@@ -442,6 +443,7 @@ addCube transceiver posit orient = do
   instruction <- do
     objID <- getRandom
     return $ UpdateObject objID (Object posit orient 0.25)
+  putStrLnIO "Print creating a cube sir"
   
   interpret instruction
 

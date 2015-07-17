@@ -65,7 +65,8 @@ newWorld playerID = World newPlayer playerID mempty mempty mempty 0 0
 interpret :: (MonadIO m, MonadState World m) => Op -> m ()
 interpret (UpdateObject objID obj)       = wldCubes   . at objID    ?= obj
 interpret (UpdatePlayer playerID player) = wldPlayers . at playerID ?= player
-interpret (Connect name)                 = (liftIO . putStrLn) (name ++ " connected")
+interpret (Connect name)                 = putStrLnIO (name ++ " connected")
+interpret (Disconnect name)              = putStrLnIO (name ++ " disconnected")
 
 -- | Deriving Generics
 
@@ -84,15 +85,15 @@ printIO :: (Show s, MonadIO m) => s -> m ()
 printIO = putStrLnIO . show
 
 data Uniforms = Uniforms
-  { uMVP          :: UniformLocation (M44 GLfloat)
-  , uInverseModel :: UniformLocation (M44 GLfloat)
-  , uModel        :: UniformLocation (M44 GLfloat)
-  , uCamera       :: UniformLocation (V3  GLfloat)
-  , uLight1       :: UniformLocation (V3  GLfloat)
-  , uLight2       :: UniformLocation (V3  GLfloat)
-  , uLight3       :: UniformLocation (V3  GLfloat)
-  , uLight4       :: UniformLocation (V3  GLfloat)
-  , uID           :: UniformLocation GLfloat
+  { uModelViewProjection :: UniformLocation (M44 GLfloat)
+  , uInverseModel        :: UniformLocation (M44 GLfloat)
+  , uModel               :: UniformLocation (M44 GLfloat)
+  , uCamera              :: UniformLocation (V3  GLfloat)
+  , uLight1              :: UniformLocation (V3  GLfloat)
+  , uLight2              :: UniformLocation (V3  GLfloat)
+  , uLight3              :: UniformLocation (V3  GLfloat)
+  , uLight4              :: UniformLocation (V3  GLfloat)
+  , uID                  :: UniformLocation GLfloat
   } deriving (Data)
 
 serverPort :: PortNumber

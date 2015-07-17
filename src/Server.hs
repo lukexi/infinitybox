@@ -107,7 +107,7 @@ interpretS _dynamicsWorld fromAddr (Connect playerID) =
   ssPlayerIDs . at fromAddr ?= playerID
 interpretS _dynamicsWorld _fromAddr (Disconnect _) = return ()
   
-  
+
 
 handleDisconnections :: (MonadIO (t m), MonadTrans t, MonadState World (t m), MonadState ServerState m) 
                      => TChan SockAddr -> (AppPacket Op -> t m ()) -> t m ()
@@ -119,11 +119,14 @@ handleDisconnections disconnectionsChan broadcastToClients = do
     -- informing them that the player has left so they can clear any
     -- visible rendering of that player.
 
-    Just playerID <- lift $ use $ ssPlayerIDs . at fromAddr
-    let message = Disconnect playerID
-    lift $ ssPlayerIDs . at fromAddr .= Nothing
-    interpret message
-    
-    broadcastToClients (Reliable message)
+    maybePlayerID <- lift $ use $ ssPlayerIDs . at fromAddr
+    case maybePlayerID of
+      Nothing -> putStrLnIO $ "Couldn't find playerID for disconnecting address: " ++ show fromAddr
+      Just playerID -> do
+        let message = Disconnect playerID
+        lift $ ssPlayerIDs . at fromAddr .= Nothing
+        interpret message
+        
+        broadcastToClients (Reliable message)
 
-    liftIO $ putStrLn $ "Goodbye: " ++ show fromAddr
+        putStrLnIO $ "Goodbye: " ++ show fromAddr
