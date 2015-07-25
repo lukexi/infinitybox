@@ -14,7 +14,6 @@ import Linear
 import Control.Lens
 import qualified Data.Map as Map
 import Data.Map (Map)
-import Data.Default 
 
 import Physics.Bullet
 import Physics
@@ -39,7 +38,7 @@ main = do
 
   
   -- Initialize physics
-  dynamicsWorld  <- createDynamicsWorld def { gravity = 0.0 }
+  dynamicsWorld  <- createDynamicsWorld mempty { gravity = 0.0 }
   _              <- addBox dynamicsWorld (-10.0)
   
   
@@ -88,11 +87,11 @@ interpretS :: (MonadIO m, MonadState ServerState m)
 interpretS dynamicsWorld _fromAddr (UpdateObject objID obj) = do
   
   rigidBody <- addCube dynamicsWorld
-                       def { position = obj ^. objPosition
-                           , rotation = obj ^. objOrientation
-                           , scale    = realToFrac (obj ^. objScale)
-                           }
-
+                       mempty { position = obj ^. objPosition
+                              , rotation = obj ^. objOrientation
+                              , scale    = realToFrac (obj ^. objScale)
+                              }
+  
   -- Shoot the cube outwards
   let v = rotate ( obj ^. objOrientation ) ( V3 0 0 ( -3 ) )
   _ <- applyCentralForce rigidBody v

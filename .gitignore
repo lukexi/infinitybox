@@ -3,5 +3,5 @@ cabal.sandbox.config
 TAGS
 build/
 .stack-work/
-src/Client.exe
-src/Server.exe
+*.exe
+$Recycle.Bin/

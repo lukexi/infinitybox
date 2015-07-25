@@ -1,9 +1,8 @@
 {-# LANGUAGE FlexibleContexts, LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
-module Client where
+--module Client where
 import Graphics.UI.GLFW.Pal
 
--- import Halive.Utils
 import Graphics.GL
 import Graphics.Oculus
 import Linear
@@ -20,6 +19,8 @@ import Control.Monad.Random
 
 import Graphics.GL.Pal2
 
+import Sound.Pd1
+
 import Network.UDP.Pal
 
 import Types
@@ -31,11 +32,17 @@ enableVR :: Bool
 enableVR = False
 --enableVR = True
 
+enableHydra :: Bool
+--enableHydra = False
+enableHydra = True
+
 main :: IO ()
 main = do
   -- Set up Hydra
-  --sixenseBase <- initSixense
-  let sixenseBase = Nothing
+  sixenseBase <- if enableHydra then Just <$> initSixense else return Nothing
+  
+  _patch <- makePatch "src/world"
+  openALSources <- getPdSources
 
   -- Create a UDP receive thread
   transceiver@Transceiver{..} <- createTransceiverToAddress serverName serverPort packetSize
@@ -151,7 +158,7 @@ main = do
     -- Update head position
     (headOrient, headPosit) <- maybe (return (axisAngle (V3 0 1 0) 0, V3 0 0 0)) (liftIO . getHMDPose) maybeHMD
     wldPlayer . plrHeadPose .= Pose headPosit headOrient
-    -- TODO pass this to OpenAL to update the listener after adding it to the player pose
+    
 
     -- Fire cubes from each hand when their triggers are held down
     forM_ (zip hands handWorldPoses) $ \(handData, Pose posit orient) -> do
@@ -161,6 +168,15 @@ main = do
     -- Send player position
     player <- use wldPlayer
     writeTransceiver transceiver $ Reliable $ UpdatePlayer playerID player
+
+    -- Render to OpenAL
+    -- TODO add wldPlayer.plrHeadPose
+    liftIO . alListenerPosition    =<< use (wldPlayer . plrPose . posPosition . to (fmap realToFrac))
+    liftIO . alListenerOrientation =<< use (wldPlayer . plrPose . posOrientation . to (fmap realToFrac))
+    liftIO $ forM_ (zip openALSources handWorldPoses) $ \(sourceID, Pose posit orient) -> do
+      alSourcePosition    sourceID (fmap realToFrac posit)
+      --alSourceOrientation sourceID (fmap realToFrac orient)
+
 
     -- Render the scene
     case maybeRenderHMD of
