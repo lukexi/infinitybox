@@ -33,8 +33,8 @@ enableVR = False
 --enableVR = True
 
 enableHydra :: Bool
---enableHydra = False
-enableHydra = True
+enableHydra = False
+--enableHydra = True
 
 main :: IO ()
 main = do
