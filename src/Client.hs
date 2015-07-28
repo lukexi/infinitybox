@@ -29,12 +29,12 @@ import Resources
 
 
 enableVR :: Bool
-enableVR = False
---enableVR = True
+--enableVR = False
+enableVR = True
 
 enableHydra :: Bool
-enableHydra = False
---enableHydra = True
+--enableHydra = False
+enableHydra = True
 
 main :: IO ()
 main = do
@@ -170,15 +170,12 @@ main = do
     writeTransceiver transceiver $ Reliable $ UpdatePlayer playerID player
 
     -- Render to OpenAL
-    -- TODO add wldPlayer.plrHeadPose
-    liftIO . alListenerPosition    =<< use (wldPlayer . plrPose . posPosition . to (fmap realToFrac))
-    liftIO . alListenerOrientation =<< use (wldPlayer . plrPose . posOrientation . to (fmap realToFrac))
-    liftIO $ forM_ (zip openALSources handWorldPoses) $ \(sourceID, Pose posit orient) -> do
+    alListenerPosition    =<< use (wldPlayer . plrPose . posPosition    . to (+ headPosit))
+    alListenerOrientation =<< use (wldPlayer . plrPose . posOrientation . to (* conjugate headOrient))
+    forM_ (zip openALSources handWorldPoses) $ \(sourceID, Pose posit orient) -> do
       alSourcePosition    sourceID (fmap realToFrac posit)
-      --alSourceOrientation sourceID (fmap realToFrac orient)
 
-
-    -- Render the scene
+    -- Render to OpenGL
     case maybeRenderHMD of
 
       Nothing        -> renderFlat window    resources
