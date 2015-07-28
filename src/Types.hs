@@ -45,6 +45,8 @@ data World = World
   , _wldLastCubes    :: Map ObjectID Object
   , _wldEyeDebug     :: V3 GLfloat
   , _wldFrameNumber  :: Integer
+  , _wldMetro1       :: GLfloat
+  , _wldMetro2       :: GLfloat
   }
 
 makeLenses ''Pose
@@ -64,7 +66,7 @@ newPlayer = Player
   }
 
 newWorld :: PlayerID -> World
-newWorld playerID = World newPlayer playerID mempty mempty mempty 0 0
+newWorld playerID = World newPlayer playerID mempty mempty mempty 0 0 0 0
 
 
 interpret :: (MonadIO m, MonadState World m) => Op -> m ()

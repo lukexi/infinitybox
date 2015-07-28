@@ -6,7 +6,7 @@ import Graphics.UI.GLFW.Pal
 import Graphics.GL
 import Graphics.Oculus
 import Linear
-
+import Control.Concurrent.STM
 import System.Hardware.Hydra
 
 import Control.Monad
@@ -38,8 +38,10 @@ main = do
   -- Set up Hydra
   sixenseBase <- if enableHydra then Just <$> initSixense else return Nothing
   
-  _patch <- makePatch "src/world"
+  patch <- makePatch "src/world"
   openALSources <- getPdSources
+  metro1 <- makeReceiveChan (local patch "metro1")
+  metro2 <- makeReceiveChan (local patch "metro2")
 
   -- Create a UDP receive thread
   transceiver@Transceiver{..} <- createTransceiverToAddress serverName serverPort packetSize
@@ -95,6 +97,12 @@ main = do
 
     -- Process controllers (Keyboard, Mouse, Gamepad, Hydra, Oculus headtracking)
     processControls window events sixenseBase maybeHMD transceiver frameNumber
+
+    -- Handle Pd events
+    liftIO (atomically (exhaustChan metro1)) >>= mapM_ (\_ -> wldMetro1 .= 0)
+    liftIO (atomically (exhaustChan metro2)) >>= mapM_ (\_ -> wldMetro2 .= 0)
+    wldMetro1 += 0.01
+    wldMetro2 += 0.01
 
     -- Send player position
     player <- use wldPlayer
