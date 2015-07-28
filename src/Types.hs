@@ -99,6 +99,7 @@ data Uniforms = Uniforms
   , uLight3              :: UniformLocation (V3  GLfloat)
   , uLight4              :: UniformLocation (V3  GLfloat)
   , uID                  :: UniformLocation GLfloat
+  , uBeat                :: UniformLocation GLfloat
   } deriving (Data)
 
 serverPort :: PortNumber
