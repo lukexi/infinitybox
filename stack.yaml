@@ -2,11 +2,11 @@ flags:
 packages:
 - '.'
 - ../gl-pal2
+- ../udp-pal
+- ../bullet-mini
+- ../game-pal
 - ../Thop/modules/glfw-pal
 - ../Thop/modules/oculus-mini
-- ../bullet-mini
-- ../Thop/modules/gl-pal
-- ../udp-pal
 - ../Thop/modules/hydra-hs
 - ../Thop/modules/pd-haskell
 extra-deps:

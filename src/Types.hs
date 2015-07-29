@@ -16,6 +16,7 @@ import Data.Map (Map)
 import System.Random
 import Network.Socket (PortNumber)
 import Data.Data
+import Game.Pal
 
 type ObjectID = Int
 type PlayerID = String
@@ -43,14 +44,17 @@ data World = World
   , _wldMetro2       :: GLfloat
   }
 
-makeLenses ''Pose
 makeLenses ''Object
 makeLenses ''Player
 makeLenses ''World
 
 interpolateObjects :: Object -> Object -> Object
-(Object p1 o1 s1) `interpolateObjects` (Object p2 o2 s2) = 
-  Object (lerp 0.5 p1 p2) (slerp o1 o2 0.5) (s1 + (s2 - s1) / 2)
+(Object p1 s1) `interpolateObjects` (Object p2 s2) = 
+  Object (interpolatePoses p1 p2) (s1 + (s2 - s1) / 2)
+
+interpolatePoses :: Pose -> Pose -> Pose
+interpolatePoses (Pose p1 o1) (Pose p2 o2) =
+  Pose (lerp 0.5 p1 p2) (slerp o1 o2 0.5)
 
 newPlayer :: Player
 newPlayer = Player

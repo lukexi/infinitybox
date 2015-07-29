@@ -24,7 +24,6 @@ library
     Client
     Server
     Physics
-    Movement
     Randoms
     Resources
     Types
@@ -35,7 +34,7 @@ library
     free, stm, binary, linear, bytestring,
     base,
     gl, gl-pal2, 
-    glfw-pal, udp-pal,
+    glfw-pal, udp-pal, game-pal,
     halive, linear, 
     lens, mtl, random, MonadRandom,
     containers, oculus-mini, 

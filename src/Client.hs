@@ -4,9 +4,7 @@
 import Graphics.UI.GLFW.Pal
 
 import Graphics.GL
-import Linear
 import Control.Concurrent.STM
-import System.Hardware.Hydra
 
 import Control.Monad
 import Control.Monad.State
@@ -17,6 +15,7 @@ import Control.Monad.Random
 import Sound.Pd1
 
 import Network.UDP.Pal
+import Game.Pal
 
 import Types
 import Resources
@@ -29,16 +28,16 @@ enableVR :: Bool
 enableVR = True
 
 enableHydra :: Bool
---enableHydra = False
-enableHydra = True
+enableHydra = False
+-- enableHydra = True
 
 main :: IO ()
 main = do
   -- Set up GLFW and Oculus
-  (window, events, maybeHMD, maybeRenderHMD) <- initRenderer enableVR
+  (window, events, maybeHMD, maybeRenderHMD, maybeSixenseBase) <- initWindow "Infinity Box" enableVR enableHydra
 
   -- Set up Hydra
-  sixenseBase <- if enableHydra then Just <$> initSixense else return Nothing
+  
   
   -- Set up sound
   patch <- makePatch "src/world"
@@ -76,7 +75,7 @@ main = do
     interpretNetworkPackets tcVerifiedPackets interpret
 
     -- Process controllers (Keyboard, Mouse, Gamepad, Hydra, Oculus headtracking)
-    processControls window events sixenseBase maybeHMD transceiver frameNumber
+    processControls window events maybeSixenseBase maybeHMD transceiver frameNumber
 
     -- Handle Pd events
     liftIO (atomically (exhaustChan metro1)) >>= mapM_ (\_ -> wldMetro1 .= 0)
@@ -110,5 +109,5 @@ totalHeadPose = do
   Pose playerPosit playerOrient <- use (wldPlayer . plrPose)
   Pose headPosit headOrient     <- use (wldPlayer . plrHeadPose)
   return $ Pose 
-    (playerPosit  + headPosit) 
-    (playerOrient * headOrient)
+    (headPosit + playerPosit) 
+    (headOrient * playerOrient) -- quat rotation order must be rotation*original

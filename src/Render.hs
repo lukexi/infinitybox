@@ -17,32 +17,10 @@ import Data.Maybe
 
 import Graphics.GL.Pal2
 
+import Game.Pal
 import Types
-import Movement
 import Resources
 
-initRenderer :: Bool -> IO (Window, Events, Maybe HMD, Maybe RenderHMD)
-initRenderer enableVR = do
-  (resX, resY, maybeHMD) <- if enableVR 
-    then do
-      hmd          <- createHMD
-      (resX, resY) <- getHMDResolution hmd
-      return (resX, resY, Just hmd)
-    else return (1024, 768, Nothing)
-  
-  (window, events) <- createWindow "UDPCubes" resX resY
-  -- Compensate for retina framebuffers on Mac
-  (frameW, frameH) <- getFramebufferSize window
-  when (frameW > resX && frameH > resY) $
-    setWindowSize window (resX `div` 2) (resY `div` 2)
-
-  -- Set up Oculus
-  maybeRenderHMD <- forM maybeHMD $ \hmd -> do
-    renderHMD <- configureHMDRendering hmd "UDPCubes"
-    dismissHSWDisplay hmd
-    recenterPose hmd
-    return renderHMD
-  return (window, events, maybeHMD, maybeRenderHMD)
 
 renderVR :: (MonadIO m, MonadState World m) 
          => RenderHMD -> Resources -> m ()
@@ -50,7 +28,7 @@ renderVR renderHMD resources = renderHMDFrame renderHMD $ \eyePoses -> do
 
   glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
 
-  view <- playerViewMat
+  view <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
 
   renderHMDEyes renderHMD eyePoses $ \projection eyeView -> do
 
@@ -65,14 +43,11 @@ renderFlat win resources = do
   glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
   
   projection  <- makeProjection win
-  view        <- playerViewMat
+  view <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
 
   render resources projection view
 
   swapBuffers win
-
-poseToMatrix :: Pose -> M44 GLfloat
-poseToMatrix (Pose posit orient) = mkTransformation orient posit
 
 render :: (MonadIO m, MonadState World m) 
        => Resources
@@ -134,7 +109,7 @@ render Resources{..} projection view = do
     let cubes = Map.unionWith interpolateObjects lastCubes newCubes
     forM_ ( zip [0..] ( Map.elems cubes ) ) $ \( i , obj ) -> do
 
-      let model = mkTransformation (obj ^. objOrientation) (obj ^. objPosition)
+      let model = mkTransformation (obj ^. objPose . posOrientation) (obj ^. objPose . posPosition)
 
       drawEntity model projectionView i cube
 
