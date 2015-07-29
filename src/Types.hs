@@ -32,9 +32,9 @@ data Object = Object
   } deriving (Generic, Binary, Show)
 
 data Player = Player 
-  { _plrPose :: Pose    
+  { _plrPose      :: Pose    
+  , _plrHeadPose  :: Pose
   , _plrHandPoses :: [Pose]
-  , _plrHeadPose :: Pose
   } deriving (Generic, Binary, Show)
 
 data World = World
@@ -60,9 +60,9 @@ interpolateObjects :: Object -> Object -> Object
 
 newPlayer :: Player
 newPlayer = Player
-  { _plrPose = Pose (V3 0 5 0) (axisAngle (V3 0 1 0) 0)
+  { _plrPose      = Pose (V3 0 5 0) (axisAngle (V3 0 1 0) 0)
+  , _plrHeadPose  = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
   , _plrHandPoses = []
-  , _plrHeadPose = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
   }
 
 newWorld :: PlayerID -> World

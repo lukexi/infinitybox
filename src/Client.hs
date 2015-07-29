@@ -4,7 +4,6 @@
 import Graphics.UI.GLFW.Pal
 
 import Graphics.GL
-import Graphics.Oculus
 import Linear
 import Control.Concurrent.STM
 import System.Hardware.Hydra
@@ -35,47 +34,26 @@ enableHydra = True
 
 main :: IO ()
 main = do
+  -- Set up GLFW and Oculus
+  (window, events, maybeHMD, maybeRenderHMD) <- initRenderer enableVR
+
   -- Set up Hydra
   sixenseBase <- if enableHydra then Just <$> initSixense else return Nothing
   
+  -- Set up sound
   patch <- makePatch "src/world"
   openALSources <- getPdSources
   metro1 <- makeReceiveChan (local patch "metro1")
   metro2 <- makeReceiveChan (local patch "metro2")
 
-  -- Create a UDP receive thread
+  -- Set up networking
   transceiver@Transceiver{..} <- createTransceiverToAddress serverName serverPort packetSize
 
-  -- Initialize GLFW
-  (resX, resY, maybeHMD) <- if enableVR 
-    then do
-      hmd <- createHMD
-      (resX, resY) <- getHMDResolution hmd
-      return (resX, resY, Just hmd)
-    else return (1024, 768, Nothing)
-  
-  (window, events) <- createWindow "UDPCubes" resX resY
-  -- Compensate for retina framebuffers on Mac
-  (frameW, frameH) <- getFramebufferSize window
-  when (frameW > resX && frameH > resY) $
-    setWindowSize window (resX `div` 2) (resY `div` 2)
-
-  -- Set up Oculus
-  maybeRenderHMD <- forM maybeHMD $ \hmd -> do
-    renderHMD <- configureHMDRendering hmd "UDPCubes"
-    dismissHSWDisplay hmd
-    recenterPose hmd
-    return renderHMD
-
-  -- Get a stdgen for Entity ID generation
-  stdGen   <- getStdGen
-  
   -- Connect to the server
-  -- Initial connection to the server
   playerID <- randomName
   writeTransceiver transceiver $ Reliable (Connect playerID)
 
-
+  -- Set up OpenGL resources
   resources@Resources{..} <- loadResources
 
 
@@ -85,6 +63,8 @@ main = do
   --glPolygonMode GL_FRONT_AND_BACK GL_LINE 
   
   -- Begin game loop
+  -- Get a stdgen for Entity ID generation
+  stdGen   <- getStdGen
   let world = newWorld playerID
   void . flip runRandT stdGen . flip runStateT world . whileWindow window $ do
     frameNumber <- wldFrameNumber <+= 1
@@ -109,10 +89,12 @@ main = do
     writeTransceiver transceiver $ Reliable $ UpdatePlayer playerID player
 
     -- Render to OpenAL
+    -- Update listener
     Pose totalHeadPosit totalHeadOrient <- totalHeadPose
     alListenerPosition totalHeadPosit
     alListenerOrientation totalHeadOrient
 
+    -- Update sources
     handWorldPoses <- use (wldPlayer . plrHandPoses)
     forM_ (zip openALSources handWorldPoses) $ \(sourceID, Pose posit _orient) -> do
       alSourcePosition sourceID posit
