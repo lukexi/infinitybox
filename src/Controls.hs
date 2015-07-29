@@ -20,14 +20,14 @@ import Network.UDP.Pal
 import Types
 import Movement
 
-processControls :: (MonadState World m, MonadIO m, MonadRandom m) =>
-                         Window
-                         -> Events
-                         -> Maybe SixenseBase
-                         -> Maybe HMD
-                         -> Transceiver Op
-                         -> Integer
-                         -> m ()
+processControls :: (MonadState World m, MonadIO m, MonadRandom m) 
+                => Window
+                -> Events
+                -> Maybe SixenseBase
+                -> Maybe HMD
+                -> Transceiver Op
+                -> Integer
+                -> m ()
 processControls window events sixenseBase maybeHMD transceiver frameNumber = do
   -- Get latest Hydra data
   hands <- maybe (return []) getHands sixenseBase
@@ -106,8 +106,7 @@ addCube transceiver posit orient = do
   instruction <- do
     objID <- getRandom
     return $ UpdateObject objID (Object posit orient 0.25)
-  putStrLnIO "Print creating a cube sir"
-  
+
   interpret instruction
 
 

@@ -89,12 +89,12 @@ main = do
     writeTransceiver transceiver $ Reliable $ UpdatePlayer playerID player
 
     -- Render to OpenAL
-    -- Update listener
+    -- Update AL listener
     Pose totalHeadPosit totalHeadOrient <- totalHeadPose
     alListenerPosition totalHeadPosit
     alListenerOrientation totalHeadOrient
 
-    -- Update sources
+    -- Update AL sources
     handWorldPoses <- use (wldPlayer . plrHandPoses)
     forM_ (zip openALSources handWorldPoses) $ \(sourceID, Pose posit _orient) -> do
       alSourcePosition sourceID posit
@@ -110,5 +110,5 @@ totalHeadPose = do
   Pose playerPosit playerOrient <- use (wldPlayer . plrPose)
   Pose headPosit headOrient     <- use (wldPlayer . plrHeadPose)
   return $ Pose 
-    (playerPosit + headPosit) 
-    (playerOrient * conjugate headOrient)
+    (playerPosit  + headPosit) 
+    (playerOrient * headOrient)

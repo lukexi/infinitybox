@@ -120,7 +120,7 @@ render Resources{..} projection view = do
   -----------
   useProgram (program cube)
 
-  -- putStrLnIO (show view )
+  -- putStrLnIO (show view)
   let cam = uCamera (uniforms cube)
   uniformV3 cam eyePos
 
