@@ -5,3 +5,5 @@ build/
 .stack-work/
 *.exe
 $Recycle.Bin/
+src/client
+src/server

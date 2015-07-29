@@ -1,6 +1,7 @@
 #version 330 core
 
 uniform vec3 uCamera;
+uniform float uBeat; // 0-1 timing of cubes
 
 in vec2 vUV;
 in vec3 vEye;
@@ -92,7 +93,7 @@ vec2 map( vec3 pos  , vec3 ro ){
     
     vec2 res = vec2( 10000. , 0.);// vec2( sdPlane( pos - vec3( 0. , -1. , 0. )), 0.0 );
   
-    vec2 res2 = vec2( repSphere( pos - vec3( 0. , 0. , ro.z) , vec3( .1 , .1 , .01 ) ,  abs( pos.z - ro.z )), 1.);
+    vec2 res2 = vec2( repSphere( pos - vec3( 0. , 0. , ro.z) , vec3( .1 , .1 , uBeat * .5 ) ,  abs( pos.z - ro.z )), 1.);
     
     res.x = opU( res.x , res2.x );
     

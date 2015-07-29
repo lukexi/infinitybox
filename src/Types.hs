@@ -26,9 +26,9 @@ data Object = Object
   } deriving (Generic, Binary, Show)
 
 data Player = Player 
-  { _plrPose :: Pose    
+  { _plrPose      :: Pose    
+  , _plrHeadPose  :: Pose
   , _plrHandPoses :: [Pose]
-  , _plrHeadPose :: Pose
   } deriving (Generic, Binary, Show)
 
 data World = World
@@ -39,6 +39,8 @@ data World = World
   , _wldLastCubes    :: Map ObjectID Object
   , _wldEyeDebug     :: V3 GLfloat
   , _wldFrameNumber  :: Integer
+  , _wldMetro1       :: GLfloat
+  , _wldMetro2       :: GLfloat
   }
 
 makeLenses ''Pose
@@ -52,13 +54,13 @@ interpolateObjects :: Object -> Object -> Object
 
 newPlayer :: Player
 newPlayer = Player
-  { _plrPose = Pose (V3 0 5 0) (axisAngle (V3 0 1 0) 0)
+  { _plrPose      = Pose (V3 0 5 0) (axisAngle (V3 0 1 0) 0)
+  , _plrHeadPose  = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
   , _plrHandPoses = []
-  , _plrHeadPose = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
   }
 
 newWorld :: PlayerID -> World
-newWorld playerID = World newPlayer playerID mempty mempty mempty 0 0
+newWorld playerID = World newPlayer playerID mempty mempty mempty 0 0 0 0
 
 
 interpret :: (MonadIO m, MonadState World m) => Op -> m ()
@@ -93,6 +95,7 @@ data Uniforms = Uniforms
   , uLight3              :: UniformLocation (V3  GLfloat)
   , uLight4              :: UniformLocation (V3  GLfloat)
   , uID                  :: UniformLocation GLfloat
+  , uBeat                :: UniformLocation GLfloat
   } deriving (Data)
 
 serverPort :: PortNumber
