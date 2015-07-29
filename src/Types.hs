@@ -20,15 +20,9 @@ import Data.Data
 type ObjectID = Int
 type PlayerID = String
 
-data Pose = Pose
-  { _posPosition    :: V3 GLfloat
-  , _posOrientation :: Quaternion GLfloat 
-  } deriving (Generic, Binary, Show)
-
 data Object = Object
-  { _objPosition    :: V3 GLfloat
-  , _objOrientation :: Quaternion GLfloat
-  , _objScale       :: GLfloat
+  { _objPose  :: Pose
+  , _objScale :: GLfloat
   } deriving (Generic, Binary, Show)
 
 data Player = Player 

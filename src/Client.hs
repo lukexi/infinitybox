@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts, LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
+
 --module Client where
 import Graphics.UI.GLFW.Pal
 
@@ -97,7 +98,7 @@ main = do
     interpretNetworkPackets tcVerifiedPackets interpret
 
     -- Get latest Hydra data
-    hands <- maybe (return []) (getHands) sixenseBase
+    hands <- maybe (return []) getHands sixenseBase
 
     -- Handle Hydra movement events, or mouse if no Hydra present
     case hands of
@@ -112,6 +113,7 @@ main = do
       _ -> do
         -- Handle mouse events
         isFocused <- getWindowFocused window
+        let isFocused = False
         when isFocused $ applyMouseLook window
     
     -- Handle keyboard movement events
@@ -171,9 +173,13 @@ main = do
 
     -- Render to OpenAL
     -- TODO add wldPlayer.plrHeadPose
-    liftIO . alListenerPosition    =<< use (wldPlayer . plrPose . posPosition . to (fmap realToFrac))
-    liftIO . alListenerOrientation =<< use (wldPlayer . plrPose . posOrientation . to (fmap realToFrac))
-    liftIO $ forM_ (zip openALSources handWorldPoses) $ \(sourceID, Pose posit orient) -> do
+    alListenerPosition    =<< use (wldPlayer . plrPose . posPosition)
+    printIO =<< use (wldPlayer . plrPose . posPosition)
+    alListenerOrientation =<< use (wldPlayer . plrPose . posOrientation)
+    printIO =<< use (wldPlayer . plrPose . posOrientation . to quaternionToUpAt)
+
+    forM_ openALSources $ \sourceID -> alSourcePosition sourceID (V3 0 0 0)
+    forM_ (zip openALSources handWorldPoses) $ \(sourceID, Pose posit _orient) -> do
       alSourcePosition    sourceID (fmap realToFrac posit)
       --alSourceOrientation sourceID (fmap realToFrac orient)
 
@@ -185,7 +191,8 @@ main = do
       Just renderHMD -> renderVR   renderHMD resources
 
 
-
+quaternionToUpAt :: (RealFloat a, Conjugate a) => Quaternion a -> (V3 a, V3 a)
+quaternionToUpAt quat = (rotate quat (V3 0 1 0), rotate quat (V3 0 0 (-1)))
 
 
 renderVR :: (MonadIO m, MonadState World m) 
@@ -231,8 +238,6 @@ render Resources{..} projection view = do
   newCubes  <- use wldCubes
   lastCubes <- use wldLastCubes
 
-
-
   let projectionView = projection !*! view
 
   let eyePos = fromMaybe view (inv44 view) ^. translation
@@ -270,12 +275,12 @@ render Resources{..} projection view = do
   useProgram (program cube)
 
   -- putStrLnIO (show view )
-  let cam = uCamera ( uniforms cube )
+  let cam = uCamera (uniforms cube)
   uniformV3 cam eyePos
 
   setLightUniforms cube light1 light2 light3 light4
 
-  withVAO ( vAO cube ) $ do
+  withVAO (vAO cube) $ do
 
     glEnable GL_CULL_FACE
     glCullFace GL_BACK
@@ -283,7 +288,7 @@ render Resources{..} projection view = do
 
     -- let cubes = lerp 0.5 newCubes lastCubes
     let cubes = Map.unionWith interpolateObjects lastCubes newCubes
-    forM_ ( zip [0..] ( Map.elems cubes ) ) $ \( i , obj ) -> do
+    forM_ (zip [0..] (Map.elems cubes)) $ \(i , obj) -> do
 
       let model = mkTransformation (obj ^. objOrientation) (obj ^. objPosition)
 
@@ -326,7 +331,7 @@ render Resources{..} projection view = do
   useProgram (program plane)
 
   -- printIO view
-  let planeCamU = uCamera ( uniforms plane )
+  let planeCamU = uCamera (uniforms plane)
   uniformV3 planeCamU eyePos
 
   setLightUniforms plane light1 light2 light3 light4
@@ -338,8 +343,8 @@ render Resources{..} projection view = do
     glCullFace GL_FRONT
 
     let model = mkTransformation 
-            ( axisAngle ( V3 1 0 0 ) 0.0 )
-            ( V3 0 0 0 )
+            (axisAngle (V3 1 0 0) 0.0)
+            (V3 0 0 0)
 
     drawEntity model projectionView 0 plane
 
@@ -349,16 +354,16 @@ setLightUniforms :: (MonadIO m)
                  -> V3 GLfloat -> V3 GLfloat -> V3 GLfloat -> V3 GLfloat -> m ()
 setLightUniforms anEntity l1 l2 l3 l4 = do
 
-  let light1 = uLight1 ( uniforms anEntity )
+  let light1 = uLight1 (uniforms anEntity)
   uniformV3 light1 l1
 
-  let light2 = uLight2 ( uniforms anEntity )
+  let light2 = uLight2 (uniforms anEntity)
   uniformV3 light2 l2
 
-  let light3 = uLight3 ( uniforms anEntity )
+  let light3 = uLight3 (uniforms anEntity)
   uniformV3 light3 l3
 
-  let light4 = uLight4 ( uniforms anEntity )
+  let light4 = uLight4 (uniforms anEntity)
   uniformV3 light4 l4
 
 
@@ -389,15 +394,15 @@ drawEntity model projectionView drawID anEntity = do
 
   let Uniforms{..} = uniforms anEntity
 
-  uniformM44 uModelViewProjection ( projectionView !*! model)
+  uniformM44 uModelViewProjection (projectionView !*! model)
   uniformM44 uInverseModel        (fromMaybe model (inv44 model))
   uniformM44 uModel model
 
   let dID = uID 
-  glUniform1f ( unUniformLocation dID ) drawID
+  glUniform1f (unUniformLocation dID) drawID
 
-  let vc = vertCount ( geometry anEntity ) 
-  glDrawElements GL_TRIANGLES ( vc ) GL_UNSIGNED_INT nullPtr
+  let vc = vertCount (geometry anEntity)
+  glDrawElements GL_TRIANGLES vc GL_UNSIGNED_INT nullPtr
 
 
 
