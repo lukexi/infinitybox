@@ -34,6 +34,15 @@ processControls window events sixenseBase maybeHMD transceiver frameNumber = do
   -- Get latest Hydra data
   hands <- maybe (return []) getHands sixenseBase
 
+  -- Update hand positions
+  handWorldPoses <- handsToWorldPoses hands <$> use (wldPlayer . plrPose)
+  wldPlayer . plrHandPoses .= handWorldPoses
+
+  -- Update head position
+  wldPlayer . plrHeadPose <~ getMaybeHMDPose maybeHMD
+
+
+
   -- Handle Hydra movement events, or mouse if no Hydra present
   zoom (wldPlayer . plrPose) $ do
     if null hands 
@@ -67,20 +76,21 @@ processControls window events sixenseBase maybeHMD transceiver frameNumber = do
     onKeyDown Key'F e (setCursorInputMode window CursorInputMode'Disabled)
     onKeyDown Key'G e (setCursorInputMode window CursorInputMode'Normal)
 
-    onKeyDown Key'Y e ( liftIO . print =<< use wldEyeDebug )
-
-  -- Update hand positions
-  handWorldPoses <- use (wldPlayer . plrPose . to (handsToWorldPoses hands))
-  wldPlayer . plrHandPoses .= handWorldPoses
-
-  -- Update head position
-  wldPlayer . plrHeadPose <~ getMaybeHMDPose maybeHMD
+    onKeyDown Key'Y e (liftIO . print =<< use wldEyeDebug)
 
   -- Fire cubes from each hand when their triggers are held down
   forM_ (zip hands handWorldPoses) $ \(handData, pose) -> do
     when (trigger handData > 0.5 && frameNumber `mod` 30 == 0) $ 
       addCube transceiver pose
 
+
+totalHeadPose :: (MonadState World m) => m Pose
+totalHeadPose = do
+  Pose playerPosit playerOrient <- use (wldPlayer . plrPose)
+  Pose headPosit headOrient     <- use (wldPlayer . plrHeadPose)
+  return $ Pose 
+    (headPosit + playerPosit) 
+    (headOrient * playerOrient) -- quat rotation order must be rotation*original
 
 addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Transceiver Op -> Pose -> m ()
 addCube transceiver pose = do

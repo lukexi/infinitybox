@@ -24,7 +24,7 @@ import Controls
 
 
 enableVR :: Bool
---enableVR = False
+-- enableVR = False
 enableVR = True
 
 enableHydra :: Bool
@@ -33,11 +33,8 @@ enableHydra = False
 
 main :: IO ()
 main = do
-  -- Set up GLFW and Oculus
-  (window, events, maybeHMD, maybeRenderHMD, maybeSixenseBase) <- initWindow "Infinity Box" enableVR enableHydra
-
-  -- Set up Hydra
-  
+  -- Set up GLFW/Oculus/Hydra
+  (window, events, maybeHMD, maybeRenderHMD, maybeSixenseBase) <- initWindow "Infinity Box" enableVR enableHydra  
   
   -- Set up sound
   patch <- makePatch "src/world"
@@ -104,10 +101,4 @@ main = do
       Nothing        -> renderFlat window    resources
       Just renderHMD -> renderVR   renderHMD resources
 
-totalHeadPose :: (MonadState World m) => m Pose
-totalHeadPose = do
-  Pose playerPosit playerOrient <- use (wldPlayer . plrPose)
-  Pose headPosit headOrient     <- use (wldPlayer . plrHeadPose)
-  return $ Pose 
-    (headPosit + playerPosit) 
-    (headOrient * playerOrient) -- quat rotation order must be rotation*original
+

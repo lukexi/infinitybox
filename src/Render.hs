@@ -59,9 +59,8 @@ render Resources{..} projection view = do
   newCubes  <- use wldCubes
   lastCubes <- use wldLastCubes
 
-  let projectionView = projection !*! view
-
-  let eyePos = fromMaybe view (inv44 view) ^. translation
+    let projectionView = projection !*! view
+        eyePos = fromMaybe view (inv44 view) ^. translation
 
   wldEyeDebug .= eyePos
 
@@ -101,7 +100,7 @@ render Resources{..} projection view = do
 
   setLightUniforms cube light1 light2 light3 light4
 
-  withVAO ( vAO cube ) $ do
+  withVAO (vAO cube) $ do
 
     glEnable GL_CULL_FACE
     glCullFace GL_BACK
@@ -116,7 +115,7 @@ render Resources{..} projection view = do
   -------------
   -- PLAYERS --
   -------------
-  withVAO ( vAO hand ) $ do
+  withVAO (vAO hand) $ do
 
     glEnable GL_CULL_FACE
     glCullFace GL_BACK
@@ -139,7 +138,7 @@ render Resources{..} projection view = do
 
   -- Draw all remote players' heads 
   -- (we don't draw the local player's head)
-  withVAO ( vAO face ) $ do
+  withVAO (vAO face) $ do
     players <- use $ wldPlayers . to Map.toList
     forM_ players $ \(playerID, player) -> 
       when (playerID /= localPlayerID) $ do
@@ -176,16 +175,16 @@ setLightUniforms :: (MonadIO m)
                  -> V3 GLfloat -> V3 GLfloat -> V3 GLfloat -> V3 GLfloat -> m ()
 setLightUniforms anEntity l1 l2 l3 l4 = do
 
-  let light1 = uLight1 ( uniforms anEntity )
+  let light1 = uLight1 (uniforms anEntity)
   uniformV3 light1 l1
 
-  let light2 = uLight2 ( uniforms anEntity )
+  let light2 = uLight2 (uniforms anEntity)
   uniformV3 light2 l2
 
-  let light3 = uLight3 ( uniforms anEntity )
+  let light3 = uLight3 (uniforms anEntity)
   uniformV3 light3 l3
 
-  let light4 = uLight4 ( uniforms anEntity )
+  let light4 = uLight4 (uniforms anEntity)
   uniformV3 light4 l4
 
 
@@ -216,14 +215,14 @@ drawEntity model projectionView drawID anEntity = do
 
   let Uniforms{..} = uniforms anEntity
 
-  uniformM44 uModelViewProjection ( projectionView !*! model)
+  uniformM44 uModelViewProjection (projectionView !*! model)
   uniformM44 uInverseModel        (fromMaybe model (inv44 model))
   uniformM44 uModel model
 
   let dID = uID 
-  glUniform1f ( unUniformLocation dID ) drawID
+  glUniform1f (unUniformLocation dID) drawID
 
-  let vc = vertCount ( geometry anEntity ) 
-  glDrawElements GL_TRIANGLES ( vc ) GL_UNSIGNED_INT nullPtr
+  let vc = vertCount (geometry anEntity) 
+  glDrawElements GL_TRIANGLES vc GL_UNSIGNED_INT nullPtr
 
 
