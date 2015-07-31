@@ -5,6 +5,7 @@ import Graphics.UI.GLFW.Pal
 
 import Graphics.GL
 import Control.Concurrent.STM
+import Linear
 
 import Control.Monad
 import Control.Monad.State
@@ -21,6 +22,7 @@ import Types
 import Resources
 import Render
 import Controls
+import qualified Data.Map as Map
 
 
 enableVR :: Bool
@@ -28,8 +30,8 @@ enableVR :: Bool
 enableVR = True
 
 enableHydra :: Bool
-enableHydra = False
--- enableHydra = True
+-- enableHydra = False
+enableHydra = True
 
 main :: IO ()
 main = do
@@ -37,10 +39,19 @@ main = do
   (window, events, maybeHMD, maybeRenderHMD, maybeSixenseBase) <- initWindow "Infinity Box" enableVR enableHydra  
   
   -- Set up sound
-  patch <- makePatch "src/world"
+  _multiDAC <- makePatch "src/multidac"
   openALSources <- getPdSources
-  metro1 <- makeReceiveChan (local patch "metro1")
-  metro2 <- makeReceiveChan (local patch "metro2")
+  patches <- foldM (\accum sourceID -> do
+    voice <- makePatch "src/voice"
+    send voice "set-channel" (Atom (String $ "dac" ++ (show (length accum + 1))))
+
+    output <- makeReceiveChan (local voice "output")
+    return (accum ++ [(sourceID, voice, output)])
+    ) [] openALSources 
+  --patch <- makePatch "src/world"
+  
+  --metro1 <- makeReceiveChan (local patch "metro1")
+  --metro2 <- makeReceiveChan (local patch "metro2")
 
   -- Set up networking
   transceiver@Transceiver{..} <- createTransceiverToAddress serverName serverPort packetSize
@@ -75,10 +86,10 @@ main = do
     processControls window events maybeSixenseBase maybeHMD transceiver frameNumber
 
     -- Handle Pd events
-    liftIO (atomically (exhaustChan metro1)) >>= mapM_ (\_ -> wldMetro1 .= 0)
-    liftIO (atomically (exhaustChan metro2)) >>= mapM_ (\_ -> wldMetro2 .= 0)
-    wldMetro1 += 0.01
-    wldMetro2 += 0.01
+    --exhaustChanIO metro1 >>= mapM_ (\_ -> wldMetro1 .= 0)
+    --exhaustChanIO metro2 >>= mapM_ (\_ -> wldMetro2 .= 0)
+    --wldMetro1 += 0.01
+    --wldMetro2 += 0.01
 
     -- Send player position
     player <- use wldPlayer
@@ -91,9 +102,17 @@ main = do
     alListenerOrientation totalHeadOrient
 
     -- Update AL sources
-    handWorldPoses <- use (wldPlayer . plrHandPoses)
-    forM_ (zip openALSources handWorldPoses) $ \(sourceID, Pose posit _orient) -> do
-      alSourcePosition sourceID posit
+    --handWorldPoses <- use (wldPlayer . plrHandPoses)
+    --forM_ (zip openALSources handWorldPoses) $ \(sourceID, Pose posit _orient) -> do
+    --  alSourcePosition sourceID posit
+    cubes <- use wldCubes
+    forM_ (zip (Map.toList cubes) patches) $ \((cubeID, cube), (sourceID, patch, output)) -> do
+      alSourcePosition sourceID (cube ^. objPose . posPosition)
+      exhaustChanIO output >>= mapM_ (\val -> 
+        case val of
+          Atom (Float f) -> wldPatchOutput . at cubeID ?= realToFrac f
+          _ -> return ()
+        )
 
     -- Render to OpenGL
     case maybeRenderHMD of
@@ -101,4 +120,5 @@ main = do
       Nothing        -> renderFlat window    resources
       Just renderHMD -> renderVR   renderHMD resources
 
-
+exhaustChanIO :: MonadIO m => TChan a -> m [a]
+exhaustChanIO = liftIO . atomically . exhaustChan

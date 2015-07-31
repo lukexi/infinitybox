@@ -24,13 +24,13 @@ import Resources
 
 renderVR :: (MonadIO m, MonadState World m) 
          => RenderHMD -> Resources -> m ()
-renderVR renderHMD resources = renderHMDFrame renderHMD $ \eyePoses -> do
+renderVR renderHMD resources = renderHMDFrame renderHMD $ \eyeViews -> do
 
   glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
 
   view <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
 
-  renderHMDEyes renderHMD eyePoses $ \projection eyeView -> do
+  renderHMDEyes eyeViews $ \projection eyeView -> do
 
     let finalView = eyeView !*! view 
 
@@ -59,8 +59,8 @@ render Resources{..} projection view = do
   newCubes  <- use wldCubes
   lastCubes <- use wldLastCubes
 
-    let projectionView = projection !*! view
-        eyePos = fromMaybe view (inv44 view) ^. translation
+  let projectionView = projection !*! view
+      eyePos = fromMaybe view (inv44 view) ^. translation
 
   wldEyeDebug .= eyePos
 
@@ -97,6 +97,7 @@ render Resources{..} projection view = do
   -- putStrLnIO (show view)
   let cam = uCamera (uniforms cube)
   uniformV3 cam eyePos
+  uniformF (uBeat (uniforms cube)) 1
 
   setLightUniforms cube light1 light2 light3 light4
 
@@ -106,7 +107,10 @@ render Resources{..} projection view = do
     glCullFace GL_BACK
 
     let cubes = Map.unionWith interpolateObjects lastCubes newCubes
-    forM_ ( zip [0..] ( Map.elems cubes ) ) $ \( i , obj ) -> do
+    forM_ ( zip [0..] ( Map.toList cubes ) ) $ \( i , (objID, obj) ) -> do
+
+      val <- fromMaybe 0 <$> use (wldPatchOutput . at objID)
+      uniformF (uBeat (uniforms cube)) val
 
       let model = mkTransformation (obj ^. objPose . posOrientation) (obj ^. objPose . posPosition)
 
@@ -121,12 +125,13 @@ render Resources{..} projection view = do
     glCullFace GL_BACK
 
     -- Draw the local player's hands
-    metro1Time <- use wldMetro1
-    metro2Time <- use wldMetro2
+    --metro1Time <- use wldMetro1
+    --metro2Time <- use wldMetro2
     handPoses <- use $ wldPlayer . plrHandPoses
-    forM_ (zip handPoses [metro1Time, metro2Time]) $ \(Pose posit orient, metroTime) -> do
+    --forM_ (zip handPoses [metro1Time, metro2Time]) $ \(Pose posit orient, metroTime) -> do
+    forM_ handPoses $ \(Pose posit orient) -> do
       let model = mkTransformation orient posit
-      uniformF (uBeat (uniforms cube)) metroTime
+      uniformF (uBeat (uniforms cube)) 1
       drawEntity model projectionView 0 cube 
 
     -- Draw all remote players' hands

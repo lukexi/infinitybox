@@ -48,7 +48,8 @@ processControls window events sixenseBase maybeHMD transceiver frameNumber = do
     if null hands 
       then do
         isFocused <- getWindowFocused window
-        when isFocused $ applyMouseLook window
+        --when isFocused $ applyMouseLook window
+        return ()
       else 
         applyHydraJoystickMovement hands
     -- Handle keyboard movement events
@@ -75,12 +76,13 @@ processControls window events sixenseBase maybeHMD transceiver frameNumber = do
     onKeyDown Key'E e (addCube transceiver (Pose (rotate playerRot (V3 0 0.1 0) + playerPos) playerRot))
     onKeyDown Key'F e (setCursorInputMode window CursorInputMode'Disabled)
     onKeyDown Key'G e (setCursorInputMode window CursorInputMode'Normal)
+    onKeyDown Key'O e (maybe (return ()) (liftIO . recenterPose) maybeHMD)
 
     onKeyDown Key'Y e (liftIO . print =<< use wldEyeDebug)
 
   -- Fire cubes from each hand when their triggers are held down
   forM_ (zip hands handWorldPoses) $ \(handData, pose) -> do
-    when (trigger handData > 0.5 && frameNumber `mod` 30 == 0) $ 
+    when (trigger handData > 0.5 && frameNumber `mod` 1 == 0) $ 
       addCube transceiver pose
 
 
@@ -89,7 +91,7 @@ totalHeadPose = do
   Pose playerPosit playerOrient <- use (wldPlayer . plrPose)
   Pose headPosit headOrient     <- use (wldPlayer . plrHeadPose)
   return $ Pose 
-    (headPosit + playerPosit) 
+    (headPosit  + playerPosit) 
     (headOrient * playerOrient) -- quat rotation order must be rotation*original
 
 addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Transceiver Op -> Pose -> m ()

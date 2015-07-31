@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
-module Server where
+--module Server where
 
 import Control.Monad
 import Control.Monad.State
@@ -18,6 +18,7 @@ import Data.Map (Map)
 import Physics.Bullet
 import Physics
 import Types
+import Game.Pal
 
 data ServerState = ServerState 
   { _ssRigidBodies :: Map ObjectID RigidBody
@@ -64,7 +65,7 @@ main = do
       <$> forM rigidBodies (\(objID, rigidBody) -> do
             (pos, orient) <- getBodyState rigidBody
             let scale' = 1.0
-            return $ UpdateObject objID (Object pos orient scale'))
+            return $ UpdateObject objID (Object (Pose pos orient) scale'))
       <*> forM players (\(playerID, player) -> 
             return $ UpdatePlayer playerID player)
 
@@ -87,13 +88,13 @@ interpretS :: (MonadIO m, MonadState ServerState m)
 interpretS dynamicsWorld _fromAddr (UpdateObject objID obj) = do
   
   rigidBody <- addCube dynamicsWorld
-                       mempty { position = obj ^. objPosition
-                              , rotation = obj ^. objOrientation
+                       mempty { position = obj ^. objPose . posPosition
+                              , rotation = obj ^. objPose . posOrientation
                               , scale    = realToFrac (obj ^. objScale)
                               }
   
   -- Shoot the cube outwards
-  let v = rotate ( obj ^. objOrientation ) ( V3 0 0 ( -3 ) )
+  let v = rotate ( obj ^. objPose . posOrientation ) ( V3 0 0 ( -3 ) )
   _ <- applyCentralForce rigidBody v
   ssRigidBodies . at objID ?= rigidBody
 
