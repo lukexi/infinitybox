@@ -67,16 +67,23 @@ newWorld playerID = World newPlayer playerID mempty mempty mempty mempty 0 0
 
 
 interpret :: (MonadIO m, MonadState World m) => Op -> m ()
-interpret (UpdateObject objID obj)       = wldCubes   . at objID    ?= obj
+interpret (CreateObject objID obj)       = wldCubes   . at objID            ?= obj
+-- traverse, here, ensures that the object is only set if it already exists
+interpret (UpdateObject objID obj)       = wldCubes   . at objID . traverse .= obj
+interpret (DeleteObject objID)           = wldCubes   . at objID    .= Nothing
 interpret (UpdatePlayer playerID player) = wldPlayers . at playerID ?= player
-interpret (Connect name)                 = putStrLnIO (name ++ " connected")
-interpret (Disconnect name)              = putStrLnIO (name ++ " disconnected")
+interpret (Connect playerID)             = putStrLnIO (playerID ++ " connected")
+interpret (Disconnect playerID)          = do
+  wldPlayers . at playerID .= Nothing
+  putStrLnIO (playerID ++ " disconnected")
 
 -- | Deriving Generics
 
-data Op = UpdateObject ObjectID Object
-        | UpdatePlayer PlayerID Player
+data Op = CreateObject ObjectID Object
+        | UpdateObject ObjectID Object
+        | DeleteObject ObjectID
         | Connect      PlayerID
+        | UpdatePlayer PlayerID Player
         | Disconnect   PlayerID
   deriving (Generic, Binary, Show)
 

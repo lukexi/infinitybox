@@ -82,7 +82,7 @@ processControls window events sixenseBase maybeHMD transceiver frameNumber = do
 
   -- Fire cubes from each hand when their triggers are held down
   forM_ (zip hands handWorldPoses) $ \(handData, pose) -> do
-    when (trigger handData > 0.5 && frameNumber `mod` 1 == 0) $ 
+    when (trigger handData > 0.5 && frameNumber `mod` 30 == 0) $ 
       addCube transceiver pose
 
 
@@ -99,7 +99,7 @@ addCube transceiver pose = do
   -- Spawn a cube at the player's position and orientation
   instruction <- do
     objID <- getRandom
-    return $ UpdateObject objID (Object pose 0.25)
+    return $ CreateObject objID (Object pose 0.25)
 
   interpret instruction
 

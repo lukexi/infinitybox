@@ -12,6 +12,7 @@ import Control.Monad.State
 import System.Random
 import Control.Lens hiding (view)
 import Control.Monad.Random
+import Control.Concurrent
 
 import Sound.Pd1
 
@@ -22,8 +23,11 @@ import Types
 import Resources
 import Render
 import Controls
+import Server
 import qualified Data.Map as Map
 
+enableServer :: Bool
+enableServer = True
 
 enableVR :: Bool
 -- enableVR = False
@@ -35,6 +39,7 @@ enableHydra = True
 
 main :: IO ()
 main = do
+  when enableServer . void $ forkOS physicsServer
   -- Set up GLFW/Oculus/Hydra
   (window, events, maybeHMD, maybeRenderHMD, maybeSixenseBase) <- initWindow "Infinity Box" enableVR enableHydra  
   
@@ -42,8 +47,11 @@ main = do
   _multiDAC <- makePatch "src/multidac"
   openALSources <- getPdSources
   patches <- foldM (\accum sourceID -> do
+    let channelNum = length accum + 1
     voice <- makePatch "src/voice"
-    send voice "set-channel" (Atom (String $ "dac" ++ (show (length accum + 1))))
+    send voice "set-channel" (Atom (String $ "dac" ++ show channelNum))
+    --send voice "speed" (Atom (Float (realToFrac (channelNum * 100))))
+    alSourcePosition sourceID (V3 0 0 (-10000))
 
     output <- makeReceiveChan (local voice "output")
     return (accum ++ [(sourceID, voice, output)])
