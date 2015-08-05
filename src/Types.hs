@@ -6,13 +6,13 @@ module Types where
 
 import Data.Binary
 import GHC.Generics
-import Control.Monad.State
+import Control.Monad.State.Strict
 
 import Control.Lens
 import Linear
 import Graphics.GL
 import Graphics.GL.Pal2
-import Data.Map (Map)
+import Data.Map.Strict (Map)
 import System.Random
 import Network.Socket (PortNumber)
 import Data.Data

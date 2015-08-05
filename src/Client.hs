@@ -7,7 +7,7 @@ import Graphics.GL
 import Control.Concurrent.STM
 
 import Control.Monad
-import Control.Monad.State
+import Control.Monad.State.Strict
 import System.Random
 import Control.Lens hiding (view)
 import Control.Monad.Random
