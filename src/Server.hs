@@ -12,26 +12,38 @@ import Control.Concurrent.STM
 import Linear
 
 import Control.Lens
+
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
+
+import qualified Data.Sequence as Seq
+import Data.Sequence (Seq)
+
+import Data.Foldable
 
 import Physics.Bullet
 import Physics
 import Types
+import Game.Pal
+
+-- | The maximum number of cubes before we start kicking cubes out
+maxCubes :: Int
+maxCubes = 16
 
 data ServerState = ServerState 
   { _ssRigidBodies :: Map ObjectID RigidBody
   , _ssPlayers     :: Map PlayerID Player
   , _ssPlayerIDs   :: Map SockAddr PlayerID
+  , _ssCubeQueue   :: Seq ObjectID
   }
 
 newServerState :: ServerState
-newServerState = ServerState mempty mempty mempty
+newServerState = ServerState mempty mempty mempty mempty
 
 makeLenses ''ServerState
 
-main :: IO ()
-main = do
+physicsServer :: IO ()
+physicsServer = do
   putStrLn "Server engaged..."
 
   (getPacketsFromClients, broadcastToClients, disconnectionsChan) <- createServer serverName serverPort packetSize
@@ -64,38 +76,51 @@ main = do
       <$> forM rigidBodies (\(objID, rigidBody) -> do
             (pos, orient) <- getBodyState rigidBody
             let scale' = 1.0
-            return $ UpdateObject objID (Object pos orient scale'))
+            return $ UpdateObject objID (Object (Pose pos orient) scale'))
       <*> forM players (\(playerID, player) -> 
             return $ UpdatePlayer playerID player)
-
     
     -- Apply to our own copy of the world
-    forM_ transientInstructions interpret
+    interpret `mapM_` transientInstructions
 
     -- Broadcast the simulation results to all clients
     broadcastToClients $ Unreliable transientInstructions
+
+    -- Generate reliable instructions
+    -- Add the cube to the queue, and delete the oldest cubes
+    (keepers, deleters) <- Seq.splitAt maxCubes <$> lift (use ssCubeQueue)
+    lift $ ssCubeQueue .= keepers
+
+    let reliableInstructions = DeleteObject <$> toList deleters
+
+    forM_ reliableInstructions $ \instruction -> do
+      interpret instruction
+      broadcastToClients $ Reliable instruction
 
     -- Run at 60 FPS
     liftIO $ threadDelay (1000000 `div` 60)
 
 
 
--- | Interpret a client message 'updating' an object as creating that object
--- and add it to the physics world
+-- | Interpret a client message creating an object
+-- to add it to the physics world
 interpretS :: (MonadIO m, MonadState ServerState m) 
            => DynamicsWorld -> SockAddr -> Op -> m ()
-interpretS dynamicsWorld _fromAddr (UpdateObject objID obj) = do
+interpretS dynamicsWorld _fromAddr (CreateObject objID obj) = do
   
   rigidBody <- addCube dynamicsWorld
-                       mempty { position = obj ^. objPosition
-                              , rotation = obj ^. objOrientation
+                       mempty { position = obj ^. objPose . posPosition
+                              , rotation = obj ^. objPose . posOrientation
                               , scale    = realToFrac (obj ^. objScale)
                               }
   
   -- Shoot the cube outwards
-  let v = rotate ( obj ^. objOrientation ) ( V3 0 0 ( -3 ) )
+  let v = rotate ( obj ^. objPose . posOrientation ) ( V3 0 0 ( -3 ) )
   _ <- applyCentralForce rigidBody v
   ssRigidBodies . at objID ?= rigidBody
+
+  -- Add the cube to the expiration queue
+  ssCubeQueue %= (objID <|)
 
 interpretS _dynamicsWorld _fromAddr (UpdatePlayer playerID player) =
   ssPlayers . at playerID ?= player
@@ -104,7 +129,12 @@ interpretS _dynamicsWorld fromAddr (Connect playerID) =
   -- Associate the playerID with the fromAddr we already know,
   -- so we can send an accurate disconnect message later
   ssPlayerIDs . at fromAddr ?= playerID
+-- We handle the disconnection message immediately in handleDisconnections
+-- (FIXME remember & document why)
 interpretS _dynamicsWorld _fromAddr (Disconnect _) = return ()
+-- We already remove the objects from the CubeQueue when we process it
+interpretS _dynamicsWorld _fromAddr (DeleteObject _) = return ()
+interpretS _dynamicsWorld _fromAddr (UpdateObject _ _) = return ()
   
 
 
