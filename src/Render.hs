@@ -10,7 +10,7 @@ import Graphics.Oculus
 import Linear
 
 import Control.Monad
-import Control.Monad.State
+import Control.Monad.State.Strict
 import Control.Lens hiding (view)
 import qualified Data.Map as Map
 import Data.Maybe

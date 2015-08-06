@@ -12,7 +12,7 @@ import Linear
 import System.Hardware.Hydra
 
 import Control.Monad
-import Control.Monad.State
+import Control.Monad.State.Strict
 import Control.Lens hiding (view)
 import Control.Monad.Random
 
