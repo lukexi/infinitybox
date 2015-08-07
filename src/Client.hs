@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts, LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
--- module Client where
+module Client where
 import Graphics.UI.GLFW.Pal
 
 import Graphics.GL
@@ -27,7 +27,7 @@ import Controls
 import Server
 import qualified Data.Map as Map
 
-import qualified System.Remote.Monitoring as EKG
+--import qualified System.Remote.Monitoring as EKG
 
 enableEKG :: Bool
 enableEKG = True
@@ -45,7 +45,7 @@ enableHydra = False
 
 main :: IO ()
 main = do
-  when enableEKG    . void $ EKG.forkServer "localhost" 8000
+  --when enableEKG    . void $ EKG.forkServer "localhost" 8000
   when enableServer . void $ forkOS physicsServer
   -- Set up GLFW/Oculus/Hydra
   (window, events, maybeHMD, maybeRenderHMD, maybeSixenseBase) <- initWindow "Infinity Box" enableVR enableHydra  
