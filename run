@@ -1,4 +1,4 @@
 #!/bin/sh
 # This works around an issue with cabal test/cabal run on Windows where it doesn't link libstdc++ properly
 
-stack exec -- ghc $1/$2.hs -outputdir=build -i$1 -isrc -Wall -O2 -threaded -with-rtsopts="-N" && $1/$2
+stack exec -- ghc $1/$2.hs -outputdir=build -i$1 -isrc -Wall -O2 -threaded -with-rtsopts="-N" -lc++ && $1/$2

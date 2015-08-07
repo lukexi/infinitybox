@@ -39,7 +39,7 @@ library
     lens, mtl, random, MonadRandom,
     containers, oculus-mini, 
     text, JuicyPixels, vector,
-    hydra-hs, bullet-mini, pd
+    hydra-hs, bullet-mini, pd, ekg
 
 executable client
   main-is:             Main.hs

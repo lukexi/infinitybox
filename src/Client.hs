@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts, LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
---module Client where
+{-# LANGUAGE OverloadedStrings #-}
+-- module Client where
 import Graphics.UI.GLFW.Pal
 
 import Graphics.GL
@@ -26,6 +27,11 @@ import Controls
 import Server
 import qualified Data.Map as Map
 
+import qualified System.Remote.Monitoring as EKG
+
+enableEKG :: Bool
+enableEKG = True
+
 enableServer :: Bool
 enableServer = True
 
@@ -34,11 +40,12 @@ enableVR :: Bool
 enableVR = True
 
 enableHydra :: Bool
--- enableHydra = False
-enableHydra = True
+enableHydra = False
+-- enableHydra = True
 
 main :: IO ()
 main = do
+  when enableEKG    . void $ EKG.forkServer "localhost" 8000
   when enableServer . void $ forkOS physicsServer
   -- Set up GLFW/Oculus/Hydra
   (window, events, maybeHMD, maybeRenderHMD, maybeSixenseBase) <- initWindow "Infinity Box" enableVR enableHydra  
@@ -51,7 +58,7 @@ main = do
     voice <- makePatch "src/voice"
     send voice "set-channel" (Atom (String $ "dac" ++ show channelNum))
     --send voice "speed" (Atom (Float (realToFrac (channelNum * 100))))
-    alSourcePosition sourceID (V3 0 0 (-10000))
+    alSourcePosition sourceID (V3 0 0 (-10000) :: V3 GLfloat)
 
     output <- makeReceiveChan (local voice "output")
     return (accum ++ [(sourceID, voice, output)])
@@ -114,8 +121,8 @@ main = do
     --forM_ (zip openALSources handWorldPoses) $ \(sourceID, Pose posit _orient) -> do
     --  alSourcePosition sourceID posit
     cubes <- use wldCubes
-    forM_ (zip (Map.toList cubes) patches) $ \((cubeID, cube), (sourceID, patch, output)) -> do
-      alSourcePosition sourceID (cube ^. objPose . posPosition)
+    forM_ (zip (Map.toList cubes) patches) $ \((cubeID, cubeObj), (sourceID, patch, output)) -> do
+      alSourcePosition sourceID (cubeObj ^. objPose . posPosition)
       exhaustChanIO output >>= mapM_ (\val -> 
         case val of
           Atom (Float f) -> wldPatchOutput . at cubeID ?= realToFrac f
