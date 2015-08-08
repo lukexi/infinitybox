@@ -5,10 +5,10 @@ packages:
 - ../udp-pal
 - ../bullet-mini
 - ../game-pal
-- ../Thop/modules/glfw-pal
-- ../Thop/modules/oculus-mini
-- ../Thop/modules/hydra-hs
-- ../Thop/modules/pd-haskell
+- ../glfw-pal
+- ../oculus-mini
+- ../hydra-hs
+- ../pd-haskell
 extra-deps:
 - fsnotify-0.1.0.3
 - halive-0.1.0.5
@@ -20,5 +20,5 @@ extra-deps:
 - inline-c-cpp-0.1.0.0
 - ekg-0.4.0.7
 - ekg-core-0.1.0.4
-resolver: nightly-2015-06-28
+resolver: nightly-2015-08-07
 arch: x86_64

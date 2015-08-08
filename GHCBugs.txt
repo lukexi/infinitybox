@@ -1,0 +1,35 @@
+
+Log of attempting to fix linking pd on windows:
+
+First attempt, seeing if ghc's mingw\bin being in the path was wrong.
+This had no effect...
+Path was originally
+C:\msys64\usr\local\ghc-7.10.1\mingw\bin;C:\msys64\usr\local\ghc-7.10.1\bin;C:\Users\lukex_000\AppData\Roaming\cabal\bin;C:\Users\lukex_000\AppData\Roaming\local\bin;C:\Program Files\Sublime Text 3;
+
+Changing to:
+C:\msys64\usr\local\ghc-7.10.1\bin;C:\Users\lukex_000\AppData\Roaming\cabal\bin;C:\Users\lukex_000\AppData\Roaming\local\bin;C:\Program Files\Sublime Text 3;
+
+in ~/.profile, it was
+PATH=/usr/local/ghc-7.10.1/mingw/bin:/c/Users/lukex_000/AppData/Roaming/cabal/bin:$PATH
+
+changing to
+PATH=/c/Users/lukex_000/AppData/Roaming/cabal/bin:$PATH
+
+DETERMINED ROOT CAUSE:
+The problem occurs when cabal tries to compile a file that uses Template Haskell.
+So e.g. testpdpack/Types.hs imports Control.Lens, defines a data type and derives lenses using the TH makeLenses function.
+It doesn't matter if Types.hs doesn't import a library that needs a DLL, it fails anyway just if said library is listed in the .cabal file that defines the library Types is compiled into.
+
+So, one crappy workaround would be to separate out a package just for types that need Template Haskell derivation.
+Or, to manually add the Template Haskell splices. Neither are very fun, and the first one won't work for types
+that depend on dll-needing-library types (e.g. data Entity = Entity {entityBody::RigidBody} for udpcubes/bullet-mini)
+
+The problem does NOT occur with just calling ghc directly via cabal exec; e.g. cabal exec -- ghc Types.hs (Main works too).
+(this is because GHC on its own doesn't try to link unneccessary libs during TH linking)
+
+So that is another workaround; udpcubes can go back to building its executables monolithically rather than splitting out a library and using the "run" script as before.
+(we only split out the libraries for stack usage)
+
+
+I've built a debug version of ghc, which can be put into play for a cabal session with:
+cabal run --with-ghc='C:/msys64/home/lukex_000/Code/ghc/inplace/bin/ghc-stage2.exe'

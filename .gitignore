@@ -7,3 +7,10 @@ build/
 $Recycle.Bin/
 src/client
 src/server
+*.o
+*.hi
+*.dyn_o
+*.dyn_hi
+*.dump-splices
+*.no-pre.hs
+strip-thease

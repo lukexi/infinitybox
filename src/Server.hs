@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -F -pgmF strip-thease #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Server where
@@ -25,6 +26,7 @@ import Physics.Bullet
 import Physics
 import Types
 import Game.Pal
+
 
 -- | The maximum number of cubes before we start kicking cubes out
 maxCubes :: Int

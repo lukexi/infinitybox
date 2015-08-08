@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -F -pgmF strip-thease #-}
 {-# LANGUAGE DeriveFunctor, DeriveTraversable, DeriveAnyClass, DeriveGeneric, FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveDataTypeable #-}
@@ -17,6 +18,7 @@ import System.Random
 import Network.Socket (PortNumber)
 import Data.Data
 import Game.Pal
+--
 
 type ObjectID = Int
 type PlayerID = String
