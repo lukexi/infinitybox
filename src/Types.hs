@@ -18,6 +18,7 @@ import System.Random
 import Network.Socket (PortNumber)
 import Data.Data
 import Game.Pal
+--
 
 type ObjectID = Int
 type PlayerID = String

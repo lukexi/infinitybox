@@ -14,6 +14,9 @@ import System.Directory
 
 preprocessorPragma = "{-# OPTIONS_GHC -F -pgmF strip-thease #-}"
 
+buildDir = "build"
+
+main :: IO ()
 main = do
   [origFileName, _, outputFileName] <- getArgs
   let origBaseName = dropExtension origFileName
@@ -22,14 +25,18 @@ main = do
   -- preprocessor pragma stripped so we can run GHC ourselves
   originalFile <- T.readFile origFileName
   let noPreprocessor = T.replace preprocessorPragma "" originalFile
-      noPreprocessFileName = origBaseName <.> "no-pre.hs"
+      noPreprocessFileName = buildDir </> origBaseName <.> "no-pre.hs"
   _ <- T.writeFile noPreprocessFileName noPreprocessor
 
   -- Next, generate a splices dump file
-  rawSystem "stack" 
-    (words "exec -- ghc -ddump-splices -ddump-to-file -isrc -outputdir build" ++ [noPreprocessFileName])
+  _ <- rawSystem "stack" 
+    (words "exec -- ghc -ddump-splices -ddump-to-file -isrc -outputdir" 
+      ++ [buildDir, noPreprocessFileName])
 
-  let splicesDumpFileName = origBaseName <.> "no-pre.dump-splices"
+  -- Read in the .dump-splices file so we can extract the splices from it
+  -- NOTE weirdness: GHC nests a second "build" dir 
+  -- inside the first when generating the .dump-splices file
+  let splicesDumpFileName = buildDir </> buildDir </> origBaseName <.> "no-pre.dump-splices"
   splicesDump <- T.readFile splicesDumpFileName
   
   let textLines = T.lines splicesDump
@@ -50,12 +57,14 @@ main = do
         . splitAt 2      -- Split into the definition and the output
         . map (T.drop 4))     -- Remove leading whitespace
         rawSplices
-
-  let final = foldl' (\accum (spliceDef, spliceOut) -> 
+      -- Replace the splice defitions with their output
+      -- and write to the file location requested by GHC
+      final = foldl' (\accum (spliceDef, spliceOut) -> 
                 T.replace spliceDef spliceOut accum
-              ) originalFile cleanSplices 
-  T.writeFile outputFileName final
-  -- forM_ rawSplices $ \s -> T.putStrLn final >> print ""
-  
+              ) originalFile cleanSplices
+
+  _ <- T.writeFile outputFileName final
+  return ()
+
 
 

@@ -27,6 +27,7 @@ import Physics
 import Types
 import Game.Pal
 
+
 -- | The maximum number of cubes before we start kicking cubes out
 maxCubes :: Int
 maxCubes = 16
