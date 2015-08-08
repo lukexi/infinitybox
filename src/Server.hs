@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -F -pgmF strip-thease #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Server where

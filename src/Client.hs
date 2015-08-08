@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts, LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
--- module Client where
+module Client where
 import Graphics.UI.GLFW.Pal
 
 import Graphics.GL
