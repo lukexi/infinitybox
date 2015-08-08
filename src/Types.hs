@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -F -pgmF strip-thease #-}
+{-# OPTIONS_GHC -F -pgmF strip-ths #-}
 {-# LANGUAGE DeriveFunctor, DeriveTraversable, DeriveAnyClass, DeriveGeneric, FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveDataTypeable #-}
