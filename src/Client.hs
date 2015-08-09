@@ -100,12 +100,6 @@ main = do
     -- Process controllers (Keyboard, Mouse, Gamepad, Hydra, Oculus headtracking)
     processControls window events maybeSixenseBase maybeHMD transceiver frameNumber
 
-    -- Handle Pd events
-    --exhaustChanIO metro1 >>= mapM_ (\_ -> wldMetro1 .= 0)
-    --exhaustChanIO metro2 >>= mapM_ (\_ -> wldMetro2 .= 0)
-    --wldMetro1 += 0.01
-    --wldMetro2 += 0.01
-
     -- Send player position
     player <- use wldPlayer
     writeTransceiver transceiver $ Reliable $ UpdatePlayer playerID player
@@ -116,6 +110,7 @@ main = do
     alListenerPosition totalHeadPosit
     alListenerOrientation totalHeadOrient
 
+    -- Handle Pd events
     -- Update AL sources
     --handWorldPoses <- use (wldPlayer . plrHandPoses)
     --forM_ (zip openALSources handWorldPoses) $ \(sourceID, Pose posit _orient) -> do
