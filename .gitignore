@@ -12,3 +12,6 @@ src/server
 *.dyn_o
 *.dyn_hi
 .strip-ths/
+
+*.dump-splices
+*.no-pre.hs

@@ -116,7 +116,7 @@ main = do
     --forM_ (zip openALSources handWorldPoses) $ \(sourceID, Pose posit _orient) -> do
     --  alSourcePosition sourceID posit
     cubes <- use wldCubes
-    forM_ (zip (Map.toList cubes) patches) $ \((cubeID, cubeObj), (sourceID, patch, output)) -> do
+    forM_ (zip (Map.toList cubes) patches) $ \((cubeID, cubeObj), (sourceID, _patch, output)) -> do
       alSourcePosition sourceID (cubeObj ^. objPose . posPosition)
       exhaustChanIO output >>= mapM_ (\val -> 
         case val of

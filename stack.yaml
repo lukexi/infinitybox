@@ -9,9 +9,9 @@ packages:
 - ../oculus-mini
 - ../hydra-hs
 - ../pd-haskell
+- ../halive
 extra-deps:
-- fsnotify-0.1.0.3
-- halive-0.1.0.5
+- fsnotify-0.2.1
 - hfsevents-0.1.5
 - GLFW-b-1.4.7.2
 - bindings-GLFW-3.1.1.3
