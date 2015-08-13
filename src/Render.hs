@@ -3,10 +3,8 @@
 
 module Render where
 
-import Graphics.UI.GLFW.Pal
-
 import Graphics.GL
-import Graphics.Oculus
+
 import Linear
 
 import Control.Monad
@@ -20,34 +18,6 @@ import Graphics.GL.Pal2
 import Game.Pal
 import Types
 import Resources
-
-
-renderVR :: (MonadIO m, MonadState World m) 
-         => RenderHMD -> Resources -> m ()
-renderVR renderHMD resources = renderHMDFrame renderHMD $ \eyeViews -> do
-
-  glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
-
-  view <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
-
-  renderHMDEyes eyeViews $ \projection eyeView -> do
-
-    let finalView = eyeView !*! view 
-
-    render resources projection finalView 
-
-renderFlat :: (MonadIO m, MonadState World m) 
-           => Window -> Resources -> m ()
-renderFlat win resources = do
-
-  glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
-  
-  projection  <- makeProjection win
-  view <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
-
-  render resources projection view
-
-  swapBuffers win
 
 render :: (MonadIO m, MonadState World m) 
        => Resources

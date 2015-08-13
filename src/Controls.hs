@@ -5,7 +5,6 @@ module Controls where
 
 import Graphics.UI.GLFW.Pal
 
-import Graphics.GL
 import Graphics.Oculus
 import Linear
 
@@ -21,15 +20,14 @@ import Types
 
 import Game.Pal
 
-
--- processControls :: (MonadState World m, MonadIO m, MonadRandom m) 
---                 => Window
---                 -> Events
---                 -> Maybe SixenseBase
---                 -> Maybe HMD
---                 -> Transceiver Op
---                 -> Integer
---                 -> m ()
+processControls :: (MonadIO m, MonadState World m, MonadRandom m) 
+                => Window
+                -> Events
+                -> Maybe SixenseBase
+                -> Maybe HMD
+                -> Transceiver Op
+                -> Integer
+                -> m ()
 processControls window events sixenseBase maybeHMD transceiver frameNumber = do
   -- Get latest Hydra data
   hands <- maybe (return []) getHands sixenseBase
@@ -41,30 +39,26 @@ processControls window events sixenseBase maybeHMD transceiver frameNumber = do
   -- Update head position
   wldPlayer . plrHeadPose <~ getMaybeHMDPose maybeHMD
 
-
-
   -- Handle Hydra movement events, or mouse if no Hydra present
-  zoom (wldPlayer . plrPose) $ do
-    if null hands 
-      then do
-        isFocused <- getWindowFocused window
-        --when isFocused $ applyMouseLook window
-        return ()
-      else 
-        applyHydraJoystickMovement hands
-    -- Handle keyboard movement events
-    applyWASD window
+  if null hands 
+    then do
+      -- isFocused <- getWindowFocused window
+      -- when isFocused $ applyMouseLook window (wldPlayer . plrPose)
+      return ()
+    else 
+      applyHydraJoystickMovement hands (wldPlayer . plrPose)
+  -- Handle keyboard movement events
+  applyWASD window (wldPlayer . plrPose)
   
 
   -- Handle UI events
   processEvents events $ \e -> do
     closeOnEscape window e
 
-    zoom (wldPlayer . plrPose) $ applyGamepadJoystickMovement e
+    applyGamepadJoystickMovement e (wldPlayer . plrPose)
 
     -- Get player pose
-    playerPos <- use (wldPlayer . plrPose . posPosition)
-    playerRot <- use (wldPlayer . plrPose . posOrientation)
+    Pose playerPos playerRot <- use (wldPlayer . plrPose)
 
     onGamepadAxes e $ \GamepadAllAxes{..} -> 
       -- Use the right trigger to fire a cube

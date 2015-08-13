@@ -5,6 +5,7 @@ module Client where
 import Graphics.UI.GLFW.Pal
 
 import Graphics.GL
+import Graphics.GL.Pal2
 import Control.Concurrent.STM
 import Linear
 
@@ -125,10 +126,9 @@ main = do
         )
 
     -- Render to OpenGL
-    case maybeRenderHMD of
-
-      Nothing        -> renderFlat window    resources
-      Just renderHMD -> renderVR   renderHMD resources
+    glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
+    viewMat <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
+    renderWith window maybeRenderHMD viewMat (render resources)
 
 exhaustChanIO :: MonadIO m => TChan a -> m [a]
 exhaustChanIO = liftIO . atomically . exhaustChan
