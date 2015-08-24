@@ -11,14 +11,11 @@ packages:
 - ../pd-haskell
 - ../halive
 extra-deps:
-- fsnotify-0.2.1
-- hfsevents-0.1.5
 - GLFW-b-1.4.7.2
 - bindings-GLFW-3.1.1.3
-- Win32-notify-0.3.0.1
 - inline-c-0.5.4.3
 - inline-c-cpp-0.1.0.0
 - ekg-0.4.0.7
 - ekg-core-0.1.0.4
-resolver: nightly-2015-08-07
+resolver: lts-3.0
 arch: x86_64
