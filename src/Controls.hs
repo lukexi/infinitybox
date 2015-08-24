@@ -45,8 +45,8 @@ processControls window events sixenseBase maybeHMD transceiver frameNumber = do
       -- isFocused <- getWindowFocused window
       -- when isFocused $ applyMouseLook window (wldPlayer . plrPose)
       return ()
-    else 
-      --applyHydraJoystickMovement hands (wldPlayer . plrPose)
+    else do
+      applyHydraJoystickMovement hands (wldPlayer . plrPose)
       return ()
   -- Handle keyboard movement events
   applyWASD window (wldPlayer . plrPose)
@@ -56,7 +56,7 @@ processControls window events sixenseBase maybeHMD transceiver frameNumber = do
   processEvents events $ \e -> do
     closeOnEscape window e
 
-    --applyGamepadJoystickMovement e (wldPlayer . plrPose)
+    applyGamepadJoystickMovement e (wldPlayer . plrPose)
 
     -- Get player pose
     Pose playerPos playerRot <- use (wldPlayer . plrPose)
