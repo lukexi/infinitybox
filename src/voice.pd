@@ -51,7 +51,6 @@
 #X obj 174 486 r testmode;
 #X obj 43 579 s \$0set-channel;
 #X obj 43 545 symbol;
-#X connect 1 0 0 0;
 #X connect 2 0 31 0;
 #X connect 3 0 4 0;
 #X connect 4 0 2 1;

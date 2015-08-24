@@ -53,7 +53,7 @@ physicsServer = do
   
   -- Initialize physics
   dynamicsWorld  <- createDynamicsWorld mempty { gravity = 0.0 }
-  _              <- addBox dynamicsWorld (-10.0)
+  _              <- addBox dynamicsWorld (-1.5)
   
   
   let world = newWorld "Server"
@@ -131,6 +131,7 @@ interpretS _dynamicsWorld fromAddr (Connect playerID) =
   -- Associate the playerID with the fromAddr we already know,
   -- so we can send an accurate disconnect message later
   ssPlayerIDs . at fromAddr ?= playerID
+
 -- We handle the disconnection message immediately in handleDisconnections
 -- (FIXME remember & document why)
 interpretS _dynamicsWorld _fromAddr (Disconnect _) = return ()

@@ -12,12 +12,15 @@ import Control.Monad.State.Strict
 import Control.Lens hiding (view)
 import qualified Data.Map as Map
 import Data.Maybe
+import Data.Time
 
 import Graphics.GL.Pal2
 
 import Game.Pal
 import Types
 import Resources
+
+
 
 render :: (MonadIO m, MonadState World m) 
        => Resources
@@ -67,20 +70,27 @@ render Resources{..} projection view = do
   -- putStrLnIO (show view)
   let cam = uCamera (uniforms cube)
   uniformV3 cam eyePos
-  uniformF (uBeat (uniforms cube)) 1
+  uniformF (uTime (uniforms cube)) =<< realToFrac . utctDayTime <$> liftIO getCurrentTime
 
   setLightUniforms cube light1 light2 light3 light4
 
+
   withVAO (vAO cube) $ do
 
-    glEnable GL_CULL_FACE
-    glCullFace GL_BACK
+    glDisable GL_CULL_FACE
+   -- glCullFace GL_BACK
 
     let cubes = Map.unionWith interpolateObjects lastCubes newCubes
     forM_ ( zip [0..] ( Map.toList cubes ) ) $ \( i , (objID, obj) ) -> do
 
-      val <- fromMaybe 0 <$> use (wldPatchOutput . at objID)
-      uniformF (uBeat (uniforms cube)) val
+
+      uniformF ( uParameter1 (uniforms cube)) ( obj ^. objPose . posPosition . _x )
+      uniformF ( uParameter2 (uniforms cube)) ( obj ^. objPose . posPosition . _y )
+      uniformF ( uParameter3 (uniforms cube)) ( obj ^. objPose . posPosition . _z )
+      let rotateVec = rotate (obj ^. objPose . posOrientation) (V3 0 0 1) 
+      uniformF ( uParameter6 (uniforms cube)) ( rotateVec ^. _z )
+      uniformF ( uParameter4 (uniforms cube)) ( rotateVec ^. _x )
+      uniformF ( uParameter5 (uniforms cube)) ( rotateVec ^. _y )
 
       let model = mkTransformation (obj ^. objPose . posOrientation) (obj ^. objPose . posPosition)
 
@@ -101,7 +111,7 @@ render Resources{..} projection view = do
     --forM_ (zip handPoses [metro1Time, metro2Time]) $ \(Pose posit orient, metroTime) -> do
     forM_ handPoses $ \(Pose posit orient) -> do
       let model = mkTransformation orient posit
-      uniformF (uBeat (uniforms cube)) 1
+
       drawEntity model projectionView 0 cube 
 
     -- Draw all remote players' hands
@@ -132,6 +142,13 @@ render Resources{..} projection view = do
 
   setLightUniforms plane light1 light2 light3 light4
 
+  uniformF ( uParameter1 (uniforms plane)) 0.5
+  uniformF ( uParameter2 (uniforms plane)) 0.5
+  uniformF ( uParameter3 (uniforms plane)) 0.5
+
+  uniformF ( uParameter6 (uniforms plane)) 0.5
+  uniformF ( uParameter4 (uniforms plane)) 0.5
+  uniformF ( uParameter5 (uniforms plane)) 0.5
 
   withVAO (vAO plane) $ do
 
