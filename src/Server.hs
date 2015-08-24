@@ -141,10 +141,7 @@ interpretS dynamicsWorld fromAddr (Connect playerID) = do
 
   handRigidBodies <- replicateM 2 $ do
     body <- addCube dynamicsWorld
-                    mempty { scale    = V3 ( (handDimensions ^. _x) * 0.75 )
-                                           ( (handDimensions ^. _y) * 0.75 )
-                                           ( (handDimensions ^. _z) * 0.75 )
-                           }
+                    mempty { scale    = handDimensions * 0.75 }
     setRigidBodyKinematic body
     return body
 

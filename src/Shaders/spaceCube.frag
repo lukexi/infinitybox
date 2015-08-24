@@ -105,6 +105,14 @@ float opRepBox( vec3 p, vec3 c , float r)
     return udBox( q  ,vec3( r ));
 }
 
+float smin( float a, float b )
+{
+  float k = 0.16;
+  float h = clamp( 0.5 + 0.5*(b-a)/k, 0.0, 1.0 );
+  return mix( b, a, h ) - k*h*(1.0-h);
+}
+
+
 
 // Using SDF from IQ's two tweet shadertoy : 
 // https://www.shadertoy.com/view/MsfGzM
@@ -163,6 +171,8 @@ vec2 map( vec3 pos ){
     vec2 res;
     if( gl_FrontFacing ){
        res = vec2( sdBlob2( pos ) , 1. );
+       res.x = smin( res.x , sdSphere(pos - vLight1, .1 ));
+       res.x = smin( res.x , sdSphere(pos - vLight2, .1 ));
     }else{
       res = vec2( sphereField( pos ) , 2. );
     }

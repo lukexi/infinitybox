@@ -39,9 +39,11 @@ render Resources{..} projection view = do
 
   -- FIXME(lukexi) fix this horrible abomination
   localHandPoses <- use $ wldPlayer . plrHandPoses
-  let (light1, light2)  = case map (^. posPosition) localHandPoses of
+  let (light1, light2)  = case map (shiftBy (V3 0 0 (-0.5))) localHandPoses of
         [left,right] -> (left, right)
         _            -> (0, 0)
+     
+
 
   localPlayerID <- use wldPlayerID
   remoteHandPoses <- use $ wldPlayers . to Map.toList . to (filter (\(playerID, _) -> playerID /= localPlayerID))
@@ -109,17 +111,21 @@ render Resources{..} projection view = do
     --metro2Time <- use wldMetro2
     handPoses <- use $ wldPlayer . plrHandPoses
     --forM_ (zip handPoses [metro1Time, metro2Time]) $ \(Pose posit orient, metroTime) -> do
-    forM_ handPoses $ \(Pose posit orient) -> do
-      let model = mkTransformation orient posit
-
-      drawEntity model projectionView 0 cube 
+    forM_ handPoses $ \handPose -> do
+      let shiftPos = shiftBy ( V3 0 0 (-0.25) ) handPose
+          finalMatrix = mkTransformation  ( handPose ^. posOrientation ) shiftPos
+      
+      drawEntity finalMatrix projectionView 0 cube 
 
     -- Draw all remote players' hands
     players <- use $ wldPlayers . to Map.toList
     forM_ players $ \(playerID, player) -> 
       when (playerID /= localPlayerID) $ do
         forM_ (player ^. plrHandPoses) $ \handPose -> do
-          drawEntity (poseToMatrix handPose) projectionView 0 cube 
+          let shiftPos = shiftBy ( V3 0 0 (-0.25) ) handPose
+              finalMatrix = mkTransformation  ( handPose ^. posOrientation ) shiftPos
+        
+          drawEntity finalMatrix projectionView 0 cube
 
   -- Draw all remote players' heads 
   -- (we don't draw the local player's head)
@@ -127,7 +133,10 @@ render Resources{..} projection view = do
     players <- use $ wldPlayers . to Map.toList
     forM_ players $ \(playerID, player) -> 
       when (playerID /= localPlayerID) $ do
-        drawEntity (poseToMatrix (player ^. plrPose)) projectionView 0 cube
+        let shiftPos = shiftBy ( V3 0 0 1.5 ) ( player ^. plrPose )
+            finalMatrix = mkTransformation  ( player ^. plrPose . posOrientation ) shiftPos
+        
+        drawEntity finalMatrix projectionView 0 cube
 
   
 
@@ -218,3 +227,5 @@ drawEntity model projectionView drawID anEntity = do
   glDrawElements GL_TRIANGLES vc GL_UNSIGNED_INT nullPtr
 
 
+--shiftBy::
+shiftBy vec pose  = (pose ^. posPosition) + rotate (pose ^. posOrientation) vec
