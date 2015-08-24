@@ -1,4 +1,8 @@
+{-# LANGUAGE CPP #-}
+#ifdef mingw32_HOST_OS
 {-# OPTIONS_GHC -F -pgmF strip-ths #-}
+#endif
+
 {-# LANGUAGE DeriveFunctor, DeriveTraversable, DeriveAnyClass, DeriveGeneric, FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveDataTypeable #-}
@@ -19,30 +23,29 @@ import Network.Socket (PortNumber)
 import Data.Data
 import Game.Pal
 --
-
 type ObjectID = Int
 type PlayerID = String
 
 data Object = Object
-  { _objPose  :: Pose
-  , _objScale :: GLfloat
+  { _objPose  :: !Pose
+  , _objScale :: !GLfloat
   } deriving (Generic, Binary, Show)
 
 data Player = Player 
-  { _plrPose      :: Pose    
-  , _plrHeadPose  :: Pose
-  , _plrHandPoses :: [Pose]
+  { _plrPose      :: !Pose    
+  , _plrHeadPose  :: !Pose
+  , _plrHandPoses :: ![Pose]
   } deriving (Generic, Binary, Show)
 
 data World = World
-  { _wldPlayer       :: Player
-  , _wldPlayerID     :: PlayerID
-  , _wldPlayers      :: Map PlayerID Player
-  , _wldCubes        :: Map ObjectID Object
-  , _wldLastCubes    :: Map ObjectID Object
-  , _wldPatchOutput  :: Map ObjectID GLfloat
-  , _wldEyeDebug     :: V3 GLfloat
-  , _wldFrameNumber  :: Integer
+  { _wldPlayer       :: !Player
+  , _wldPlayerID     :: !PlayerID
+  , _wldPlayers      :: !(Map PlayerID Player)
+  , _wldCubes        :: !(Map ObjectID Object)
+  , _wldLastCubes    :: !(Map ObjectID Object)
+  , _wldPatchOutput  :: !(Map ObjectID GLfloat)
+  , _wldEyeDebug     :: !(V3 GLfloat)
+  , _wldFrameNumber  :: !Integer
   }
 
 makeLenses ''Object
@@ -81,12 +84,12 @@ interpret (Disconnect playerID)          = do
 
 -- | Deriving Generics
 
-data Op = CreateObject ObjectID Object
-        | UpdateObject ObjectID Object
-        | DeleteObject ObjectID
-        | Connect      PlayerID
-        | UpdatePlayer PlayerID Player
-        | Disconnect   PlayerID
+data Op = CreateObject !ObjectID !Object
+        | UpdateObject !ObjectID !Object
+        | DeleteObject !ObjectID
+        | Connect      !PlayerID
+        | UpdatePlayer !PlayerID !Player
+        | Disconnect   !PlayerID
   deriving (Generic, Binary, Show)
 
 -- Util
@@ -120,8 +123,8 @@ serverPort :: PortNumber
 serverPort = 3000
 
 serverName :: String
--- serverName = "127.0.0.1"
-serverName = "10.0.1.158"
+serverName = "127.0.0.1"
+-- serverName = "10.0.1.158"
 
 packetSize :: Int
 packetSize = 4096

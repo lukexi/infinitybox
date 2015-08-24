@@ -15,3 +15,9 @@ src/server
 
 *.dump-splices
 *.no-pre.hs
+
+*.aux
+*.hp
+*.ps
+*.pdf
+*.prof

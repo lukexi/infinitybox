@@ -13,6 +13,9 @@ data Resources = Resources
   , face  :: Entity Uniforms
   }
 
+handDimensions :: V3 GLfloat
+handDimensions = V3 0.2 0.2 1
+
 loadResources :: IO Resources
 loadResources = do
   
@@ -44,7 +47,7 @@ loadResources = do
 
   -- Set up our hand resources
   handProg  <- createShaderProgram "src/shaders/plane.vert" "src/shaders/plane.frag"
-  handGeo   <- cubeGeometry ( V3 0.2 0.2 1 ) ( V3 1 1 1 )
+  handGeo   <- cubeGeometry handDimensions ( V3 1 1 1 )
 
   -- Set up face cube resources
   faceProg  <- createShaderProgram "src/shaders/plane.vert" "src/shaders/plane.frag"

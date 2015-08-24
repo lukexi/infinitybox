@@ -26,48 +26,52 @@ import Resources
 import Render
 import Controls
 import Server
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 
---import qualified System.Remote.Monitoring as EKG
+import qualified System.Remote.Monitoring as EKG
 
 enableEKG :: Bool
-enableEKG = True
+enableEKG = False
+-- enableEKG = False
 
 enableServer :: Bool
-enableServer = False
+enableServer = True
+-- enableServer = False
 
 enableVR :: Bool
--- enableVR = False
 enableVR = True
+-- enableVR = False
 
 enableHydra :: Bool
 enableHydra = True
--- enableHydra = True
+-- enableHydra = False
 
-main :: IO ()
-main = do
-  --when enableEKG    . void $ EKG.forkServer "localhost" 8000
-  when enableServer . void $ forkOS physicsServer
-  -- Set up GLFW/Oculus/Hydra
-  (window, events, maybeHMD, maybeRenderHMD, maybeSixenseBase) <- initWindow "Infinity Box" enableVR enableHydra  
-  
+initAudio = do
   -- Set up sound
-  _multiDAC <- makePatch "src/multidac"
+  _multiDAC <- makePatch "src/Patches/multidac"
   openALSources <- getPdSources
   patches <- foldM (\accum sourceID -> do
+    -- Set each voice to a unique channel from 1-16
     let channelNum = length accum + 1
-    voice <- makePatch "src/voice"
+    voice <- makePatch "src/Patches/voice"
     send voice "set-channel" (Atom (String $ "dac" ++ show channelNum))
     --send voice "speed" (Atom (Float (realToFrac (channelNum * 100))))
     alSourcePosition sourceID (V3 0 0 (-10000) :: V3 GLfloat)
 
     output <- makeReceiveChan (local voice "output")
     return (accum ++ [(sourceID, voice, output)])
-    ) [] openALSources 
-  --patch <- makePatch "src/world"
+    ) [] openALSources
+  return patches
+
+main :: IO ()
+main = do
+  when enableEKG    . void $ EKG.forkServer "localhost" 8000
+  when enableServer . void $ forkOS physicsServer
+  -- Set up GLFW/Oculus/Hydra
+  (window, events, maybeHMD, maybeRenderHMD, maybeSixenseBase) <- initWindow "Infinity Box" enableVR enableHydra  
   
-  --metro1 <- makeReceiveChan (local patch "metro1")
-  --metro2 <- makeReceiveChan (local patch "metro2")
+  -- patches <- initAudio
+  let patches = []
 
   -- Set up networking
   transceiver@Transceiver{..} <- createTransceiverToAddress serverName serverPort packetSize
@@ -113,9 +117,13 @@ main = do
 
     -- Handle Pd events
     -- Update AL sources
+
+    -- Pass hand positions to OpenAL sources
     --handWorldPoses <- use (wldPlayer . plrHandPoses)
     --forM_ (zip openALSources handWorldPoses) $ \(sourceID, Pose posit _orient) -> do
     --  alSourcePosition sourceID posit
+
+
     cubes <- use wldCubes
     forM_ (zip (Map.toList cubes) patches) $ \((cubeID, cubeObj), (sourceID, _patch, output)) -> do
       alSourcePosition sourceID (cubeObj ^. objPose . posPosition)

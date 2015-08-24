@@ -9,3 +9,15 @@
   [x] Add head pose field to Player and transmit to server
 [x] Cube expiration
 
+BUGS
+[x] Delete cube physics bodies
+[ ] Fix freeze
+[ ] Fix shivering avatars
+
+FEATURES
+[ ] Collision for hands
+[ ] Grabbing
+[ ] Add more lights to shaders
+[ ] Set up proper uniforms for player hands, passing orientations etc. to control the shaders
+[ ] Pass parameters to the room
+[ ] FFT as texture

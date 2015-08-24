@@ -28,50 +28,50 @@ library
     Types
     Render
     Controls
-  build-depends:       
-    network, 
-    free, stm, binary, linear, bytestring,
-    base,time,
-    gl, gl-pal2, 
-    glfw-pal, udp-pal, game-pal,
-    halive, linear, 
-    lens, mtl, random, MonadRandom,
-    containers, oculus-mini, 
-    hydra-hs, bullet-mini, pd
-    -- , ekg
+  build-depends:
+      network
+    , base
+    , binary
+    , bullet-mini
+    , bytestring
+    , containers
+    , ekg
+    , free
+    , game-pal
+    , gl
+    , gl-pal2
+    , glfw-pal
+    -- , halive
+    , hydra-hs
+    , lens
+    , linear
+    , linear
+    , MonadRandom
+    , mtl
+    , oculus-mini
+    , pd
+    , random
+    , stm
+    , time
+    , udp-pal
 
 executable client
   main-is:             Main.hs
   hs-source-dirs:      app/client
   -- other-modules:
-  build-depends:       
-    network, 
-    free, stm, binary, linear, bytestring,
-    base,
-    gl, gl-pal2, 
-    glfw-pal, udp-pal,
-    halive, linear, 
-    lens, mtl, random, MonadRandom,
-    containers, oculus-mini, 
-    text, JuicyPixels, vector,
-    hydra-hs,time,
-    infinitybox
+  build-depends:
+    base, infinitybox
   default-language:    Haskell2010
-  ghc-options:         -Wall -O2 -threaded -rtsopts -with-rtsopts=-N
+  -- -T enables GC data collection, and is apparently benign to performance according to jtibell
+  ghc-options:         -Wall -O2 -threaded -rtsopts "-with-rtsopts=-N -T"
+  ghc-prof-options:    -Wall -O2 -threaded -rtsopts -prof -fprof-auto "-with-rtsopts=-N -T -p -s"
 
 executable server
   main-is:             Main.hs
   hs-source-dirs:      app/server
   -- other-modules:
-  build-depends:       
-    network, 
-    free, stm, binary, linear, bytestring,
-    base,
-    gl, gl-pal2, 
-    glfw-pal, udp-pal,
-    halive, linear, 
-    lens, mtl, random, MonadRandom,
-    containers, bullet-mini, 
-    infinitybox
+  build-depends:
+    base, infinitybox
   default-language:    Haskell2010
-  ghc-options:         -Wall -O2 -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -Wall -O2 -threaded -rtsopts "-with-rtsopts=-N -T"
+  ghc-prof-options:    -Wall -O2 -threaded -rtsopts -prof -fprof-auto "-with-rtsopts=-N -T -p -s"

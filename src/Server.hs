@@ -1,4 +1,8 @@
+{-# LANGUAGE CPP #-}
+#ifdef mingw32_HOST_OS
 {-# OPTIONS_GHC -F -pgmF strip-ths #-}
+#endif
+
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Server where
@@ -24,6 +28,7 @@ import Data.Foldable
 
 import Physics.Bullet
 import Physics
+import Resources
 import Types
 import Game.Pal
 
@@ -33,14 +38,15 @@ maxCubes :: Int
 maxCubes = 16
 
 data ServerState = ServerState 
-  { _ssRigidBodies :: Map ObjectID RigidBody
-  , _ssPlayers     :: Map PlayerID Player
-  , _ssPlayerIDs   :: Map SockAddr PlayerID
-  , _ssCubeQueue   :: Seq ObjectID
+  { _ssRigidBodies         :: !(Map ObjectID RigidBody)
+  , _ssPlayerRigidBodies   :: !(Map PlayerID [RigidBody])
+  , _ssPlayers             :: !(Map PlayerID Player)
+  , _ssPlayerIDs           :: !(Map SockAddr PlayerID)
+  , _ssCubeExpirationQueue :: !(Seq ObjectID)
   }
 
 newServerState :: ServerState
-newServerState = ServerState mempty mempty mempty mempty
+newServerState = ServerState mempty mempty mempty mempty mempty
 
 makeLenses ''ServerState
 
@@ -58,7 +64,7 @@ physicsServer = do
   
   let world = newWorld "Server"
   void . flip runStateT newServerState . flip runStateT world . forever $ do
-    handleDisconnections disconnectionsChan broadcastToClients
+    handleDisconnections disconnectionsChan broadcastToClients dynamicsWorld
     -- Receive updates from clients
     interpredNetworkPacketsFromOthers getPacketsFromClients $ \fromAddr message -> do
       -- Apply to our state
@@ -81,23 +87,22 @@ physicsServer = do
             return $ UpdateObject objID (Object (Pose pos orient) scale'))
       <*> forM players (\(playerID, player) -> 
             return $ UpdatePlayer playerID player)
-    
-    -- Apply to our own copy of the world
-    interpret `mapM_` transientInstructions
-
-    -- Broadcast the simulation results to all clients
-    broadcastToClients $ Unreliable transientInstructions
 
     -- Generate reliable instructions
     -- Add the cube to the queue, and delete the oldest cubes
-    (keepers, deleters) <- Seq.splitAt maxCubes <$> lift (use ssCubeQueue)
-    lift $ ssCubeQueue .= keepers
+    deleters <- Seq.drop maxCubes <$> lift (use ssCubeExpirationQueue)
 
     let reliableInstructions = DeleteObject <$> toList deleters
 
     forM_ reliableInstructions $ \instruction -> do
       interpret instruction
       broadcastToClients $ Reliable instruction
+
+    -- Apply to our own copy of the world
+    interpret `mapM_` transientInstructions
+
+    -- Broadcast the simulation results to all clients
+    broadcastToClients $ Unreliable transientInstructions
 
     -- Run at 60 FPS
     liftIO $ threadDelay (1000000 `div` 60)
@@ -111,9 +116,9 @@ interpretS :: (MonadIO m, MonadState ServerState m)
 interpretS dynamicsWorld _fromAddr (CreateObject objID obj) = do
   
   rigidBody <- addCube dynamicsWorld
-                       mempty { position = obj ^. objPose . posPosition
-                              , rotation = obj ^. objPose . posOrientation
-                              , scale    = realToFrac (obj ^. objScale)
+                       mempty { position = obj ^. objPose  . posPosition
+                              , rotation = obj ^. objPose  . posOrientation
+                              , scale    = obj ^. objScale . to realToFrac
                               }
   
   -- Shoot the cube outwards
@@ -122,28 +127,48 @@ interpretS dynamicsWorld _fromAddr (CreateObject objID obj) = do
   ssRigidBodies . at objID ?= rigidBody
 
   -- Add the cube to the expiration queue
-  ssCubeQueue %= (objID <|)
+  ssCubeExpirationQueue %= (objID <|)
 
-interpretS _dynamicsWorld _fromAddr (UpdatePlayer playerID player) =
+interpretS _dynamicsWorld _fromAddr (UpdatePlayer playerID player) = do
   ssPlayers . at playerID ?= player
 
-interpretS _dynamicsWorld fromAddr (Connect playerID) = 
+  maybeHandRigidBodies <- use $ ssPlayerRigidBodies . at playerID
+  forM_ maybeHandRigidBodies $ \handRigidBodies -> 
+    forM_ (zip (player ^. plrHandPoses) handRigidBodies) $ \(handPose, handRigidBody) -> 
+      setRigidBodyWorldTransform handRigidBody (handPose ^. posPosition) (handPose ^. posOrientation)
+
+interpretS dynamicsWorld fromAddr (Connect playerID) = do
   -- Associate the playerID with the fromAddr we already know,
   -- so we can send an accurate disconnect message later
   ssPlayerIDs . at fromAddr ?= playerID
 
--- We handle the disconnection message immediately in handleDisconnections
--- (FIXME remember & document why)
-interpretS _dynamicsWorld _fromAddr (Disconnect _) = return ()
--- We already remove the objects from the CubeQueue when we process it
-interpretS _dynamicsWorld _fromAddr (DeleteObject _) = return ()
-interpretS _dynamicsWorld _fromAddr (UpdateObject _ _) = return ()
+  handRigidBodies <- replicateM 2 $ do
+    body <- addCube dynamicsWorld
+                    mempty { scale    = handDimensions
+                           }
+    setRigidBodyKinematic body
+    return body
+
+  ssPlayerRigidBodies . at playerID ?= handRigidBodies
+
+interpretS _dynamicsWorld fromAddr (Disconnect _) = 
+  ssPlayerIDs . at fromAddr .= Nothing
+
+interpretS dynamicsWorld _fromAddr (DeleteObject objID) = do
+
+  rigidBody <- use $ ssRigidBodies . at objID
+  maybe (return ()) (removeCube dynamicsWorld) rigidBody
   
+  ssCubeExpirationQueue %= Seq.filter (/= objID)
+  ssRigidBodies . at objID .= Nothing
+
+interpretS _dynamicsWorld _fromAddr (UpdateObject _ _) = return ()
 
 
-handleDisconnections :: (MonadIO (t m), MonadTrans t, MonadState World (t m), MonadState ServerState m) 
-                     => TChan SockAddr -> (AppPacket Op -> t m ()) -> t m ()
-handleDisconnections disconnectionsChan broadcastToClients = do
+
+handleDisconnections :: (MonadIO m, MonadIO (t m), MonadTrans t, MonadState World (t m), MonadState ServerState m) 
+                     => TChan SockAddr -> (AppPacket Op -> t m ()) -> DynamicsWorld -> t m ()
+handleDisconnections disconnectionsChan broadcastToClients dynamicsWorld = do
   disconnections <- liftIO (atomically (exhaustChan disconnectionsChan))
   forM_ disconnections $ \fromAddr -> do
     -- For each SockAddr we've detected a disconnection from,
@@ -156,8 +181,9 @@ handleDisconnections disconnectionsChan broadcastToClients = do
       Nothing -> putStrLnIO $ "Couldn't find playerID for disconnecting address: " ++ show fromAddr
       Just playerID -> do
         let message = Disconnect playerID
-        lift $ ssPlayerIDs . at fromAddr .= Nothing
+        
         interpret message
+        lift $ interpretS dynamicsWorld fromAddr message
         
         broadcastToClients (Reliable message)
 

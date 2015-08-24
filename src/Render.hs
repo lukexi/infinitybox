@@ -10,7 +10,7 @@ import Linear
 import Control.Monad
 import Control.Monad.State.Strict
 import Control.Lens hiding (view)
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Maybe
 import Data.Time
 
@@ -81,7 +81,7 @@ render Resources{..} projection view = do
    -- glCullFace GL_BACK
 
     let cubes = Map.unionWith interpolateObjects lastCubes newCubes
-    forM_ ( zip [0..] ( Map.toList cubes ) ) $ \( i , (objID, obj) ) -> do
+    forM_ ( zip [0..] ( Map.toList cubes ) ) $ \( i , (_objID, obj) ) -> do
 
 
       uniformF ( uParameter1 (uniforms cube)) ( obj ^. objPose . posPosition . _x )
