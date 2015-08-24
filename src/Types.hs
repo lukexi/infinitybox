@@ -59,7 +59,7 @@ interpolatePoses (Pose p1 o1) (Pose p2 o2) =
 
 newPlayer :: Player
 newPlayer = Player
-  { _plrPose      = Pose (V3 0 5 0) (axisAngle (V3 0 1 0) 0)
+  { _plrPose      = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
   , _plrHeadPose  = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
   , _plrHandPoses = []
   }
@@ -106,8 +106,14 @@ data Uniforms = Uniforms
   , uLight2              :: UniformLocation (V3  GLfloat)
   , uLight3              :: UniformLocation (V3  GLfloat)
   , uLight4              :: UniformLocation (V3  GLfloat)
+  , uParameter1          :: UniformLocation GLfloat
+  , uParameter2          :: UniformLocation GLfloat
+  , uParameter3          :: UniformLocation GLfloat
+  , uParameter4          :: UniformLocation GLfloat
+  , uParameter5          :: UniformLocation GLfloat
+  , uParameter6          :: UniformLocation GLfloat
   , uID                  :: UniformLocation GLfloat
-  , uBeat                :: UniformLocation GLfloat
+  , uTime                :: UniformLocation GLfloat
   } deriving (Data)
 
 serverPort :: PortNumber
