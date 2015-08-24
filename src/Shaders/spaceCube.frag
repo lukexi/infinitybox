@@ -13,7 +13,8 @@ in vec3 vPos;
 in vec3 vCam;
 in vec3 vNorm;
 
-in vec3 vLight;
+in vec3 vLight1;
+in vec3 vLight2;
 
 in vec2 vUv;
 
@@ -243,12 +244,15 @@ vec3 calcNormal( in vec3 pos ){
 }*/
 
 
-vec3 doCol( float lamb , float spec ){
+vec3 doCol( float lamb1 , float spec1  , float lamb2 , float spec2){
 
-  float nSpec= pow( spec , abs(sin(uParameter1 * 1.1))* 10. + 2. );
+  float nSpec1= pow( spec1 , abs(sin(uParameter1 * 1.1))* 10. + 2. );
+  float nSpec2= pow( spec2 , abs(sin(uParameter1 * 1.1))* 10. + 2. );
   return
-      hsv( lamb * .3 + uParameter2 , abs( sin( uParameter6 )) * .2 + .6 , abs( sin( uParameter2 ) * .4 + .6 )) * lamb 
-    + hsv( nSpec * .6 + uParameter3 , abs( sin( uParameter5 )) * .4 + .6 , abs( sin( uParameter4 ) * .3 + .8 )) * nSpec;
+      .5 *  hsv( lamb1  * .3 + uParameter2 , abs( sin( uParameter6 )) * .2 + .6 , abs( sin( uParameter2 ) * .4 + .6 )) * lamb1 
+    +  hsv( nSpec1 * .6 + uParameter3 , abs( sin( uParameter5 )) * .4 + .6 , abs( sin( uParameter4 ) * .3 + .8 )) * nSpec1
+    + .5 *  hsv( lamb2  * .3 + uParameter2 , abs( cos( uParameter6 )) * .2 + .6 , abs( cos( uParameter2 ) * .4 + .6 )) * lamb2
+    +  hsv( nSpec2 * .6 + uParameter3 , abs( cos( uParameter5 )) * .4 + .6 , abs( cos( uParameter4 ) * .3 + .8 )) * nSpec2;
 }
 
 
@@ -260,28 +264,39 @@ void main(){
   vec3 ro = vPos;
   vec3 rd = normalize( vPos - vCam );
 
-  vec3 lightDir = normalize( vLight - ro);
+  vec3 lightDir1 = normalize( vLight1 - ro);
+  vec3 lightDir2 = normalize( vLight2 - ro);
 
   vec2 res = calcIntersection( ro , rd );
 
-  vec3 reflDir = reflect( lightDir , vNorm );
+  vec3 reflDir1 = reflect( lightDir1 , vNorm );
+  vec3 reflDir2 = reflect( lightDir2 , vNorm );
 
-  float lamb = max( dot( vNorm , lightDir), 0.);
-  float spec = max( dot( reflDir , rd ), 0.);
+  float lamb1 = max( dot( vNorm , lightDir1), 0.);
+  float spec1 = max( dot( reflDir1 , rd ), 0.);
+
+  float lamb2 = max( dot( vNorm , lightDir2), 0.);
+  float spec2 = max( dot( reflDir2 , rd ), 0.);
 
 
-  float iLamb = max( dot( -vNorm , lightDir), 0.);
-  vec3  iReflDir = reflect( lightDir , -vNorm );
-  float iSpec = max( dot( iReflDir , rd ), 0.);
+
+  float iLamb1 = max( dot( -vNorm , lightDir1), 0.);
+  vec3  iReflDir1 = reflect( lightDir1 , -vNorm );
+  float iSpec1 = max( dot( iReflDir1 , rd ), 0.);
+
+  float iLamb2 = max( dot( -vNorm , lightDir2), 0.);
+  vec3  iReflDir2 = reflect( lightDir2 , -vNorm );
+  float iSpec2 = max( dot( iReflDir2 , rd ), 0.);
 
 
-  vec3 col = doCol( iLamb , iSpec );//-vNorm * .5 + .5;
+  vec3 col = doCol( iLamb1 , iSpec1 , iLamb2 , iSpec2 );//-vNorm * .5 + .5;
   
   if( res.y > .5 ){
 
     vec3 pos = ro + rd * res.x;
 
-    vec3 lightDir = normalize( vLight - pos);
+    vec3 lightDir1 = normalize( vLight1 - pos);
+    vec3 lightDir2 = normalize( vLight2 - pos);
     vec3 norm;
 
     if( res.y == 3.){
@@ -289,20 +304,24 @@ void main(){
     }else{
       norm = calcNormal( pos );
     }
-    vec3 reflDir = reflect( lightDir , norm );
+    vec3 reflDir1 = reflect( lightDir1 , norm );
+    vec3 reflDir2 = reflect( lightDir2 , norm );
 
-    float lamb = max( dot( norm , lightDir), 0.);
-    float spec = max( dot( reflDir , rd ), 0.);
+    float lamb1 = max( dot( norm , lightDir1 ), 0.);
+    float spec1 = max( dot( reflDir1 , rd ), 0.);
+
+    float lamb2 = max( dot( norm , lightDir2 ), 0.);
+    float spec2 = max( dot( reflDir2 , rd ), 0.);
 
 
     //col = lamb * vec3( 1. , 0. , 0. ) + pow( spec , 10.) * vec3( 0. , 0. , 1. );// norm * .5 +.5;
-    col = doCol( lamb , spec );
+    col = doCol( lamb1 , spec1 , lamb2 , spec2 );
   }
 
   if( vUv.x < .05 || vUv.x > .95 || vUv.y < .05 || vUv.y > .95 ){
 
 
-    col += doCol( lamb , spec );
+        col = doCol( lamb1 , spec1 , lamb2 , spec2 );
     col += vec3( .3 , .3 , .3 );
   }
 

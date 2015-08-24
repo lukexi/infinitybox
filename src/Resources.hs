@@ -14,7 +14,7 @@ data Resources = Resources
   }
 
 handDimensions :: V3 GLfloat
-handDimensions = V3 0.2 0.2 1
+handDimensions = V3 0.05 0.05 0.5
 
 loadResources :: IO Resources
 loadResources = do

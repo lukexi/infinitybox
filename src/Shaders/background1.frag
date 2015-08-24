@@ -13,7 +13,7 @@ in vec3 vPos;
 in vec3 vCam;
 in vec3 vNorm;
 
-in vec3 vLight;
+in vec3 vLight1;
 
 in vec2 vUv;
 
@@ -202,7 +202,7 @@ void main(){
   vec3 ro = vPos;
   vec3 rd = normalize( vPos - vCam );
 
-  vec3 lightDir = normalize( vLight - ro);
+  vec3 lightDir = normalize( vLight1 - ro);
 
   vec2 res = calcIntersection( ro , rd );
 
@@ -223,7 +223,7 @@ void main(){
 
     vec3 pos = ro + rd * res.x;
 
-    vec3 lightDir = normalize( vLight - pos);
+    vec3 lightDir = normalize( vLight1 - pos);
     vec3 norm = calcNormal( pos );
     
     vec3 reflDir = reflect( lightDir , norm );
