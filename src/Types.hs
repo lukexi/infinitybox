@@ -114,7 +114,8 @@ serverPort :: PortNumber
 serverPort = 3000
 
 serverName :: String
-serverName = "127.0.0.1"
+-- serverName = "127.0.0.1"
+serverName = "10.0.1.158"
 
 packetSize :: Int
 packetSize = 4096

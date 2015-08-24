@@ -34,7 +34,7 @@ enableEKG :: Bool
 enableEKG = True
 
 enableServer :: Bool
-enableServer = True
+enableServer = False
 
 enableVR :: Bool
 -- enableVR = False
