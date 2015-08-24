@@ -1,3 +1,33 @@
+
+
+BUGS
+[x] Delete cube physics bodies
+[x] Fix drift in Hydra
+[ ] Fix freeze
+[ ] Fix shivering avatars
+
+FEATURES
+[x] Collision for hands
+  [ ] Fix size of collider/mesh mismatch
+[ ] Grabbing
+[ ] Sound
+[ ] FFT as texture
+
+[ ] Add more lights to shaders
+[ ] Set up proper uniforms for player hands, passing orientations etc. to control the shaders
+[ ] Pass parameters to the room
+
+
+
+
+
+
+
+
+
+
+
+DONE
 [x] Fix bunk movement
 
 [x] Hydra calibration
@@ -8,16 +38,3 @@
 [x] Transmit player/hand positions
   [x] Add head pose field to Player and transmit to server
 [x] Cube expiration
-
-BUGS
-[x] Delete cube physics bodies
-[ ] Fix freeze
-[ ] Fix shivering avatars
-
-FEATURES
-[ ] Collision for hands
-[ ] Grabbing
-[ ] Add more lights to shaders
-[ ] Set up proper uniforms for player hands, passing orientations etc. to control the shaders
-[ ] Pass parameters to the room
-[ ] FFT as texture

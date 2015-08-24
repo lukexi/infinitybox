@@ -1,7 +1,4 @@
-{-# LANGUAGE CPP #-}
-#ifdef mingw32_HOST_OS
 {-# OPTIONS_GHC -F -pgmF strip-ths #-}
-#endif
 
 {-# LANGUAGE DeriveFunctor, DeriveTraversable, DeriveAnyClass, DeriveGeneric, FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}

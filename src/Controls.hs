@@ -76,9 +76,11 @@ processControls window events sixenseBase maybeHMD transceiver frameNumber = do
     onKeyDown Key'Y e (liftIO . print =<< use wldEyeDebug)
 
   -- Fire cubes from each hand when their triggers are held down
-  forM_ (zip hands handWorldPoses) $ \(handData, pose) -> do
+  forM_ (zip hands handWorldPoses) $ \(handData, Pose handPos handRot) -> do
+    -- Move the cube upwards a bit so it spawns at the tip of the hand
+    let cubePose = Pose (rotate handRot (V3 0 0.5 0) + handPos) handRot
     when (trigger handData > 0.5 && frameNumber `mod` 30 == 0) $ 
-      addCube transceiver pose
+      addCube transceiver cubePose
 
 
 totalHeadPose :: (MonadState World m) => m Pose
