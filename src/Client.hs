@@ -41,7 +41,7 @@ enableVR :: Bool
 enableVR = True
 
 enableHydra :: Bool
-enableHydra = False
+enableHydra = True
 -- enableHydra = True
 
 main :: IO ()
@@ -126,9 +126,11 @@ main = do
         )
 
     -- Render to OpenGL
-    glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
+    
     viewMat <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
-    renderWith window maybeRenderHMD viewMat (render resources)
+    renderWith window maybeRenderHMD viewMat 
+      (glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT))
+      (render resources)
 
 exhaustChanIO :: MonadIO m => TChan a -> m [a]
 exhaustChanIO = liftIO . atomically . exhaustChan
