@@ -1,4 +1,5 @@
-
+[ ] Fix cube firing timer (even though we're getting rid of that...)
+[ ] Add view recentering to hydra start buttons
 
 BUGS
 [x] Delete cube physics bodies
