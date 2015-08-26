@@ -8,6 +8,7 @@ BUGS
 [ ] Fix shivering avatars
 [ ] Fix size of collider/mesh mismatch
 [ ] Head is moving only by player position, and not by full oculus position
+[ ] Fix judder
 
 FEATURES
 [x] Add more lights to shaders
@@ -18,7 +19,6 @@ FEATURES
 [ ] Head shaders should look like deformable head
 
 [ ] Grabbing
-
 
 [ ] FFT as texture
 

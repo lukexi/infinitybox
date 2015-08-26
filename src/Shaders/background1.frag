@@ -98,7 +98,7 @@ float sdBlob( vec3 p ){
 
 float sphereField( vec3 p ){
 
-  float fieldSize = .1  + abs( sin( uParameter5) ) * 1.;
+  float fieldSize = .3  + abs( sin( uParameter5) ) * .1;
   //float fieldSize = .1;
   return opRepSphere( p , vec3(fieldSize ), .01 + uParameter4 * .05 );
 
@@ -140,10 +140,11 @@ vec2 map( vec3 pos ){
 
    // vec2 res = vec2( opRepSphere( pos , vec3( repSize ) , radius ) , 1. );
     //vec2 res = vec2( sdSphere( pos ,  radius ) , 1. );
-    vec2 res = vec2( sdBlob( pos ) , 1. );
-    res.x = opS( sdBox( pos , vec3(3.5) ) , res.x );
+    //vec2 res = vec2( sdBlob( pos ) , 1. );
+    //res.x = opS( sdBox( pos , vec3(3.5) ) , res.x );
 
-    //vec2 res =  vec2( sphereField( pos ) , 2. );
+    vec2 res =  vec2( sphereField( pos ) , 2. );
+    res.x = opS( sdBox( pos , vec3(3.) ) , res.x );
     return res;
     
 }
@@ -245,8 +246,8 @@ void main(){
   if( vUv.x < .05 || vUv.x > .95 || vUv.y < .05 || vUv.y > .95 ){
 
 
-    col += doCol( lamb , spec );
-    col += vec3( .3 , .3 , .3 );
+    //col += doCol( lamb , spec );
+    //col += vec3( .3 , .3 , .3 );
   }
 
   //vec3 col = vec3( 2. - length( texture2D( t_iri , vUv * 4. - vec2( 1.5 ) ) ));
