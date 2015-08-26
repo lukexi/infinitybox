@@ -7,13 +7,15 @@ BUGS
 [ ] Fix freeze
 [ ] Fix shivering avatars
 [ ] Fix size of collider/mesh mismatch
+[ ] Head is moving only by player position, and not by full oculus position
 
 FEATURES
 [x] Add more lights to shaders
 [x] Collision for hands
 [ ] Sound ( https://soundcloud.com/chvrches/chvrches-leave-a-trace-four-tet-remix-1 )
-[ ] Set up proper uniforms for player hands, passing orientations etc. to control the shaders
-[ ] Pass parameters to the room
+[x] Set up proper uniforms for player hands, passing orientations etc. to control the shaders
+[x] Pass parameters to the room
+[ ] Head shaders should look like deformable head
 
 [ ] Grabbing
 

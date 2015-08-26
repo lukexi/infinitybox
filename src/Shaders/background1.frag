@@ -40,6 +40,11 @@ vec2 opU( vec2 d1, vec2 d2 )
     return  d1.x < d2.x ? d1 : d2 ;
 }
 
+float opS( float d1, float d2 )
+{
+    return max(-d1,d2);
+}
+
 float sdBox( vec3 p, vec3 b )
 {
   vec3 d = abs(p) - b;
@@ -81,7 +86,7 @@ float opRepBox( vec3 p, vec3 c , float r)
 // Using SDF from IQ's two tweet shadertoy : 
 // https://www.shadertoy.com/view/MsfGzM
 float sdBlob( vec3 p ){
-
+  p = p * 1.;
   return length(
     .05 * cos( 9. * (sin( uParameter1 )+ 1.) * p.y * p.x )
     + cos(p) * (sin( uParameter2 ) * .01 + 1.) 
@@ -135,9 +140,10 @@ vec2 map( vec3 pos ){
 
    // vec2 res = vec2( opRepSphere( pos , vec3( repSize ) , radius ) , 1. );
     //vec2 res = vec2( sdSphere( pos ,  radius ) , 1. );
-    //vec2 res = vec2( sdBlob( pos ) , 1. );
+    vec2 res = vec2( sdBlob( pos ) , 1. );
+    res.x = opS( sdBox( pos , vec3(3.5) ) , res.x );
 
-    vec2 res =  vec2( sphereField( pos ) , 2. );
+    //vec2 res =  vec2( sphereField( pos ) , 2. );
     return res;
     
 }

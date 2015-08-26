@@ -136,3 +136,10 @@ randomColor :: MonadIO m => m (V4 GLfloat)
 randomColor = liftIO $ V4 <$> randomRIO (0, 1) <*> randomRIO (0, 1) <*> randomRIO (0, 1) <*> pure 1
 
 
+totalHeadPose :: (MonadState World m) => m Pose
+totalHeadPose = do
+  Pose playerPosit playerOrient <- use (wldPlayer . plrPose)
+  Pose headPosit headOrient     <- use (wldPlayer . plrHeadPose)
+  return $ Pose 
+    (headPosit  + playerPosit) 
+    (headOrient * playerOrient) -- quat rotation order must be rotation*original

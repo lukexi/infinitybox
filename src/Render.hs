@@ -22,12 +22,15 @@ import Resources
 
 
 
+
 render :: (MonadIO m, MonadState World m) 
        => Resources
        -> M44 GLfloat
        -> M44 GLfloat
        -> m ()
 render Resources{..} projection view = do
+
+  time <- realToFrac . utctDayTime <$> liftIO getCurrentTime
 
   newCubes  <- use wldCubes
   lastCubes <- use wldLastCubes
@@ -72,7 +75,7 @@ render Resources{..} projection view = do
   -- putStrLnIO (show view)
   let cam = uCamera (uniforms cube)
   uniformV3 cam eyePos
-  uniformF (uTime (uniforms cube)) =<< realToFrac . utctDayTime <$> liftIO getCurrentTime
+  uniformF (uTime (uniforms cube)) time
 
   setLightUniforms cube light1 light2 light3 light4
 
@@ -167,20 +170,40 @@ render Resources{..} projection view = do
   --------------------
   useProgram (program plane)
 
+  player <- use wldPlayer 
+
+  Pose totalHeadPosition totalHeadOriention <- totalHeadPose
+  
+  let rotateVec = rotate totalHeadOriention (V3 0 0 1)   
+
+  uniformF ( uParameter1 (uniforms plane)) ( totalHeadPosition ^. _x )
+  uniformF ( uParameter2 (uniforms plane)) ( totalHeadPosition ^. _y )
+  uniformF ( uParameter3 (uniforms plane)) ( totalHeadPosition ^. _z )
+
+  uniformF ( uParameter6 (uniforms plane)) ( rotateVec ^. _z )
+  uniformF ( uParameter4 (uniforms plane)) ( rotateVec ^. _x )
+  uniformF ( uParameter5 (uniforms plane)) ( rotateVec ^. _y )
+
+
+  --uniformF ( uParameter1 (uniforms plane)) ( sin $ time * 0.3)
+  --uniformF ( uParameter2 (uniforms plane)) ( sin $ time * 0.01)
+  --uniformF ( uParameter3 (uniforms plane)) ( sin $ time * 0.23)
+
+  --uniformF ( uParameter6 (uniforms plane)) ( sin $ time * 0.074)
+  --uniformF ( uParameter4 (uniforms plane)) ( sin $ time * 0.037)
+  --uniformF ( uParameter5 (uniforms plane)) ( sin $ time * 0.69 )
+
+
+
+
   -- printIO view
   let planeCamU = uCamera ( uniforms plane )
   uniformV3 planeCamU eyePos
 
   setLightUniforms plane light1 light2 light3 light4
+   
 
-  uniformF ( uParameter1 (uniforms plane)) 0.5
-  uniformF ( uParameter2 (uniforms plane)) 0.5
-  uniformF ( uParameter3 (uniforms plane)) 0.5
-
-  uniformF ( uParameter6 (uniforms plane)) 0.5
-  uniformF ( uParameter4 (uniforms plane)) 0.5
-  uniformF ( uParameter5 (uniforms plane)) 0.5
-
+    
   withVAO (vAO plane) $ do
 
     glEnable GL_CULL_FACE

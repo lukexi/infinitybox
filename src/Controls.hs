@@ -83,13 +83,7 @@ processControls window events sixenseBase maybeHMD transceiver frameNumber = do
       addCube transceiver cubePose
 
 
-totalHeadPose :: (MonadState World m) => m Pose
-totalHeadPose = do
-  Pose playerPosit playerOrient <- use (wldPlayer . plrPose)
-  Pose headPosit headOrient     <- use (wldPlayer . plrHeadPose)
-  return $ Pose 
-    (headPosit  + playerPosit) 
-    (headOrient * playerOrient) -- quat rotation order must be rotation*original
+
 
 addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Transceiver Op -> Pose -> m ()
 addCube transceiver pose = do
