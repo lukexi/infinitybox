@@ -80,7 +80,7 @@ render Resources{..} projection view = do
   withVAO (vAO cube) $ do
 
     glDisable GL_CULL_FACE
-   -- glCullFace GL_BACK
+    glCullFace GL_BACK
 
     let cubes = Map.unionWith interpolateObjects lastCubes newCubes
     forM_ ( zip [0..] ( Map.toList cubes ) ) $ \( i , (_objID, obj) ) -> do
@@ -101,6 +101,9 @@ render Resources{..} projection view = do
   -------------
   -- PLAYERS --
   -------------
+
+  setLightUniforms cube light1 light2 light3 light4
+  useProgram (program hand)
   withVAO (vAO hand) $ do
 
     glEnable GL_CULL_FACE
@@ -114,8 +117,18 @@ render Resources{..} projection view = do
     forM_ handPoses $ \handPose -> do
       let shiftPos = shiftBy ( V3 0 0 (-0.25) ) handPose
           finalMatrix = mkTransformation  ( handPose ^. posOrientation ) shiftPos
-      
-      drawEntity finalMatrix projectionView 0 cube 
+
+          rotateVec = rotate ( handPose ^. posOrientation ) (V3 0 0 1)
+
+      uniformF ( uParameter1 (uniforms hand)) ( handPose ^. posPosition . _x )
+      uniformF ( uParameter2 (uniforms hand)) ( handPose ^. posPosition . _y )
+      uniformF ( uParameter3 (uniforms hand)) ( handPose ^. posPosition . _z )
+
+      uniformF ( uParameter6 (uniforms hand)) ( rotateVec ^. _z )
+      uniformF ( uParameter4 (uniforms hand)) ( rotateVec ^. _x )
+      uniformF ( uParameter5 (uniforms hand)) ( rotateVec ^. _y )
+
+      drawEntity finalMatrix projectionView 0 hand
 
     -- Draw all remote players' hands
     players <- use $ wldPlayers . to Map.toList
@@ -124,16 +137,25 @@ render Resources{..} projection view = do
         forM_ (player ^. plrHandPoses) $ \handPose -> do
           let shiftPos = shiftBy ( V3 0 0 (-0.25) ) handPose
               finalMatrix = mkTransformation  ( handPose ^. posOrientation ) shiftPos
-        
-          drawEntity finalMatrix projectionView 0 cube
+              
+              rotateVec = rotate ( handPose ^. posOrientation ) (V3 0 0 1) 
+          
+          uniformF ( uParameter1 (uniforms hand)) ( handPose ^. posPosition . _x )
+          uniformF ( uParameter2 (uniforms hand)) ( handPose ^. posPosition . _y )
+          uniformF ( uParameter3 (uniforms hand)) ( handPose ^. posPosition . _z )
 
+          uniformF ( uParameter6 (uniforms hand)) ( rotateVec ^. _z )
+          uniformF ( uParameter4 (uniforms hand)) ( rotateVec ^. _x )
+          uniformF ( uParameter5 (uniforms hand)) ( rotateVec ^. _y )
+        
+          drawEntity finalMatrix projectionView 0 hand
   -- Draw all remote players' heads 
   -- (we don't draw the local player's head)
   withVAO (vAO face) $ do
     players <- use $ wldPlayers . to Map.toList
     forM_ players $ \(playerID, player) -> 
       when (playerID /= localPlayerID) $ do
-        let shiftPos = shiftBy ( V3 0 0 1.5 ) ( player ^. plrPose )
+        let shiftPos = shiftBy ( V3 0 0 5 ) ( player ^. plrPose )
             finalMatrix = mkTransformation  ( player ^. plrPose . posOrientation ) shiftPos
         
         drawEntity finalMatrix projectionView 0 cube
@@ -165,7 +187,7 @@ render Resources{..} projection view = do
     glCullFace GL_FRONT
 
     let model = mkTransformation 
-            ( axisAngle ( V3 1 0 0 ) 0.0 )
+            ( axisAngle ( V3 1 0 0 ) 0 )
             ( V3 0 0 0 )
 
     drawEntity model projectionView 0 plane
@@ -207,6 +229,9 @@ drawLights anEntity projectionView l1 l2 l3 l4 = do
 
     forM_ (zip [0..] [l1, l2, l3, l4]) $ \(i, lightPos) -> do
       let model = mkTransformation (axisAngle (V3 1 0 0) 0.0) lightPos
+      uniformF ( uParameter1 (uniforms anEntity)) ( lightPos ^. _x )
+      uniformF ( uParameter2 (uniforms anEntity)) ( lightPos ^. _y )
+      uniformF ( uParameter3 (uniforms anEntity)) ( lightPos ^. _z )
       drawEntity model projectionView i anEntity
 
 

@@ -249,7 +249,7 @@ void main(){
 
   //col = vCam * .5 + .5;
 
-  color = vec4( 1. );
+  //color = vec4( 1. );
   //color = vec4(vec3( length(col)) , 1. );
   color = vec4( col , 1. );
 

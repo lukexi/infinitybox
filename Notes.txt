@@ -5,19 +5,19 @@ BUGS
 [x] Fix drift in Hydra
 [ ] Fix freeze
 [ ] Fix shivering avatars
+[ ] Fix size of collider/mesh mismatch
 
 FEATURES
+[x] Add more lights to shaders
 [x] Collision for hands
-  [ ] Fix size of collider/mesh mismatch
-[ ] Grabbing
-[ ] Sound
-[ ] FFT as texture
-
-[ ] Add more lights to shaders
+[ ] Sound ( https://soundcloud.com/chvrches/chvrches-leave-a-trace-four-tet-remix-1 )
 [ ] Set up proper uniforms for player hands, passing orientations etc. to control the shaders
 [ ] Pass parameters to the room
 
+[ ] Grabbing
 
+
+[ ] FFT as texture
 
 
 
