@@ -1,13 +1,10 @@
-[ ] Fix cube firing timer (even though we're getting rid of that...)
-[ ] Add view recentering to hydra start buttons
 
 BUGS
 [x] Delete cube physics bodies
 [x] Fix drift in Hydra
 [ ] Fix freeze
-[ ] Fix shivering avatars
+[ ] Fix shivering avatars (is the server maybe relaying this back to us or something? Or, did I fix this by removing the reliable flag?)
 [ ] Fix size of collider/mesh mismatch
-[ ] Head is moving only by player position, and not by full oculus position
 [ ] Fix judder
 
 FEATURES
@@ -17,13 +14,23 @@ FEATURES
 [x] Set up proper uniforms for player hands, passing orientations etc. to control the shaders
 [x] Pass parameters to the room
 [ ] Head shaders should look like deformable head
+[ ] Rendered remote heads should include oculus position
 
 [ ] Grabbing
 
+[ ] Add view recentering to hydra start buttons
+[ ] Fix cube firing timer (even though we're getting rid of that...)
+
+
 [ ] FFT as texture
 
+[ ] Try gl_Discard on fragments outside of SDF boundary
 
 
+
+
+SIDEPROJECTS
+[ ] Finish Halive on Windows
 
 
 

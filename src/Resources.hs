@@ -43,16 +43,16 @@ loadResources = do
   -}
 
   -- Set up our cube resources
-  planeProg   <- createShaderProgram "src/shaders/raytrace.vert" "src/shaders/background1.frag"
-  planeGeo    <- cubeGeometry ( V3 3 3 3 ) ( V3 1 1 1 )
+  planeProg  <- createShaderProgram "src/shaders/raytrace.vert" "src/shaders/background1.frag"
+  planeGeo   <- cubeGeometry ( V3 3 3 3 ) ( V3 1 1 1 )
 
   -- Set up our hand resources
-  handProg  <- createShaderProgram "src/shaders/raytrace.vert" "src/shaders/spaceCube.frag"
-  handGeo   <- cubeGeometry handDimensions ( V3 1 1 1 )
+  handProg   <- createShaderProgram "src/shaders/raytrace.vert" "src/shaders/spaceCube.frag"
+  handGeo    <- cubeGeometry handDimensions ( V3 1 1 1 )
 
   -- Set up face cube resources
-  faceProg  <- createShaderProgram "src/shaders/raytrace.vert" "src/shaders/face.frag"
-  faceGeo   <- cubeGeometry ( V3 0.5 0.7 0.1 ) ( V3 1 1 1 )
+  faceProg   <- createShaderProgram "src/shaders/raytrace.vert" "src/shaders/face.frag"
+  faceGeo    <- cubeGeometry ( V3 0.5 0.7 0.1 ) ( V3 1 1 1 )
 
   plane      <- entity planeGeo planeProg 
   cube       <- entity cubeGeo  cubeProg 
