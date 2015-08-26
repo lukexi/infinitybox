@@ -1,0 +1,9 @@
+#N canvas 0 22 450 300 10;
+#X obj 96 60 voice;
+#X obj 96 80 voice;
+#X obj 136 60 voice;
+#X obj 136 80 voice;
+#X obj 176 60 voice;
+#X obj 176 80 voice;
+#X obj 216 60 voice;
+#X obj 216 80 voice;

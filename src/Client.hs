@@ -6,8 +6,6 @@ import Graphics.UI.GLFW.Pal
 
 import Graphics.GL
 import Graphics.GL.Pal2
-import Control.Concurrent.STM
-import Linear
 
 import Control.Monad
 import Control.Monad.State.Strict
@@ -16,7 +14,7 @@ import Control.Lens hiding (view)
 import Control.Monad.Random
 import Control.Concurrent
 
-import Sound.Pd1
+import qualified System.Remote.Monitoring as EKG
 
 import Network.UDP.Pal
 import Game.Pal
@@ -26,9 +24,8 @@ import Resources
 import Render
 import Controls
 import Server
-import qualified Data.Map.Strict as Map
+import Audio
 
-import qualified System.Remote.Monitoring as EKG
 
 enableEKG :: Bool
 enableEKG = False
@@ -46,22 +43,6 @@ enableHydra :: Bool
 enableHydra = True
 -- enableHydra = False
 
-initAudio = do
-  -- Set up sound
-  _multiDAC <- makePatch "src/Patches/multidac"
-  openALSources <- getPdSources
-  patches <- foldM (\accum sourceID -> do
-    -- Set each voice to a unique channel from 1-16
-    let channelNum = length accum + 1
-    voice <- makePatch "src/Patches/voice"
-    send voice "set-channel" (Atom (String $ "dac" ++ show channelNum))
-    --send voice "speed" (Atom (Float (realToFrac (channelNum * 100))))
-    alSourcePosition sourceID (V3 0 0 (-10000) :: V3 GLfloat)
-
-    output <- makeReceiveChan (local voice "output")
-    return (accum ++ [(sourceID, voice, output)])
-    ) [] openALSources
-  return patches
 
 main :: IO ()
 main = do
@@ -70,8 +51,7 @@ main = do
   -- Set up GLFW/Oculus/Hydra
   (window, events, maybeHMD, maybeRenderHMD, maybeSixenseBase) <- initWindow "Infinity Box" enableVR enableHydra  
   
-  -- patches <- initAudio
-  let patches = []
+  patches <- initAudio
 
   -- Set up networking
   transceiver@Transceiver{..} <- createTransceiverToAddress serverName serverPort packetSize
@@ -110,28 +90,7 @@ main = do
     writeTransceiver transceiver $ Unreliable [UpdatePlayer playerID player]
 
     -- Render to OpenAL
-    -- Update AL listener
-    Pose totalHeadPosit totalHeadOrient <- totalHeadPose
-    alListenerPosition totalHeadPosit
-    alListenerOrientation totalHeadOrient
-
-    -- Handle Pd events
-    -- Update AL sources
-
-    -- Pass hand positions to OpenAL sources
-    --handWorldPoses <- use (wldPlayer . plrHandPoses)
-    --forM_ (zip openALSources handWorldPoses) $ \(sourceID, Pose posit _orient) -> do
-    --  alSourcePosition sourceID posit
-
-
-    cubes <- use wldCubes
-    forM_ (zip (Map.toList cubes) patches) $ \((cubeID, cubeObj), (sourceID, _patch, output)) -> do
-      alSourcePosition sourceID (cubeObj ^. objPose . posPosition)
-      exhaustChanIO output >>= mapM_ (\val -> 
-        case val of
-          Atom (Float f) -> wldPatchOutput . at cubeID ?= realToFrac f
-          _ -> return ()
-        )
+    updateAudio patches
 
     -- Render to OpenGL
     
@@ -140,5 +99,4 @@ main = do
       (glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT))
       (render resources)
 
-exhaustChanIO :: MonadIO m => TChan a -> m [a]
-exhaustChanIO = liftIO . atomically . exhaustChan
+

@@ -1,0 +1,35 @@
+#N canvas 0 22 627 352 10;
+#X obj 299 304 outlet~;
+#X obj 110 181 hsl 128 15 0 1 0 0 \$0pulsewidth \$0pulsewidth pulsewidth
+-2 -8 0 10 -262144 -1 -1 6350 1;
+#X obj 299 56 r \$0pitch;
+#X obj 299 171 pack 0 50;
+#X obj 299 200 line~;
+#X obj 299 249 blsquare~ 440 0.5;
+#X obj 88 24 inlet;
+#X obj 110 221 hsl 128 15 0 500 0 0 \$0glide \$0glide glide -2 -8 0
+10 -262144 -1 -1 0 1;
+#X obj 364 170 r \$0glide;
+#X obj 88 53 s \$0pitch;
+#X obj 348 222 r \$0pulsewidth;
+#X obj 503 16 loadbang;
+#X obj 503 45 \$0;
+#X obj 110 141 hsl 128 15 -1 1 0 0 \$0detune \$0detune detune -2 -8
+0 10 -262144 -1 -1 5715 1;
+#X obj 314 79 r \$0detune;
+#X obj 299 144 *;
+#X obj 314 117 + 1;
+#X msg 503 70 \; \$1pulsewidth 0.5 \; \$1detune 0;
+#X connect 2 0 15 0;
+#X connect 3 0 4 0;
+#X connect 4 0 5 0;
+#X connect 5 0 0 0;
+#X connect 6 0 9 0;
+#X connect 8 0 3 1;
+#X connect 10 0 5 1;
+#X connect 11 0 12 0;
+#X connect 12 0 17 0;
+#X connect 14 0 16 0;
+#X connect 15 0 3 0;
+#X connect 16 0 15 1;
+#X coords 0 -1 1 1 150 150 1 100 100;

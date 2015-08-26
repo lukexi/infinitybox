@@ -275,5 +275,5 @@ drawEntity model projectionView drawID anEntity = do
   glDrawElements GL_TRIANGLES vc GL_UNSIGNED_INT nullPtr
 
 
---shiftBy::
+shiftBy :: V3 GLfloat -> Pose -> V3 GLfloat
 shiftBy vec pose  = (pose ^. posPosition) + rotate (pose ^. posOrientation) vec
