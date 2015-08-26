@@ -1,7 +1,4 @@
-{-# LANGUAGE CPP #-}
-#ifdef mingw32_HOST_OS
 {-# OPTIONS_GHC -F -pgmF strip-ths #-}
-#endif
 
 {-# LANGUAGE DeriveFunctor, DeriveTraversable, DeriveAnyClass, DeriveGeneric, FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -141,3 +138,10 @@ randomColor :: MonadIO m => m (V4 GLfloat)
 randomColor = liftIO $ V4 <$> randomRIO (0, 1) <*> randomRIO (0, 1) <*> randomRIO (0, 1) <*> pure 1
 
 
+totalHeadPose :: (MonadState World m) => m Pose
+totalHeadPose = do
+  Pose playerPosit playerOrient <- use (wldPlayer . plrPose)
+  Pose headPosit headOrient     <- use (wldPlayer . plrHeadPose)
+  return $ Pose 
+    (headPosit  + playerPosit) 
+    (headOrient * playerOrient) -- quat rotation order must be rotation*original

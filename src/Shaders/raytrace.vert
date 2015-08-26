@@ -1,6 +1,7 @@
 #version 330 core
 
 uniform vec3 uLight1;
+uniform vec3 uLight2;
 
 uniform mat4 uModelViewProjection;
 uniform mat4 uModel;
@@ -13,7 +14,8 @@ in vec2 aUV;
 in vec3 aTangent;
 
 out vec3 vPos;
-out vec3 vLight;
+out vec3 vLight1;
+out vec3 vLight2;
 out vec3 vNorm;
 out vec3 vCam;
 
@@ -28,7 +30,8 @@ void main(){
   vNorm = aNormal;
 
   vCam   = ( uInverseModel * vec4( uCamera , 1. ) ).xyz;
-  vLight = ( uInverseModel * vec4( uLight1 , 1. ) ).xyz;
+  vLight1 = ( uInverseModel * vec4( uLight1 , 1. ) ).xyz;
+  vLight2 = ( uInverseModel * vec4( uLight2 , 1. ) ).xyz;
 
 
   // Use this position to get the final position 

@@ -1,7 +1,4 @@
-{-# LANGUAGE CPP #-}
-#ifdef mingw32_HOST_OS
 {-# OPTIONS_GHC -F -pgmF strip-ths #-}
-#endif
 
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -148,7 +145,7 @@ interpretS dynamicsWorld fromAddr (Connect playerID) = do
   -- update with their positions on receipt later
   handRigidBodies <- replicateM 2 $ do
     body <- addCube dynamicsWorld
-                    mempty { scale = handDimensions
+                    mempty { scale = handDimensions * 0.75 
                            }
     setRigidBodyKinematic body
     return body

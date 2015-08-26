@@ -92,6 +92,21 @@ float sdSphere( vec3 p, float s )
   return length(p)-s;
 }
 
+float sdCappedCone( in vec3 p, in vec3 c )
+{
+    vec2 q = vec2( length(p.xy), -p.z - c.z );
+    vec2 v = vec2( c.z*c.y/c.x, -c.z );
+
+    vec2 w = v - q;
+
+    vec2 vv = vec2( dot(v,v), v.x*v.x );
+    vec2 qv = vec2( dot(v,w), v.x*w.x );
+
+    vec2 d = max(qv,0.0)*qv/vv;
+
+    return sqrt( dot(w,w) - max(d.x,d.y) )* sign(max(q.y*v.x-q.x*v.y,w.y));
+}
+
 float opRepSphere( vec3 p, vec3 c , float r)
 {
     vec3 q = mod(p,c)-0.5*c;
@@ -148,6 +163,46 @@ float sdBlob2( vec3 p ){
 
 }
 
+float smin_2_3(float a, float b, float k) {
+  float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+  return mix(b, a, h) - k * h * (1.0 - h);
+}
+float sdTorus( vec3 p, vec2 t )
+{
+  vec2 q = vec2(length(p.xy)-t.x,p.z);
+  return length(q)-t.y;
+}
+
+float face( vec3 pos , vec3 p ){
+    
+    vec3 headPos  = ( pos - p );
+    vec3 nosePos  = ( pos - p );
+    vec3 lePos    = ( pos - p + vec3( -.1 , -.1 , 0.));
+    vec3 rePos    = ( pos - p + vec3( .1 , -.1 , 0.));
+    vec3 mouthPos = ( pos - p + vec3( 0. , .12 , 0.));
+
+    
+    float nose = sdCappedCone( nosePos , vec3( .1 , .04 , .1 ) );
+    float head = udBox( headPos , vec3( .25 , .35 , .01 ));
+    
+    float re = sdSphere( rePos , .03 );
+    float le = sdSphere( lePos , .03 );
+    
+    float mouth = sdTorus( mouthPos , vec2( .04 , .02 ));
+
+    float f = head;
+    
+    f = smin_2_3( f , nose  , .04 );
+    f = smin_2_3( f , le    , .04 );
+    f = smin_2_3( f , re    , .04 );
+    f = smin_2_3( f , mouth , .04 );
+    f = f + .005 * uParameter1 * abs( sin( pos.x * 300. * uParameter2 ) * sin( pos.y * 300. * uParameter3 ) );
+                       
+    return f;
+    
+}
+
+
 //--------------------------------
 // Modelling 
 //--------------------------------
@@ -170,7 +225,7 @@ vec2 map( vec3 pos ){
     //vec2 res = vec2( sdSphere( pos ,  radius ) , 1. );
     vec2 res;
     if( gl_FrontFacing ){
-       res = vec2( sdBlob2( pos ) , 1. );
+       res = vec2( face( pos , vec3( 0. , 0. , 0.06 ) ) , 1. );
        res.x = smin( res.x , sdSphere(pos - vLight1, .1 ));
        res.x = smin( res.x , sdSphere(pos - vLight2, .1 ));
     }else{
@@ -288,8 +343,6 @@ void main(){
   float lamb2 = max( dot( vNorm , lightDir2), 0.);
   float spec2 = max( dot( reflDir2 , rd ), 0.);
 
-
-
   float iLamb1 = max( dot( -vNorm , lightDir1), 0.);
   vec3  iReflDir1 = reflect( lightDir1 , -vNorm );
   float iSpec1 = max( dot( iReflDir1 , rd ), 0.);
@@ -329,20 +382,10 @@ void main(){
   }
 
   if( vUv.x < .05 || vUv.x > .95 || vUv.y < .05 || vUv.y > .95 ){
-
-
-        col = doCol( lamb1 , spec1 , lamb2 , spec2 );
+    col = doCol( lamb1 , spec1 , lamb2 , spec2 );
     col += vec3( .3 , .3 , .3 );
   }
 
-  //vec3 col = vec3( 2. - length( texture2D( t_iri , vUv * 4. - vec2( 1.5 ) ) ));
-
-  //vec3 col = vec3( hit );
-
-  //col = vCam * .5 + .5;
-
-  //col = vec3( 1. , 1. , 1. );
-  //gl_FragColor = vec4(vec3(length( col)) , 1. );
   color = vec4( col , 1. );
 
 
