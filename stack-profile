@@ -1,0 +1,35 @@
+
+help_text="-h<break-down> Heap residency profile (hp2ps) (output file <program>.hp)
+      break-down: c = cost centre stack (default)
+                  m = module
+                  d = closure description
+                  y = type description
+                  r = retainer
+                  b = biography (LAG,DRAG,VOID,USE)"
+
+if [[ "$#" -lt 2 ]]; then
+  echo $help_text
+  
+  exit
+fi
+
+# Build the environment and executables with -prof.
+# Make sure libraries have 
+# ghc-prof-options: -fprof-auto
+# in their cabal files to generate SCCs
+# and executables include -prof
+stack build --executable-profiling --library-profiling || exit 1 # Don't continue if the build fails
+
+
+# Allow the program to fail, as it will still generate a profile
+trap "echo 'Killed'" INT
+stack exec $1 -- +RTS ${@:2} || echo "Exiting"
+trap - INT
+
+# Generate a heap graph from the heap profile
+hp2ps -c $1.hp
+open $1.ps
+
+# Generate a flame graph from the stack profile
+cat $1.prof | ghc-prof-flamegraph | flamegraph.pl > $1.svg
+# open $1.svg

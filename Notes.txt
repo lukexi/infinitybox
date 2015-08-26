@@ -15,9 +15,12 @@ BUGS
 [ ] Fix shivering avatars
 
 FEATURES
-[ ] Collision for hands
+[x] Collision for hands
 [ ] Grabbing
 [ ] Add more lights to shaders
 [ ] Set up proper uniforms for player hands, passing orientations etc. to control the shaders
 [ ] Pass parameters to the room
 [ ] FFT as texture
+
+SIDEPROJECTS
+[ ] Finish Halive on Windows

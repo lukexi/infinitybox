@@ -46,12 +46,12 @@ loadResources = do
   planeGeo    <- cubeGeometry ( V3 3 3 3 ) ( V3 1 1 1 )
 
   -- Set up our hand resources
-  handProg  <- createShaderProgram "src/shaders/plane.vert" "src/shaders/plane.frag"
-  handGeo   <- cubeGeometry handDimensions ( V3 1 1 1 )
+  handProg   <- createShaderProgram "src/shaders/plane.vert" "src/shaders/plane.frag"
+  handGeo    <- cubeGeometry handDimensions ( V3 1 1 1 )
 
   -- Set up face cube resources
-  faceProg  <- createShaderProgram "src/shaders/plane.vert" "src/shaders/plane.frag"
-  faceGeo   <- cubeGeometry ( V3 0.5 0.8 0.1 ) ( V3 1 1 1 )
+  faceProg   <- createShaderProgram "src/shaders/plane.vert" "src/shaders/plane.frag"
+  faceGeo    <- cubeGeometry ( V3 0.5 0.8 0.1 ) ( V3 1 1 1 )
 
   plane      <- entity planeGeo planeProg 
   cube       <- entity cubeGeo  cubeProg 
