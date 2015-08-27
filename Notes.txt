@@ -1,6 +1,6 @@
 [ ] Fix cube firing timer (even though we're getting rid of that...)
 [ ] Add view recentering to hydra start buttons
-
+[ ] Slow down the hydra joystick raising/lowering
 BUGS
 [x] Delete cube physics bodies
 [x] Fix drift in Hydra
