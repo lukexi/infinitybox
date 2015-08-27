@@ -1,7 +1,4 @@
-{-# LANGUAGE CPP #-}
-#ifdef WINDOWS
 {-# OPTIONS_GHC -F -pgmF strip-ths #-}
-#endif
 
 {-# LANGUAGE DeriveFunctor, DeriveTraversable, DeriveAnyClass, DeriveGeneric, FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -62,7 +59,7 @@ interpolatePoses (Pose p1 o1) (Pose p2 o2) =
 
 newPlayer :: Player
 newPlayer = Player
-  { _plrPose      = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
+  { _plrPose      = Pose (V3 0 0 1) (axisAngle (V3 0 1 0) 0)
   , _plrHeadPose  = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
   , _plrHandPoses = []
   }
