@@ -13,11 +13,14 @@ import System.Random
 import Control.Lens hiding (view)
 import Control.Monad.Random
 import Control.Concurrent
+import System.Directory
+import Data.Maybe
 
 import qualified System.Remote.Monitoring as EKG
 
 import Network.UDP.Pal
 import Game.Pal
+import Data.Char
 
 import Types
 import Resources
@@ -43,6 +46,17 @@ enableHydra :: Bool
 enableHydra = True
 -- enableHydra = False
 
+getServerNameFromFile :: IO String
+getServerNameFromFile = do
+  let serverIPFile = "serverIP.cfg"
+  exists <- doesFileExist serverIPFile
+  if not exists 
+    then return "127.0.0.1"
+    else do 
+      line <- fmap (filter (not . isSpace)) . listToMaybe . lines <$> readFile serverIPFile
+      case line of
+        Just line -> return line
+        Nothing -> return "127.0.0.1"
 
 main :: IO ()
 main = do
@@ -54,6 +68,7 @@ main = do
   patches <- initAudio
 
   -- Set up networking
+  serverName <- getServerNameFromFile
   transceiver@Transceiver{..} <- createTransceiverToAddress serverName serverPort packetSize
 
   -- Connect to the server

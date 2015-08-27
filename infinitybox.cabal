@@ -37,6 +37,7 @@ library
     , bullet-mini
     , bytestring
     , containers
+    , directory
     , ekg
     , free
     , game-pal
@@ -56,6 +57,7 @@ library
     , stm
     , time
     , udp-pal
+    , network-info
 
 executable client
   main-is:             Main.hs

@@ -52,13 +52,12 @@ makeLenses ''ServerState
 
 physicsServer :: IO ()
 physicsServer = do
-  putStrLn "Server engaged..."
 
   -- This is just a dummy value to pass to interpretS when calling with a message we generated
+  serverName <- findLocalIP
   let serverFromAddr = SockAddrUnix serverName
-
   (getPacketsFromClients, broadcastToClients, disconnectionsChan) <- createServer serverName serverPort packetSize
-
+  putStrLn $ "Server engaged on " ++ serverName
   
   -- Initialize physics
   dynamicsWorld  <- createDynamicsWorld mempty { gravity = 0.0 }
