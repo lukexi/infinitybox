@@ -1,6 +1,7 @@
 flags:
 packages:
 - '.'
+- ../gl-pal
 - ../gl-pal2
 - ../udp-pal
 - ../bullet-mini

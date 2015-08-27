@@ -59,24 +59,24 @@ processControls window events sixenseBase maybeHMD transceiver frameNumber = do
     applyGamepadJoystickMovement e (wldPlayer . plrPose)
 
     -- Get player pose
-    Pose playerPos playerRot <- use (wldPlayer . plrPose)
+    playerPose <- use (wldPlayer . plrPose)
 
     onGamepadAxes e $ \GamepadAllAxes{..} -> 
       -- Use the right trigger to fire a cube
       when (gaxTriggers < (-0.5) && frameNumber `mod` 30 == 0) $ 
-        addCube transceiver (Pose (rotate playerRot (V3 0 0.1 0) + playerPos) playerRot)
+        addCube transceiver (shiftBy (V3 0 0.1 0) playerPose)
     
     -- Handle key events
     -- Spawn a cube offset by 0.1 y
-    onKeyDown Key'E e (addCube transceiver (Pose (rotate playerRot (V3 0 0.1 0) + playerPos) playerRot))
+    onKeyDown Key'E e (addCube transceiver (shiftBy (V3 0 0.1 0) playerPose))
     onKeyDown Key'F e (setCursorInputMode window CursorInputMode'Disabled)
     onKeyDown Key'G e (setCursorInputMode window CursorInputMode'Normal)
     onKeyDown Key'O e (maybe (return ()) (liftIO . recenterPose) maybeHMD)
 
   -- Fire cubes from each hand when their triggers are held down
-  forM_ (zip hands handWorldPoses) $ \(handData, Pose handPos handRot) -> do
+  forM_ (zip hands handWorldPoses) $ \(handData, handPose) -> do
     -- Move the cube upwards a bit so it spawns at the tip of the hand
-    let cubePose = Pose (rotate handRot (V3 0 0.5 0) + handPos) handRot
+    let cubePose = shiftBy (V3 0 0.5 0) handPose
     when (trigger handData > 0.5 && frameNumber `mod` 30 == 0) $ 
       addCube transceiver cubePose
 
