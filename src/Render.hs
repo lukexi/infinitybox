@@ -94,7 +94,7 @@ drawCubes cube projectionView eyePos lights  = do
     forM_ ( zip [0..] ( Map.toList cubes ) ) $ \( i , (objID, obj) ) -> do
 
       tick <- fromMaybe 0 <$> use (wldPatchOutput . at objID)
-      uniformF ( uTick (uniforms cube )) tick
+      uniformF uTick tick
 
       let rotateVec = rotate (obj ^. objPose . posOrientation) (V3 0 0 1) 
       
