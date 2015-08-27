@@ -40,7 +40,6 @@ render Resources{..} projection view = do
 
   wldEyeDebug .= eyePos
 
-  -- FIXME(lukexi) fix this horrible abomination
   localHandPoses <- use $ wldPlayer . plrHandPoses
   let (light1, light2)  = case map (shiftBy (V3 0 0 (-0.5))) localHandPoses of
         [left,right] -> (left, right)
@@ -48,6 +47,7 @@ render Resources{..} projection view = do
      
 
 
+  -- FIXME(lukexi) fix this abomination
   localPlayerID <- use wldPlayerID
   remoteHandPoses <- use $ wldPlayers . to Map.toList . to (filter (\(playerID, _) -> playerID /= localPlayerID))
   let (light3, light4) = case remoteHandPoses of
@@ -86,8 +86,11 @@ render Resources{..} projection view = do
     glCullFace GL_BACK
 
     let cubes = Map.unionWith interpolateObjects lastCubes newCubes
-    forM_ ( zip [0..] ( Map.toList cubes ) ) $ \( i , (_objID, obj) ) -> do
+    forM_ ( zip [0..] ( Map.toList cubes ) ) $ \( i , (objID, obj) ) -> do
 
+      tick <- fromMaybe 0 <$> use (wldPatchOutput . at objID)
+      uniformF ( uTick (uniforms cube )) tick
+      --printIO tick
 
       uniformF ( uParameter1 (uniforms cube)) ( obj ^. objPose . posPosition . _x )
       uniformF ( uParameter2 (uniforms cube)) ( obj ^. objPose . posPosition . _y )

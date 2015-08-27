@@ -9,7 +9,7 @@
 #X obj 147 209 sin;
 #X msg 168 132 0.5;
 #X obj 201 133 f \$1;
-#N canvas 0 22 715 450 check-arg 0;
+#N canvas 0 50 715 450 check-arg 0;
 #X obj 179 184 makefilename $%d-EMPTY;
 #X obj 52 185 symbol \$1-EMPTY;
 #X msg 69 156 bang;

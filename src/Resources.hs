@@ -1,9 +1,33 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+
 module Resources where
 import Types
 import Graphics.GL.Pal2
 import Graphics.GL
 import Linear
+import Data.Data
+
+
+data Uniforms = Uniforms
+  { uModelViewProjection :: UniformLocation (M44 GLfloat)
+  , uInverseModel        :: UniformLocation (M44 GLfloat)
+  , uModel               :: UniformLocation (M44 GLfloat)
+  , uCamera              :: UniformLocation (V3  GLfloat)
+  , uLight1              :: UniformLocation (V3  GLfloat)
+  , uLight2              :: UniformLocation (V3  GLfloat)
+  , uLight3              :: UniformLocation (V3  GLfloat)
+  , uLight4              :: UniformLocation (V3  GLfloat)
+  , uParameter1          :: UniformLocation GLfloat
+  , uParameter2          :: UniformLocation GLfloat
+  , uParameter3          :: UniformLocation GLfloat
+  , uParameter4          :: UniformLocation GLfloat
+  , uParameter5          :: UniformLocation GLfloat
+  , uParameter6          :: UniformLocation GLfloat
+  , uID                  :: UniformLocation GLfloat
+  , uTime                :: UniformLocation GLfloat
+  , uTick                :: UniformLocation GLfloat
+  } deriving (Data)
 
 data Resources = Resources
   { plane :: Entity Uniforms
@@ -19,18 +43,15 @@ handDimensions = V3 0.05 0.05 0.5
 loadResources :: IO Resources
 loadResources = do
   
-  {-
 
   -- Set up our cube resources
-  cubeProg   <- createShaderProgram "src/shaders/cube.vert" "src/shaders/cube.frag"
+  cubeProg   <- createShaderProgram "src/shaders/raytrace.vert" "src/shaders/spaceCube.frag"
   cubeGeo    <- cubeGeometry ( 0.5 :: V3 GLfloat ) ( V3 1 1 1 )
 
-  -}
-
-   -- Set up our cube resources
-  cubeProg   <- createShaderProgram "src/shaders/raytrace.vert" "src/shaders/face.frag"
-  --cubeGeo    <- cubeGeometry ( 0.5 :: V3 GLfloat ) ( V3 1 1 1 )
-  cubeGeo    <- cubeGeometry ( V3 0.5 0.7 0.1 ) ( V3 1 1 1 )
+   -- Set up our cube resources (face testing)
+  --cubeProg   <- createShaderProgram "src/shaders/raytrace.vert" "src/shaders/face.frag"
+  ----cubeGeo    <- cubeGeometry ( 0.5 :: V3 GLfloat ) ( V3 1 1 1 )
+  --cubeGeo    <- cubeGeometry ( V3 0.5 0.7 0.1 ) ( V3 1 1 1 )
 
   -- Set up our light resources
   lightProg  <- createShaderProgram "src/shaders/raytrace.vert" "src/shaders/spaceCube.frag"

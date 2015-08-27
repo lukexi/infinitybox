@@ -2,7 +2,7 @@
 #X obj 281 128 osc~;
 #X obj 281 21 inlet~;
 #X obj 112 125 hsl 128 15 0.1 127 1 0 \$0freq \$0freq freq -2 -8 0
-10 -262144 -1 -1 2100 1;
+10 -262144 -1 -1 0 1;
 #X obj 656 132 sig~;
 #X obj 656 161 s~ \$0freq;
 #X obj 656 107 r \$0freq;

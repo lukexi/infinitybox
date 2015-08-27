@@ -1,6 +1,6 @@
 #version 330 core
 
-uniform float time;
+uniform float uTime;
 
 uniform float uParameter1;
 uniform float uParameter2;

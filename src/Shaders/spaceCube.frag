@@ -1,6 +1,7 @@
 #version 330 core
 
-uniform float time;
+uniform float uTime;
+uniform float uTick;
 
 uniform float uParameter1;
 uniform float uParameter2;
@@ -42,7 +43,7 @@ float triNoise3D(in vec3 p, in float spd)
   for (float i=0.; i<=3.; i++ )
   {
         vec3 dg = tri3(bp*2.);
-        p += (dg+time*.1*spd);
+        p += (dg+uTime*.1*spd);
 
         bp *= 1.8;
     z *= 1.5;
@@ -135,7 +136,7 @@ float cubeField( vec3 p ){
 
 float sphereField( vec3 p ){
 
-  float fieldSize = 1.  + abs( sin( uParameter5) ) * 1.;
+  float fieldSize = 1.  + abs( sin( uParameter5 + uTick) ) * 1.;
   return opRepSphere( p , vec3(fieldSize ), .01 + uParameter4 * .05 );
 
 }
@@ -144,7 +145,7 @@ float sdBlob2( vec3 p ){
  
   vec3 pos = p;
 
-  return length( p ) - .2 + .3 * .2 * sin( uParameter4 )*sin(300.0 * sin(uParameter1 ) *pos.x * sin( length(pos) ))*sin(200.0*sin( uParameter2 ) *pos.y )*sin(50.0 * sin( uParameter3 * 4. )*pos.z);
+  return length( p ) - .2 + .3 * .2 * sin( uParameter4 + uTick )*sin(300.0 * sin(uParameter1 ) *pos.x * sin( length(pos) ))*sin(200.0*sin( uParameter2 + uTick ) *pos.y )*sin(50.0 * sin( uParameter3 * 4. )*pos.z);
 
 }
 
@@ -159,10 +160,10 @@ vec2 map( vec3 pos ){
     vec3 rot = vec3( 0.,0.,0. );
    // vec2 res = vec2( rotatedBox( pos , rot , size , .001 ) , 1.0 );
     
-    float repSize = ( uParameter1 * .4 + .4) * 2.;
+    float repSize = ( uParameter1 * .4 + .4 + uTick * .1) * 2.;
     repSize = 2.;
 
-    float radius = .4 * uParameter2  + .1;
+    float radius = .4 * uParameter2 + uTick  + .1;
 
     radius = .01;
 
@@ -259,7 +260,7 @@ vec3 doCol( float lamb1 , float spec1  , float lamb2 , float spec2){
   float nSpec1= pow( spec1 , abs(sin(uParameter1 * 1.1))* 10. + 2. );
   float nSpec2= pow( spec2 , abs(sin(uParameter1 * 1.1))* 10. + 2. );
   return
-      .5 *  hsv( lamb1  * .3 + uParameter2 , abs( sin( uParameter6 )) * .2 + .6 , abs( sin( uParameter2 ) * .4 + .6 )) * lamb1 
+      .5 *  hsv( lamb1  * .3 + uParameter2 + uTick , abs( sin( uParameter6 )) * .2 + .6 , abs( sin( uParameter2 ) * .4 + .6 )) * lamb1 
     +  hsv( nSpec1 * .6 + uParameter3 , abs( sin( uParameter5 )) * .4 + .6 , abs( sin( uParameter4 ) * .3 + .8 )) * nSpec1
     + .5 *  hsv( lamb2  * .3 + uParameter2 , abs( cos( uParameter6 )) * .2 + .6 , abs( cos( uParameter2 ) * .4 + .6 )) * lamb2
     +  hsv( nSpec2 * .6 + uParameter3 , abs( cos( uParameter5 )) * .4 + .6 , abs( cos( uParameter4 ) * .3 + .8 )) * nSpec2;

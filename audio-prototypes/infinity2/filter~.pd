@@ -1,4 +1,4 @@
-#N canvas 0 22 850 446 10;
+#N canvas 0 50 850 446 10;
 #X obj 300 62 inlet~;
 #X obj 300 356 outlet~;
 #X obj 300 298 bob~;
@@ -8,9 +8,9 @@
 #X obj 485 238 line~;
 #X msg 184 318 saturation \$1;
 #X obj 111 140 hsl 128 15 0 127 0 0 \$0cutoff \$0cutoff cutoff -2 -8
-0 10 -262144 -1 -1 1700 1;
+0 10 -262144 -1 -1 6900 1;
 #X obj 111 170 hsl 128 15 0 4 0 0 \$0resonance \$0resonance resonance
--2 -8 0 10 -262144 -1 -1 5000 1;
+-2 -8 0 10 -262144 -1 -1 3175 1;
 #X obj 111 200 hsl 128 15 0 10 0 0 \$0saturation \$0saturation saturation
 -2 -8 0 10 -262144 -1 -1 12700 1;
 #X obj 354 62 inlet~;

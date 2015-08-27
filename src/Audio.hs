@@ -17,8 +17,8 @@ exhaustChanIO = liftIO . atomically . exhaustChan
 initAudio :: IO [(OpenALSource, Int, TChan Message)]
 initAudio = do
   -- Set up sound
-  addToLibPdSearchPath "audio-prototypes/infinity2"
-  _main <- makePatch "audio-prototypes/infinity2/main"
+  addToLibPdSearchPath "audio-prototypes/infinity3"
+  _main <- makePatch "audio-prototypes/infinity3/main"
   openALSources <- getPdSources
   patches <- foldM (\accum sourceID -> do
     -- Set each voice to a unique channel from 1-16
@@ -26,7 +26,7 @@ initAudio = do
 
     alSourcePosition sourceID (V3 0 0 (-10000) :: V3 GLfloat)
 
-    output <- makeReceiveChan ("output" ++ show voiceID)
+    output <- makeReceiveChan (show voiceID ++ "tick")
     return (accum ++ [(sourceID, voiceID, output)])
     ) [] openALSources
   return patches
@@ -43,9 +43,10 @@ updateAudio patches = do
     alSourcePosition sourceID (cubeObj ^. objPose . posPosition)
     exhaustChanIO output >>= mapM_ (\val -> 
       case val of
-        Atom (Float f) -> wldPatchOutput . at cubeID ?== realToFrac f
+        Bang -> wldPatchOutput . at cubeID ?== 1
         _ -> return ()
       )
+    wldPatchOutput . at cubeID . traverse -= 0.01
   -- Pass hand positions to OpenAL sources
   --handWorldPoses <- use (wldPlayer . plrHandPoses)
   --forM_ (zip openALSources handWorldPoses) $ \(sourceID, Pose posit _orient) -> do
