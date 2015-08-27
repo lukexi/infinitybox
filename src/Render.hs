@@ -22,12 +22,15 @@ import Resources
 
 
 
+
 render :: (MonadIO m, MonadState World m) 
        => Resources
        -> M44 GLfloat
        -> M44 GLfloat
        -> m ()
 render Resources{..} projection view = do
+
+  time <- realToFrac . utctDayTime <$> liftIO getCurrentTime
 
   newCubes  <- use wldCubes
   lastCubes <- use wldLastCubes
@@ -72,7 +75,7 @@ render Resources{..} projection view = do
   -- putStrLnIO (show view)
   let cam = uCamera (uniforms cube)
   uniformV3 cam eyePos
-  uniformF (uTime (uniforms cube)) =<< realToFrac . utctDayTime <$> liftIO getCurrentTime
+  uniformF (uTime (uniforms cube)) time
 
   setLightUniforms cube light1 light2 light3 light4
 
@@ -80,7 +83,7 @@ render Resources{..} projection view = do
   withVAO (vAO cube) $ do
 
     glDisable GL_CULL_FACE
-   -- glCullFace GL_BACK
+    glCullFace GL_BACK
 
     let cubes = Map.unionWith interpolateObjects lastCubes newCubes
     forM_ ( zip [0..] ( Map.toList cubes ) ) $ \( i , (_objID, obj) ) -> do
@@ -101,6 +104,9 @@ render Resources{..} projection view = do
   -------------
   -- PLAYERS --
   -------------
+
+  setLightUniforms cube light1 light2 light3 light4
+  useProgram (program hand)
   withVAO (vAO hand) $ do
 
     glEnable GL_CULL_FACE
@@ -114,8 +120,18 @@ render Resources{..} projection view = do
     forM_ handPoses $ \handPose -> do
       let shiftPos = shiftBy ( V3 0 0 (-0.25) ) handPose
           finalMatrix = mkTransformation  ( handPose ^. posOrientation ) shiftPos
-      
-      drawEntity finalMatrix projectionView 0 cube 
+
+          rotateVec = rotate ( handPose ^. posOrientation ) (V3 0 0 1)
+
+      uniformF ( uParameter1 (uniforms hand)) ( handPose ^. posPosition . _x )
+      uniformF ( uParameter2 (uniforms hand)) ( handPose ^. posPosition . _y )
+      uniformF ( uParameter3 (uniforms hand)) ( handPose ^. posPosition . _z )
+
+      uniformF ( uParameter6 (uniforms hand)) ( rotateVec ^. _z )
+      uniformF ( uParameter4 (uniforms hand)) ( rotateVec ^. _x )
+      uniformF ( uParameter5 (uniforms hand)) ( rotateVec ^. _y )
+
+      drawEntity finalMatrix projectionView 0 hand
 
     -- Draw all remote players' hands
     players <- use $ wldPlayers . to Map.toList
@@ -124,16 +140,25 @@ render Resources{..} projection view = do
         forM_ (player ^. plrHandPoses) $ \handPose -> do
           let shiftPos = shiftBy ( V3 0 0 (-0.25) ) handPose
               finalMatrix = mkTransformation  ( handPose ^. posOrientation ) shiftPos
-        
-          drawEntity finalMatrix projectionView 0 cube
+              
+              rotateVec = rotate ( handPose ^. posOrientation ) (V3 0 0 1) 
+          
+          uniformF ( uParameter1 (uniforms hand)) ( handPose ^. posPosition . _x )
+          uniformF ( uParameter2 (uniforms hand)) ( handPose ^. posPosition . _y )
+          uniformF ( uParameter3 (uniforms hand)) ( handPose ^. posPosition . _z )
 
+          uniformF ( uParameter6 (uniforms hand)) ( rotateVec ^. _z )
+          uniformF ( uParameter4 (uniforms hand)) ( rotateVec ^. _x )
+          uniformF ( uParameter5 (uniforms hand)) ( rotateVec ^. _y )
+        
+          drawEntity finalMatrix projectionView 0 hand
   -- Draw all remote players' heads 
   -- (we don't draw the local player's head)
   withVAO (vAO face) $ do
     players <- use $ wldPlayers . to Map.toList
     forM_ players $ \(playerID, player) -> 
       when (playerID /= localPlayerID) $ do
-        let shiftPos = shiftBy ( V3 0 0 1.5 ) ( player ^. plrPose )
+        let shiftPos = shiftBy ( V3 0 0 5 ) ( player ^. plrPose )
             finalMatrix = mkTransformation  ( player ^. plrPose . posOrientation ) shiftPos
         
         drawEntity finalMatrix projectionView 0 cube
@@ -145,27 +170,47 @@ render Resources{..} projection view = do
   --------------------
   useProgram (program plane)
 
+  player <- use wldPlayer 
+
+  Pose totalHeadPosition totalHeadOriention <- totalHeadPose
+  
+  let rotateVec = rotate totalHeadOriention (V3 0 0 1)   
+
+  uniformF ( uParameter1 (uniforms plane)) ( totalHeadPosition ^. _x )
+  uniformF ( uParameter2 (uniforms plane)) ( totalHeadPosition ^. _y )
+  uniformF ( uParameter3 (uniforms plane)) ( totalHeadPosition ^. _z )
+
+  uniformF ( uParameter6 (uniforms plane)) ( rotateVec ^. _z )
+  uniformF ( uParameter4 (uniforms plane)) ( rotateVec ^. _x )
+  uniformF ( uParameter5 (uniforms plane)) ( rotateVec ^. _y )
+
+
+  --uniformF ( uParameter1 (uniforms plane)) ( sin $ time * 0.3)
+  --uniformF ( uParameter2 (uniforms plane)) ( sin $ time * 0.01)
+  --uniformF ( uParameter3 (uniforms plane)) ( sin $ time * 0.23)
+
+  --uniformF ( uParameter6 (uniforms plane)) ( sin $ time * 0.074)
+  --uniformF ( uParameter4 (uniforms plane)) ( sin $ time * 0.037)
+  --uniformF ( uParameter5 (uniforms plane)) ( sin $ time * 0.69 )
+
+
+
+
   -- printIO view
   let planeCamU = uCamera ( uniforms plane )
   uniformV3 planeCamU eyePos
 
   setLightUniforms plane light1 light2 light3 light4
+   
 
-  uniformF ( uParameter1 (uniforms plane)) 0.5
-  uniformF ( uParameter2 (uniforms plane)) 0.5
-  uniformF ( uParameter3 (uniforms plane)) 0.5
-
-  uniformF ( uParameter6 (uniforms plane)) 0.5
-  uniformF ( uParameter4 (uniforms plane)) 0.5
-  uniformF ( uParameter5 (uniforms plane)) 0.5
-
+    
   withVAO (vAO plane) $ do
 
     glEnable GL_CULL_FACE
     glCullFace GL_FRONT
 
     let model = mkTransformation 
-            ( axisAngle ( V3 1 0 0 ) 0.0 )
+            ( axisAngle ( V3 1 0 0 ) 0 )
             ( V3 0 0 0 )
 
     drawEntity model projectionView 0 plane
@@ -207,6 +252,9 @@ drawLights anEntity projectionView l1 l2 l3 l4 = do
 
     forM_ (zip [0..] [l1, l2, l3, l4]) $ \(i, lightPos) -> do
       let model = mkTransformation (axisAngle (V3 1 0 0) 0.0) lightPos
+      uniformF ( uParameter1 (uniforms anEntity)) ( lightPos ^. _x )
+      uniformF ( uParameter2 (uniforms anEntity)) ( lightPos ^. _y )
+      uniformF ( uParameter3 (uniforms anEntity)) ( lightPos ^. _z )
       drawEntity model projectionView i anEntity
 
 

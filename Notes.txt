@@ -1,27 +1,37 @@
-[ ] Fix cube firing timer (even though we're getting rid of that...)
-[ ] Add view recentering to hydra start buttons
-[ ] Slow down the hydra joystick raising/lowering
+
 BUGS
 [x] Delete cube physics bodies
 [x] Fix drift in Hydra
 [ ] Fix freeze
-[ ] Fix shivering avatars
+[ ] Fix shivering avatars (is the server maybe relaying this back to us or something? Or, did I fix this by removing the reliable flag?)
+[ ] Fix size of collider/mesh mismatch
+[ ] Fix judder
 
 FEATURES
+[x] Add more lights to shaders
 [x] Collision for hands
-  [ ] Fix size of collider/mesh mismatch
+[ ] Sound ( https://soundcloud.com/chvrches/chvrches-leave-a-trace-four-tet-remix-1 )
+[x] Set up proper uniforms for player hands, passing orientations etc. to control the shaders
+[x] Pass parameters to the room
+[ ] Head shaders should look like deformable head
+[ ] Rendered remote heads should include oculus position
+
 [ ] Grabbing
-[ ] Sound
+
+[ ] Add view recentering to hydra start buttons
+[ ] Slow down the hydra joystick raising/lowering
+[ ] Fix cube firing timer (even though we're getting rid of that...)
+
+
 [ ] FFT as texture
 
-[ ] Add more lights to shaders
-[ ] Set up proper uniforms for player hands, passing orientations etc. to control the shaders
-[ ] Pass parameters to the room
+[ ] Try gl_Discard on fragments outside of SDF boundary
 
 
 
 
-
+SIDEPROJECTS
+[ ] Finish Halive on Windows
 
 
 

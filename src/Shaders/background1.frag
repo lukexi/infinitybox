@@ -40,6 +40,11 @@ vec2 opU( vec2 d1, vec2 d2 )
     return  d1.x < d2.x ? d1 : d2 ;
 }
 
+float opS( float d1, float d2 )
+{
+    return max(-d1,d2);
+}
+
 float sdBox( vec3 p, vec3 b )
 {
   vec3 d = abs(p) - b;
@@ -81,7 +86,7 @@ float opRepBox( vec3 p, vec3 c , float r)
 // Using SDF from IQ's two tweet shadertoy : 
 // https://www.shadertoy.com/view/MsfGzM
 float sdBlob( vec3 p ){
-
+  p = p * 1.;
   return length(
     .05 * cos( 9. * (sin( uParameter1 )+ 1.) * p.y * p.x )
     + cos(p) * (sin( uParameter2 ) * .01 + 1.) 
@@ -93,7 +98,7 @@ float sdBlob( vec3 p ){
 
 float sphereField( vec3 p ){
 
-  float fieldSize = .1  + abs( sin( uParameter5) ) * 1.;
+  float fieldSize = .3  + abs( sin( uParameter5) ) * .1;
   //float fieldSize = .1;
   return opRepSphere( p , vec3(fieldSize ), .01 + uParameter4 * .05 );
 
@@ -136,8 +141,10 @@ vec2 map( vec3 pos ){
    // vec2 res = vec2( opRepSphere( pos , vec3( repSize ) , radius ) , 1. );
     //vec2 res = vec2( sdSphere( pos ,  radius ) , 1. );
     //vec2 res = vec2( sdBlob( pos ) , 1. );
+    //res.x = opS( sdBox( pos , vec3(3.5) ) , res.x );
 
     vec2 res =  vec2( sphereField( pos ) , 2. );
+    res.x = opS( sdBox( pos , vec3(3.) ) , res.x );
     return res;
     
 }
@@ -239,8 +246,8 @@ void main(){
   if( vUv.x < .05 || vUv.x > .95 || vUv.y < .05 || vUv.y > .95 ){
 
 
-    col += doCol( lamb , spec );
-    col += vec3( .3 , .3 , .3 );
+    //col += doCol( lamb , spec );
+    //col += vec3( .3 , .3 , .3 );
   }
 
   //vec3 col = vec3( 2. - length( texture2D( t_iri , vUv * 4. - vec2( 1.5 ) ) ));
@@ -249,7 +256,7 @@ void main(){
 
   //col = vCam * .5 + .5;
 
-  color = vec4( 1. );
+  //color = vec4( 1. );
   //color = vec4(vec3( length(col)) , 1. );
   color = vec4( col , 1. );
 

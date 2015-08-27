@@ -35,8 +35,8 @@ enableEKG = False
 -- enableEKG = False
 
 enableServer :: Bool
-enableServer = True
--- enableServer = False
+-- enableServer = True
+enableServer = False
 
 enableVR :: Bool
 enableVR = True
@@ -107,7 +107,7 @@ main = do
 
     -- Send player position
     player <- use wldPlayer
-    writeTransceiver transceiver $ Reliable $ UpdatePlayer playerID player
+    writeTransceiver transceiver $ Unreliable [UpdatePlayer playerID player]
 
     -- Render to OpenAL
     -- Update AL listener
