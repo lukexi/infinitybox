@@ -1,4 +1,7 @@
+{-# LANGUAGE CPP #-}
+#ifdef WINDOWS
 {-# OPTIONS_GHC -F -pgmF strip-ths #-}
+#endif
 
 {-# LANGUAGE DeriveFunctor, DeriveTraversable, DeriveAnyClass, DeriveGeneric, FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
