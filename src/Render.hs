@@ -26,7 +26,7 @@ getLocalHandPositions :: MonadState World m => m (V3 GLfloat, V3 GLfloat)
 getLocalHandPositions = do
   localHandPoses <- use $ wldPlayer . plrHandPoses
   return $ 
-    case map (view posPosition . shiftBy handLightOffset) localHandPoses of
+    case map (view posPosition . shiftBy (handLightOffset*2)) localHandPoses of
       [left,right] -> (left, right)
       _            -> (0, 0)
 
