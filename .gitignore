@@ -21,3 +21,9 @@ src/server
 *.ps
 *.pdf
 *.prof
+
+infinitybox.tar.gz
+
+release/src
+release/audio-prototypes
+release/serverIP.txt
