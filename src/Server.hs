@@ -1,7 +1,4 @@
-{-# LANGUAGE CPP #-}
-#ifdef WINDOWS
 {-# OPTIONS_GHC -F -pgmF strip-ths #-}
-#endif
 
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
