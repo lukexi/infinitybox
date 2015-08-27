@@ -11,6 +11,7 @@ BUGS
 [ ] Fix sound sources not staying stably attached to the cube they started from
     (we should round robin the oldest expiring source onto the newest cube)
 [?] Disconnecting players still leave zombie hands
+[ ] Apply handOffset right at the point of putting the hands into the player struct rather than offsetting all over the codebase
 
 FEATURES
 [x] Add more lights to shaders
@@ -29,6 +30,7 @@ FEATURES
 [ ] Slow down the hydra joystick raising/lowering
 [ ] Fix cube firing timer (even though we're getting rid of that...)
 
+[ ] Update oculus-mini to Oculus SDK 0.6
 
 [ ] FFT as texture
 

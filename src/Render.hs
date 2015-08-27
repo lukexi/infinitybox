@@ -20,26 +20,34 @@ import Game.Pal
 import Types
 import Resources
 
+listToTuple _   [a,b] = (a,b)
+listToTuple def _     = def
+
+useListOf aLens = do
+  stat <- use id
+  return (stat ^.. aLens)
 
 getLocalHandPositions :: MonadState World m => m (V3 GLfloat, V3 GLfloat)
-getLocalHandPositions = do
-  localHandPoses <- use $ wldPlayer . plrHandPoses
-  return $ 
-    case map (view posPosition . shiftBy handLightOffset) localHandPoses of
-      [left,right] -> (left, right)
-      _            -> (0, 0)
+getLocalHandPositions = listToTuple (0,0) <$>
+  useListOf ( wldPlayer 
+            . plrHandPoses 
+            . traverse 
+            . to (shiftBy handLightOffset) 
+            . posPosition 
+            )
 
 -- | We draw the second pair of lights for one remote player
 -- (4 is the most we can handle currently)
+-- Defaults to 0,0 if no remote players... 
+-- should we remove the lights instead?
+-- (e.g. default to infinity,infinity)
 getFirstRemoteHandPositions :: MonadState World m => m (V3 GLfloat, V3 GLfloat)
 getFirstRemoteHandPositions = do
-  remoteHandPoses <- use $ wldPlayers . to Map.toList
+  remoteHandPoses <- listToMaybe <$> useListOf (wldPlayers . traverse . plrHandPoses)
   return $ 
     case remoteHandPoses of
-      ((_,x):_) -> case map (^. posPosition) (x ^. plrHandPoses) of
-        [left,right] -> (left, right)
-        _            -> (0, 0)
-      _ -> (0,0)
+      Just hands -> listToTuple (0,0) (hands ^.. traverse . posPosition)
+      Nothing -> (0,0)
 
 render :: (MonadIO m, MonadState World m) 
        => Resources
