@@ -20,13 +20,12 @@ import Game.Pal
 import Types
 import Resources
 
-handLightOffset = V3 0 0 (-0.25)
 
 getLocalHandPositions :: MonadState World m => m (V3 GLfloat, V3 GLfloat)
 getLocalHandPositions = do
   localHandPoses <- use $ wldPlayer . plrHandPoses
   return $ 
-    case map (view posPosition . shiftBy (handLightOffset*2)) localHandPoses of
+    case map (view posPosition . shiftBy handLightOffset) localHandPoses of
       [left,right] -> (left, right)
       _            -> (0, 0)
 
@@ -34,8 +33,7 @@ getLocalHandPositions = do
 -- (4 is the most we can handle currently)
 getFirstRemoteHandPositions :: MonadState World m => m (V3 GLfloat, V3 GLfloat)
 getFirstRemoteHandPositions = do
-  localPlayerID <- use wldPlayerID
-  remoteHandPoses <- use $ wldPlayers . to Map.toList . to (filter (\(playerID, _) -> playerID /= localPlayerID))
+  remoteHandPoses <- use $ wldPlayers . to Map.toList
   return $ 
     case remoteHandPoses of
       ((_,x):_) -> case map (^. posPosition) (x ^. plrHandPoses) of
@@ -65,7 +63,12 @@ render Resources{..} projection viewMat = do
 
   drawRoom    plane     projectionView eyePos lightPositions
   
-
+drawCubes :: (MonadIO m, MonadState World m)
+          => Entity Uniforms
+          -> M44 GLfloat
+          -> V3 GLfloat
+          -> (V3 GLfloat, V3 GLfloat, V3 GLfloat, V3 GLfloat)
+          -> m ()
 drawCubes cube projectionView eyePos lights  = do
   -- Interpolate between the last and newest cube states
   newCubes  <- use wldCubes
@@ -146,6 +149,13 @@ drawLights anEntity projectionView (l1, l2, l3, l4) = do
       
       drawEntity model projectionView i anEntity
 
+drawPlayers :: (MonadIO m, MonadState World m) 
+            => Entity Uniforms
+            -> Entity Uniforms
+            -> M44 GLfloat
+            -> V3 GLfloat
+            -> (V3 GLfloat, V3 GLfloat, V3 GLfloat, V3 GLfloat)
+            -> m ()
 drawPlayers hand face projectionView eyePos lights = do
   useProgram (program hand)
   let Uniforms{..} = uniforms hand
@@ -162,13 +172,14 @@ drawPlayers hand face projectionView eyePos lights = do
 
   drawRemoteHeads projectionView eyePos face lights
 
-
+drawLocalHands :: (MonadIO m, MonadState World m) 
+               => M44 GLfloat -> Entity Uniforms -> m ()
 drawLocalHands projectionView hand = do
   let Uniforms{..} = uniforms hand
   -- Draw the local player's hands
   handPoses <- use $ wldPlayer . plrHandPoses
   forM_ handPoses $ \handPose -> do
-    let finalMatrix = transformationFromPose $ shiftBy handLightOffset handPose
+    let finalMatrix = transformationFromPose $ shiftBy handOffset handPose
         rotateVec = rotate ( handPose ^. posOrientation ) (V3 0 0 1)
 
     uniformF uParameter1 $ handPose ^. posPosition . _x
@@ -181,27 +192,33 @@ drawLocalHands projectionView hand = do
 
     drawEntity finalMatrix projectionView 0 hand
 
+drawRemoteHands :: (MonadIO m, MonadState World m) 
+                => M44 GLfloat -> Entity Uniforms -> m ()
 drawRemoteHands projectionView hand = do
   let Uniforms{..} = uniforms hand
   players <- use $ wldPlayers . to Map.toList
-  localPlayerID <- use wldPlayerID
   forM_ players $ \(playerID, player) -> 
-    when (playerID /= localPlayerID) $ do
-      forM_ (player ^. plrHandPoses) $ \handPose -> do
-        let finalMatrix = transformationFromPose $ shiftBy handLightOffset handPose
-            
-            rotateVec = rotate ( handPose ^. posOrientation ) (V3 0 0 1) 
-        
-        uniformF uParameter1 $ handPose ^. posPosition . _x
-        uniformF uParameter2 $ handPose ^. posPosition . _y
-        uniformF uParameter3 $ handPose ^. posPosition . _z
-        
-        uniformF uParameter6 $ rotateVec ^. _z
-        uniformF uParameter4 $ rotateVec ^. _x
-        uniformF uParameter5 $ rotateVec ^. _y
-        
-        drawEntity finalMatrix projectionView 0 hand
+    forM_ (player ^. plrHandPoses) $ \handPose -> do
+      let finalMatrix = transformationFromPose $ shiftBy handOffset handPose
+          
+          rotateVec = rotate ( handPose ^. posOrientation ) (V3 0 0 1) 
+      
+      uniformF uParameter1 $ handPose ^. posPosition . _x
+      uniformF uParameter2 $ handPose ^. posPosition . _y
+      uniformF uParameter3 $ handPose ^. posPosition . _z
+      
+      uniformF uParameter6 $ rotateVec ^. _z
+      uniformF uParameter4 $ rotateVec ^. _x
+      uniformF uParameter5 $ rotateVec ^. _y
+      
+      drawEntity finalMatrix projectionView 0 hand
 
+drawRemoteHeads :: (MonadIO m, MonadState World m) 
+                => M44 GLfloat
+                -> V3 GLfloat
+                -> Entity Uniforms
+                -> (V3 GLfloat, V3 GLfloat, V3 GLfloat, V3 GLfloat)
+                -> m ()
 drawRemoteHeads projectionView eyePos face lights = do
   let Uniforms{..} = uniforms face
   -- Draw all remote players' heads 
@@ -212,13 +229,17 @@ drawRemoteHeads projectionView eyePos face lights = do
 
   withVAO (vAO face) $ do
     players <- use $ wldPlayers . to Map.toList
-    localPlayerID <- use wldPlayerID
-    forM_ players $ \(playerID, player) -> 
-      when (playerID /= localPlayerID) $ do
-        let finalMatrix = transformationFromPose (totalHeadPose player)
+    forM_ players $ \(playerID, player) -> do
+      let finalMatrix = transformationFromPose (totalHeadPose player)
 
-        drawEntity finalMatrix projectionView 0 face
+      drawEntity finalMatrix projectionView 0 face
 
+drawRoom :: (MonadIO m, MonadState World m) 
+         => Entity Uniforms
+         -> M44 GLfloat
+         -> V3 GLfloat
+         -> (V3 GLfloat, V3 GLfloat, V3 GLfloat, V3 GLfloat)
+         -> m ()
 drawRoom plane projectionView eyePos lights = do
   let Uniforms{..} = uniforms plane
 
@@ -277,7 +298,4 @@ drawEntity model projectionView drawID anEntity = do
   let vc = vertCount (geometry anEntity) 
   glDrawElements GL_TRIANGLES vc GL_UNSIGNED_INT nullPtr
 
-transformationFromPose (Pose position orientation) = mkTransformation orientation position 
 
-shiftBy :: V3 GLfloat -> Pose -> Pose
-shiftBy vec pose = pose & posPosition +~ rotate (pose ^. posOrientation) vec

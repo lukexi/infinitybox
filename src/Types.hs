@@ -132,3 +132,9 @@ totalHeadPose player =
   in  Pose 
     (headPosit  + playerPosit) 
     (headOrient * playerOrient) -- quat rotation order must be rotation*original
+
+transformationFromPose :: Pose -> M44 GLfloat
+transformationFromPose (Pose position orientation) = mkTransformation orientation position 
+
+shiftBy :: V3 GLfloat -> Pose -> Pose
+shiftBy vec pose = pose & posPosition +~ rotate (pose ^. posOrientation) vec

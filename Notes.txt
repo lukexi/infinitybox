@@ -7,7 +7,7 @@ BUGS
 [ ] Fix shivering avatars 
       (is the server maybe relaying this back to us or something? 
       Or, did I fix this by removing the reliable flag from player positions?)
-[ ] Fix size of collider/mesh mismatch
+[x] Fix size of collider/mesh mismatch
 [ ] Fix sound sources not staying stably attached to the cube they started from
     (we should round robin the oldest expiring source onto the newest cube)
 [?] Disconnecting players still leave zombie hands

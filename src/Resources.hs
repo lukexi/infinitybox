@@ -6,7 +6,7 @@ import Graphics.GL.Pal2
 import Graphics.GL
 import Linear
 import Data.Data
-
+import Control.Lens
 
 data Uniforms = Uniforms
   { uModelViewProjection :: UniformLocation (M44 GLfloat)
@@ -35,6 +35,14 @@ data Resources = Resources
   , hand  :: Entity Uniforms
   , face  :: Entity Uniforms
   }
+
+-- Offset the lights to be on the end of the wands
+handLightOffset :: V3 GLfloat
+handLightOffset = handOffset * 2
+
+-- Offset the hand model outward to feel like wands rather than batons
+handOffset :: V3 GLfloat
+handOffset = V3 0 0 (-(handDimensions ^. _z) / 2)
 
 handDimensions :: V3 GLfloat
 handDimensions = V3 0.05 0.05 0.5

@@ -133,8 +133,9 @@ interpretS _dynamicsWorld _fromAddr (UpdatePlayer playerID player) = do
 
   maybeHandRigidBodies <- use $ ssPlayerRigidBodies . at playerID
   forM_ maybeHandRigidBodies $ \handRigidBodies -> 
-    forM_ (zip (player ^. plrHandPoses) handRigidBodies) $ \(handPose, handRigidBody) -> 
-      setRigidBodyWorldTransform handRigidBody (handPose ^. posPosition) (handPose ^. posOrientation)
+    forM_ (zip (player ^. plrHandPoses) handRigidBodies) $ \(handPose, handRigidBody) -> do
+      let Pose handPosition handOrientation = shiftBy handOffset handPose
+      setRigidBodyWorldTransform handRigidBody handPosition handOrientation
 
 interpretS dynamicsWorld fromAddr (Connect playerID) = do
   -- Associate the playerID with the fromAddr we already know,
@@ -145,15 +146,19 @@ interpretS dynamicsWorld fromAddr (Connect playerID) = do
   -- update with their positions on receipt later
   handRigidBodies <- replicateM 2 $ do
     body <- addCube dynamicsWorld
-                    mempty { scale = handDimensions * 0.75 
+                    mempty { scale = handDimensions
                            }
     setRigidBodyKinematic body
     return body
 
   ssPlayerRigidBodies . at playerID ?== handRigidBodies
 
-interpretS _dynamicsWorld fromAddr (Disconnect _) = 
+interpretS dynamicsWorld fromAddr (Disconnect playerID) = do
   ssPlayerIDs . at fromAddr .== Nothing
+
+  rigidBodies <- use $ ssPlayerRigidBodies . at playerID
+  maybe (return ()) (mapM_ (removeCube dynamicsWorld)) rigidBodies
+  ssPlayerRigidBodies . at playerID .== Nothing
 
 interpretS dynamicsWorld _fromAddr (DeleteObject objID) = do
 
