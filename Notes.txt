@@ -2,20 +2,27 @@
 BUGS
 [x] Delete cube physics bodies
 [x] Fix drift in Hydra
-[ ] Fix freeze
-[ ] Fix shivering avatars (is the server maybe relaying this back to us or something? Or, did I fix this by removing the reliable flag?)
+[x] Fix judder
+[x] Fix freeze
+[ ] Fix shivering avatars 
+      (is the server maybe relaying this back to us or something? 
+      Or, did I fix this by removing the reliable flag from player positions?)
 [ ] Fix size of collider/mesh mismatch
-[ ] Fix judder
+[ ] Fix sound sources not staying stably attached to the cube they started from
+    (we should round robin the oldest expiring source onto the newest cube)
+[?] Disconnecting players still leave zombie hands
 
 FEATURES
 [x] Add more lights to shaders
 [x] Collision for hands
-[ ] Sound ( https://soundcloud.com/chvrches/chvrches-leave-a-trace-four-tet-remix-1 )
+[x] Sound v1 
+  [ ] Sound v2
+      ( https://soundcloud.com/chvrches/chvrches-leave-a-trace-four-tet-remix-1 )
 [x] Set up proper uniforms for player hands, passing orientations etc. to control the shaders
 [x] Pass parameters to the room
-[ ] Head shaders should look like deformable head
-[ ] Rendered remote heads should include oculus position
 
+[?] Rendered remote heads should include oculus position
+[ ] Head shaders should look like deformable head
 [ ] Grabbing
 
 [ ] Add view recentering to hydra start buttons
@@ -31,6 +38,7 @@ FEATURES
 
 
 SIDEPROJECTS
+[ ] Get stack-ide-sublime working on Windows
 [ ] Finish Halive on Windows
 
 

@@ -34,7 +34,8 @@ initAudio = do
 updateAudio :: (MonadIO m, MonadState World m) => [(OpenALSource, t, TChan Message)] -> m ()
 updateAudio patches = do
 
-  Pose totalHeadPosit totalHeadOrient <- totalHeadPose
+  player <- use wldPlayer
+  let Pose totalHeadPosit totalHeadOrient = totalHeadPose player
   alListenerPosition totalHeadPosit
   alListenerOrientation totalHeadOrient
 
