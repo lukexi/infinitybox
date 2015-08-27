@@ -42,7 +42,6 @@ data World = World
   , _wldCubes        :: !(Map ObjectID Object)
   , _wldLastCubes    :: !(Map ObjectID Object)
   , _wldPatchOutput  :: !(Map ObjectID GLfloat)
-  , _wldEyeDebug     :: !(V3 GLfloat)
   , _wldFrameNumber  :: !Integer
   }
 
@@ -66,17 +65,22 @@ newPlayer = Player
   }
 
 newWorld :: PlayerID -> World
-newWorld playerID = World newPlayer playerID mempty mempty mempty mempty 0 0
+newWorld playerID = World newPlayer playerID mempty mempty mempty mempty 0
 
+-- | Interpret a command into the client's world state.
+-- We use a pattern here of Reliable Create/Destroy messages and Unreliable Update
+-- messages. We only create and destroy the object when receiving those messages,
+-- and only perform updates if the object already exists, since unreliable messages
+-- can come in before the object is created and after it is destroyed.
 
 interpret :: (MonadIO m, MonadState World m) => Op -> m ()
-interpret (CreateObject objID obj)       = wldCubes   . at objID            ?== obj
--- using traverse ensures that the object is only set if it already exists,
--- to keep unreliable Updates from recreating already-deleted objects
-interpret (UpdateObject objID obj)       = wldCubes   . at objID . traverse .== obj
-interpret (DeleteObject objID)           = wldCubes   . at objID            .== Nothing
-interpret (UpdatePlayer playerID player) = wldPlayers . at playerID         ?== player
-interpret (Connect playerID)             = putStrLnIO (playerID ++ " connected")
+interpret (CreateObject objID obj)       = wldCubes   . at objID               ?== obj
+interpret (DeleteObject objID)           = wldCubes   . at objID               .== Nothing
+interpret (UpdateObject objID obj)       = wldCubes   . at objID    . traverse .== obj
+interpret (UpdatePlayer playerID player) = wldPlayers . at playerID . traverse .== player
+interpret (Connect playerID)             = do
+  wldPlayers . at playerID ?== newPlayer
+  putStrLnIO (playerID ++ " connected")
 interpret (Disconnect playerID)          = do
   wldPlayers . at playerID .== Nothing
   putStrLnIO (playerID ++ " disconnected")
@@ -138,10 +142,10 @@ randomColor :: MonadIO m => m (V4 GLfloat)
 randomColor = liftIO $ V4 <$> randomRIO (0, 1) <*> randomRIO (0, 1) <*> randomRIO (0, 1) <*> pure 1
 
 
-totalHeadPose :: (MonadState World m) => m Pose
-totalHeadPose = do
-  Pose playerPosit playerOrient <- use (wldPlayer . plrPose)
-  Pose headPosit headOrient     <- use (wldPlayer . plrHeadPose)
-  return $ Pose 
+totalHeadPose :: Player -> Pose
+totalHeadPose player = 
+  let Pose playerPosit playerOrient = player ^. plrPose
+      Pose headPosit headOrient     = player ^. plrHeadPose
+  in  Pose 
     (headPosit  + playerPosit) 
     (headOrient * playerOrient) -- quat rotation order must be rotation*original

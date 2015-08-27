@@ -73,8 +73,6 @@ processControls window events sixenseBase maybeHMD transceiver frameNumber = do
     onKeyDown Key'G e (setCursorInputMode window CursorInputMode'Normal)
     onKeyDown Key'O e (maybe (return ()) (liftIO . recenterPose) maybeHMD)
 
-    onKeyDown Key'Y e (liftIO . print =<< use wldEyeDebug)
-
   -- Fire cubes from each hand when their triggers are held down
   forM_ (zip hands handWorldPoses) $ \(handData, Pose handPos handRot) -> do
     -- Move the cube upwards a bit so it spawns at the tip of the hand
