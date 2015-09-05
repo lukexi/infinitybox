@@ -19,10 +19,13 @@ import Graphics.GL.Pal2
 import Game.Pal
 import Types
 import Resources
+import Data.Monoid
 
+listToTuple :: (t, t) -> [t] -> (t, t)
 listToTuple _   [a,b] = (a,b)
 listToTuple def _     = def
 
+useListOf :: MonadState s m => Getting (Endo [a]) s a -> m [a]
 useListOf aLens = do
   stat <- use id
   return (stat ^.. aLens)
@@ -104,7 +107,10 @@ drawCubes cube projectionView eyePos lights  = do
     
     forM_ ( zip [0..] ( Map.toList cubes ) ) $ \( i , (objID, obj) ) -> do
 
-      tick <- fromMaybe 0 <$> use (wldPatchOutput . at objID)
+      mVoiceID <- use (wldCubeVoices . at objID)
+      tick <- case mVoiceID of
+        Just voiceID -> fromMaybe 0 <$> use (wldVoiceOutput . at voiceID)
+        Nothing      -> return 0
       uniformF uTick tick
 
       let rotateVec = rotate (obj ^. objPose . posOrientation) (V3 0 0 1) 

@@ -13,16 +13,20 @@ import Control.Monad.State.Strict
 import Control.Lens
 import Linear
 import Graphics.GL
-import Graphics.GL.Pal2
 import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
 import System.Random
-import Network.Socket (PortNumber)
+-- import Network.Socket (PortNumber)
 import Data.Data
 import Game.Pal
 import Network.UDP.Pal
+import Sound.Pd1
+
+
 --
 type ObjectID = Int
 type PlayerID = String
+type VoiceID = Int
 
 data Object = Object
   { _objPose  :: !Pose
@@ -41,8 +45,11 @@ data World = World
   , _wldPlayers      :: !(Map PlayerID Player)
   , _wldCubes        :: !(Map ObjectID Object)
   , _wldLastCubes    :: !(Map ObjectID Object)
-  , _wldPatchOutput  :: !(Map ObjectID GLfloat)
   , _wldFrameNumber  :: !Integer
+  , _wldVoiceQueue   :: ![VoiceID]
+  , _wldCubeVoices   :: !(Map ObjectID VoiceID)
+  , _wldVoiceOutput  :: !(Map VoiceID GLfloat)
+  , _wldVoiceSources :: !(Map VoiceID OpenALSource)
   }
 
 makeLenses ''Object
@@ -64,8 +71,25 @@ newPlayer = Player
   , _plrHandPoses = []
   }
 
-newWorld :: PlayerID -> World
-newWorld playerID = World newPlayer playerID mempty mempty mempty mempty 0
+newWorld :: PlayerID -> Map VoiceID OpenALSource -> World
+newWorld playerID sourcesByVoice = World 
+  { _wldPlayer       = newPlayer
+  , _wldPlayerID     = playerID 
+  , _wldPlayers      = mempty 
+  , _wldCubes        = mempty 
+  , _wldLastCubes    = mempty 
+  , _wldFrameNumber  = 0
+  , _wldCubeVoices   = mempty
+  , _wldVoiceQueue   = Map.keys sourcesByVoice
+  , _wldVoiceOutput  = mempty 
+  , _wldVoiceSources = sourcesByVoice
+  }
+
+dequeueVoice :: MonadState World m => m VoiceID
+dequeueVoice = do
+  (x:xs) <- use wldVoiceQueue
+  wldVoiceQueue .== xs ++ [x]
+  return x
 
 -- | Interpret a command into the client's world state.
 -- We use a pattern here of Reliable Create/Destroy messages and Unreliable Update
@@ -74,7 +98,10 @@ newWorld playerID = World newPlayer playerID mempty mempty mempty mempty 0
 -- can come in before the object is created and after it is destroyed.
 
 interpret :: (MonadIO m, MonadState World m) => Op -> m ()
-interpret (CreateObject objID obj)       = wldCubes   . at objID               ?== obj
+interpret (CreateObject objID obj)       = do
+  voiceID <- dequeueVoice
+  wldCubes      . at objID ?== obj
+  wldCubeVoices . at objID ?== voiceID
 interpret (DeleteObject objID)           = wldCubes   . at objID               .== Nothing
 interpret (UpdateObject objID obj)       = wldCubes   . at objID    . traverse .== obj
 interpret (UpdatePlayer playerID player) = wldPlayers . at playerID . traverse .== player
@@ -134,3 +161,6 @@ transformationFromPose (Pose position orientation) = mkTransformation orientatio
 
 shiftBy :: V3 GLfloat -> Pose -> Pose
 shiftBy vec pose = pose & posPosition +~ rotate (pose ^. posOrientation) vec
+
+
+

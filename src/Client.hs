@@ -65,7 +65,7 @@ main = do
   -- Set up GLFW/Oculus/Hydra
   (window, events, maybeHMD, maybeRenderHMD, maybeSixenseBase) <- initWindow "Infinity Box" enableVR enableHydra  
   
-  patches <- initAudio
+  (voiceTicks, sourcesByVoice) <- initAudio
 
   -- Set up networking
   serverName <- getServerNameFromFile
@@ -87,7 +87,7 @@ main = do
   -- Begin game loop
   -- Get a stdgen for Entity ID generation
   stdGen   <- getStdGen
-  let world = newWorld playerID
+  let world = newWorld playerID sourcesByVoice
   void . flip runRandT stdGen . flip runStateT world . whileWindow window $ do
     frameNumber <- wldFrameNumber <+= 1
 
@@ -105,7 +105,7 @@ main = do
     writeTransceiver transceiver $ Unreliable [UpdatePlayer playerID player]
 
     -- Render to OpenAL
-    updateAudio patches
+    updateAudio voiceTicks
 
     -- Render to OpenGL
     

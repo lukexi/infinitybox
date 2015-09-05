@@ -1,17 +1,17 @@
 
 BUGS
+[ ] Fix sound sources not staying stably attached to the cube they started from
+    (we should round robin the oldest expiring source onto the newest cube)
+[ ] Apply handOffset right at the point of putting the hands into the player struct rather than offsetting all over the codebase
+[ ] Fix shivering avatars 
+      (is the server maybe relaying this back to us or something? 
+      Or, did I fix this by removing the reliable flag from player positions?)
 [x] Delete cube physics bodies
 [x] Fix drift in Hydra
 [x] Fix judder
 [x] Fix freeze
-[ ] Fix shivering avatars 
-      (is the server maybe relaying this back to us or something? 
-      Or, did I fix this by removing the reliable flag from player positions?)
 [x] Fix size of collider/mesh mismatch
-[ ] Fix sound sources not staying stably attached to the cube they started from
-    (we should round robin the oldest expiring source onto the newest cube)
 [?] Disconnecting players still leave zombie hands
-[ ] Apply handOffset right at the point of putting the hands into the player struct rather than offsetting all over the codebase
 
 FEATURES
 [x] Add more lights to shaders
@@ -22,7 +22,7 @@ FEATURES
 [x] Set up proper uniforms for player hands, passing orientations etc. to control the shaders
 [x] Pass parameters to the room
 
-[?] Rendered remote heads should include oculus position
+[x] Rendered remote heads should include oculus position
 [ ] Head shaders should look like deformable head
 [ ] Grabbing
 
@@ -43,7 +43,7 @@ FEATURES
 
 [ ] Try gl_Discard on fragments outside of SDF boundary
 
-
+[ ] Add viscosity
 
 
 SIDEPROJECTS
