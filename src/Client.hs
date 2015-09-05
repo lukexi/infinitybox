@@ -48,7 +48,7 @@ enableHydra = True
 
 getServerNameFromFile :: IO String
 getServerNameFromFile = do
-  let serverIPFile = "serverIP.cfg"
+  let serverIPFile = "serverIP.txt"
   exists <- doesFileExist serverIPFile
   if not exists 
     then return "127.0.0.1"

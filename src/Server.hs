@@ -55,6 +55,7 @@ physicsServer = do
 
   -- This is just a dummy value to pass to interpretS when calling with a message we generated
   serverName <- findLocalIP
+  writeFile "serverIP.txt" serverName
   let serverFromAddr = SockAddrUnix serverName
   (getPacketsFromClients, broadcastToClients, disconnectionsChan) <- createServer serverName serverPort packetSize
   putStrLn $ "Server engaged on " ++ serverName
