@@ -281,6 +281,11 @@ drawRoom plane projectionView eyePos lights = do
   --uniformF uParameter4 ( sin $ time * 0.037)
   --uniformF uParameter5 ( sin $ time * 0.69 )
 
+
+  kickVoiceID <- use wldKickVoiceID
+  tick <- fromMaybe 0 <$> use (wldVoiceOutput . at kickVoiceID)
+  uniformF uTick tick
+
   -- printIO view
   uniformV3 uCamera eyePos
 

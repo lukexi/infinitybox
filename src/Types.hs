@@ -17,11 +17,11 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import System.Random
 -- import Network.Socket (PortNumber)
-import Data.Data
+-- import Data.Data
 import Game.Pal
 import Network.UDP.Pal
 import Sound.Pd1
-
+import Data.List
 
 --
 type ObjectID = Int
@@ -50,6 +50,7 @@ data World = World
   , _wldCubeVoices   :: !(Map ObjectID VoiceID)
   , _wldVoiceOutput  :: !(Map VoiceID GLfloat)
   , _wldVoiceSources :: !(Map VoiceID OpenALSource)
+  , _wldKickVoiceID  :: !VoiceID
   }
 
 makeLenses ''Object
@@ -80,10 +81,14 @@ newWorld playerID sourcesByVoice = World
   , _wldLastCubes    = mempty 
   , _wldFrameNumber  = 0
   , _wldCubeVoices   = mempty
-  , _wldVoiceQueue   = Map.keys sourcesByVoice
+  , _wldVoiceQueue   = polyVoiceIDs
   , _wldVoiceOutput  = mempty 
   , _wldVoiceSources = sourcesByVoice
+  , _wldKickVoiceID  = kickVoiceID
   }
+  where
+    allVoiceIDs = sort (Map.keys sourcesByVoice)
+    (kickVoiceID:polyVoiceIDs) = allVoiceIDs
 
 dequeueVoice :: MonadState World m => m VoiceID
 dequeueVoice = do

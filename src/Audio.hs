@@ -28,7 +28,7 @@ initAudio = do
   -- Associate each voice number with an OpenAL source
   openALSources <- getPdSources
 
-  let sourcesByVoice = Map.fromList (zip [0..] openALSources)
+  let sourcesByVoice = Map.fromList (zip [1..] openALSources)
 
   forM_  openALSources $ \sourceID -> 
     
@@ -48,13 +48,26 @@ updateAudio ticks = do
   alListenerPosition totalHeadPosit
   alListenerOrientation totalHeadOrient
 
-
+  -- Set voice levels to 1 when they tick
   exhaustChanIO ticks >>= mapM_ (\val -> 
     case val of
       Atom (Float voiceID) -> wldVoiceOutput . at (floor voiceID) ?== 1          
       _ -> return ()
     )
 
+  -- Decrement each voice by a tiny bit each frame
+  voiceIDs <- Map.keys <$> use wldVoiceSources
+  forM_ voiceIDs $ \voiceID -> do
+    wldVoiceOutput . at voiceID . traverse -= 0.01
+    wldVoiceOutput . at voiceID . traverse %= max 0
+
+  -- Kick is always centered in the floor
+  kickVoiceID <- use wldKickVoiceID
+  mSourceID <- use $ wldVoiceSources . at kickVoiceID
+  forM_ mSourceID $ \sourceID -> 
+    alSourcePosition sourceID (V3 0 (-1) 0)
+
+  -- Update voices with cube positions
   cubes <- use wldCubes
   forM_ (Map.toList cubes) $ \(cubeID, cubeObj) -> do
     mVoiceID  <- use $ wldCubeVoices . at cubeID
@@ -64,9 +77,7 @@ updateAudio ticks = do
     
         alSourcePosition sourceID (cubeObj ^. objPose . posPosition)
 
-        liftIO $ sendGlobal (show voiceID ++ "xyz") $ List (map realToFrac (toList (cubeObj ^. objPose . posPosition)))
-        
-        wldVoiceOutput . at voiceID . traverse -= 0.01
-        wldVoiceOutput . at voiceID . traverse %= max 0
+        liftIO $ sendGlobal (show voiceID ++ "xyz") $ 
+          List (map realToFrac (toList (cubeObj ^. objPose . posPosition)))
 
 

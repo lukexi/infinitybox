@@ -8,6 +8,7 @@ uniform float uParameter3;
 uniform float uParameter4;
 uniform float uParameter5;
 uniform float uParameter6;
+uniform float uTick;
 
 in vec3 vPos;
 in vec3 vCam;
@@ -258,6 +259,6 @@ void main(){
 
   //color = vec4( 1. );
   //color = vec4(vec3( length(col)) , 1. );
-  color = vec4( col , 1. );
+  color = vec4( col * uTick , 1. );
 
 }
