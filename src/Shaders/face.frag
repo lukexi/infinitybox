@@ -42,7 +42,7 @@ float triNoise3D(in vec3 p, in float spd)
   for (float i=0.; i<=3.; i++ )
   {
         vec3 dg = tri3(bp*2.);
-        p += (dg+time*.1*spd);
+        p += (dg+uTime*.1*spd);
 
         bp *= 1.8;
     z *= 1.5;
