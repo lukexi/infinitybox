@@ -30,8 +30,8 @@ useListOf aLens = do
   stat <- use id
   return (stat ^.. aLens)
 
-getLocalHandPositions :: MonadState World m => m (V3 GLfloat, V3 GLfloat)
-getLocalHandPositions = listToTuple (0,0) <$>
+getLocalHandPositions :: MonadState World m => m [V3 GLfloat]
+getLocalHandPositions = 
   useListOf ( wldPlayer 
             . plrHandPoses 
             . traverse 
@@ -44,13 +44,13 @@ getLocalHandPositions = listToTuple (0,0) <$>
 -- Defaults to 0,0 if no remote players... 
 -- should we remove the lights instead?
 -- (e.g. default to infinity,infinity)
-getFirstRemoteHandPositions :: MonadState World m => m (V3 GLfloat, V3 GLfloat)
+getFirstRemoteHandPositions :: MonadState World m => m [V3 GLfloat]
 getFirstRemoteHandPositions = do
   remoteHandPoses <- listToMaybe <$> useListOf (wldPlayers . traverse . plrHandPoses)
   return $ 
     case remoteHandPoses of
-      Just hands -> listToTuple (0,0) (hands ^.. traverse . posPosition)
-      Nothing -> (0,0)
+      Just hands -> hands ^.. traverse . posPosition
+      Nothing -> []
 
 render :: (MonadIO m, MonadState World m) 
        => Resources
@@ -62,9 +62,9 @@ render Resources{..} projection viewMat = do
   let projectionView = projection !*! viewMat
       eyePos = fromMaybe viewMat (inv44 viewMat) ^. translation
 
-  (light1, light2) <- getLocalHandPositions
-  (light3, light4) <- getFirstRemoteHandPositions
-  let lightPositions = (light1, light2, light3, light4)
+  lights12 <- getLocalHandPositions
+  lights34 <- getFirstRemoteHandPositions
+  let lightPositions = lights12 ++ lights34
 
   drawLights light      projectionView lightPositions
 
@@ -78,7 +78,7 @@ drawCubes :: (MonadIO m, MonadState World m)
           => Entity Uniforms
           -> M44 GLfloat
           -> V3 GLfloat
-          -> (V3 GLfloat, V3 GLfloat, V3 GLfloat, V3 GLfloat)
+          -> [V3 GLfloat]
           -> m ()
 drawCubes cube projectionView eyePos lights  = do
   -- Interpolate between the last and newest cube states
@@ -129,23 +129,20 @@ drawCubes cube projectionView eyePos lights  = do
 
 setLightUniforms :: (MonadIO m) 
                  => Entity Uniforms
-                 -> (V3 GLfloat, V3 GLfloat, V3 GLfloat, V3 GLfloat) 
+                 -> [V3 GLfloat]
                  -> m ()
-setLightUniforms anEntity (l1, l2, l3, l4) = do
+setLightUniforms anEntity lights = do
   let Uniforms{..} = uniforms anEntity
-  
-  uniformV3 uLight1 l1
-  uniformV3 uLight2 l2
-  uniformV3 uLight3 l3
-  uniformV3 uLight4 l4
+      uniformsAndPositions = zip [uLight1, uLight2, uLight3, uLight4] lights
+  forM_ uniformsAndPositions $ \(lightUniform, lightPos) ->
+    uniformV3 lightUniform lightPos
 
-
-drawLights :: MonadIO m 
+drawLights :: (MonadIO m)
            => Entity Uniforms
            -> M44 GLfloat
-           -> (V3 GLfloat, V3 GLfloat, V3 GLfloat, V3 GLfloat) 
+           -> [V3 GLfloat]
            -> m ()
-drawLights anEntity projectionView (l1, l2, l3, l4) = do
+drawLights anEntity projectionView lights = do
   let Uniforms{..} = uniforms anEntity
   useProgram (program anEntity)
 
@@ -154,8 +151,9 @@ drawLights anEntity projectionView (l1, l2, l3, l4) = do
     glEnable GL_CULL_FACE
     glCullFace GL_BACK
 
-    forM_ (zip [0..] [l1, l2, l3, l4]) $ \(i, lightPos) -> do
+    forM_ (zip [0..] lights) $ \(i, lightPos) -> do
       let model = mkTransformation (axisAngle (V3 1 0 0) 0.0) lightPos
+      -- printIO (i, lightPos)
       
       uniformF uParameter1 $ lightPos ^. _x
       uniformF uParameter2 $ lightPos ^. _y
@@ -168,7 +166,7 @@ drawPlayers :: (MonadIO m, MonadState World m)
             -> Entity Uniforms
             -> M44 GLfloat
             -> V3 GLfloat
-            -> (V3 GLfloat, V3 GLfloat, V3 GLfloat, V3 GLfloat)
+            -> [V3 GLfloat]
             -> m ()
 drawPlayers hand face projectionView eyePos lights = do
   useProgram (program hand)
@@ -231,7 +229,7 @@ drawRemoteHeads :: (MonadIO m, MonadState World m)
                 => M44 GLfloat
                 -> V3 GLfloat
                 -> Entity Uniforms
-                -> (V3 GLfloat, V3 GLfloat, V3 GLfloat, V3 GLfloat)
+                -> [V3 GLfloat]
                 -> m ()
 drawRemoteHeads projectionView eyePos face lights = do
   let Uniforms{..} = uniforms face
@@ -252,7 +250,7 @@ drawRoom :: (MonadIO m, MonadState World m)
          => Entity Uniforms
          -> M44 GLfloat
          -> V3 GLfloat
-         -> (V3 GLfloat, V3 GLfloat, V3 GLfloat, V3 GLfloat)
+         -> [V3 GLfloat]
          -> m ()
 drawRoom plane projectionView eyePos lights = do
   let Uniforms{..} = uniforms plane
