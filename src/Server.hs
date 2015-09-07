@@ -62,7 +62,7 @@ physicsServer = do
   
   -- Initialize physics
   dynamicsWorld  <- createDynamicsWorld mempty { gravity = 0.0 }
-  _              <- addBox dynamicsWorld (-1.5)
+  _              <- addRoom dynamicsWorld (-1.5)
   
   void . flip runStateT newServerState . forever $ do
     handleDisconnections disconnectionsChan broadcastToClients dynamicsWorld
@@ -112,10 +112,10 @@ interpretS :: (MonadIO m, MonadState ServerState m)
            => DynamicsWorld -> SockAddr -> Op -> m ()
 interpretS dynamicsWorld _fromAddr (CreateObject objID obj) = do
   
-  rigidBody <- addCube dynamicsWorld
-                       mempty { position = obj ^. objPose  . posPosition
-                              , rotation = obj ^. objPose  . posOrientation
-                              , scale    = obj ^. objScale . to realToFrac
+  rigidBody <- addCube dynamicsWorld (RigidBodyID (fromIntegral objID))
+                       mempty { pcPosition = obj ^. objPose  . posPosition
+                              , pcRotation = obj ^. objPose  . posOrientation
+                              , pcScale    = obj ^. objScale . to realToFrac
                               }
   
   -- Shoot the cube outwards
@@ -145,8 +145,8 @@ interpretS dynamicsWorld fromAddr (Connect playerID) = do
   -- Add rigid bodies for the player's hands that we'll
   -- update with their positions on receipt later
   handRigidBodies <- replicateM 2 $ do
-    body <- addCube dynamicsWorld
-                    mempty { scale = handDimensions
+    body <- addCube dynamicsWorld (RigidBodyID 1)
+                    mempty { pcScale = handDimensions
                            }
     setRigidBodyKinematic body
     return body

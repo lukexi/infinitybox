@@ -42,7 +42,7 @@ library
     , free
     , game-pal
     , gl
-    , gl-pal2
+    , gl-pal
     , glfw-pal
     -- , halive
     , hydra-hs

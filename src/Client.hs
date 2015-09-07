@@ -5,7 +5,7 @@ module Client where
 import Graphics.UI.GLFW.Pal
 
 import Graphics.GL
-import Graphics.GL.Pal2
+import Graphics.GL.Pal
 
 import Control.Monad
 import Control.Monad.State.Strict

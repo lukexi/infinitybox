@@ -14,7 +14,7 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe
 import Data.Time
 
-import Graphics.GL.Pal2
+import Graphics.GL.Pal
 
 import Game.Pal
 import Types

@@ -5,14 +5,14 @@ import Linear
 import Physics.Bullet
 import Control.Monad.Trans
 
-addBox :: MonadIO m => DynamicsWorld -> Float -> m ()
-addBox dynamicsWorld height = do
-  _ <- addStaticPlane dynamicsWorld mempty { rotation = axisAngle ( V3 1 0 0 ) ((-pi)/2) , yPos = height } 
-  _ <- addStaticPlane dynamicsWorld mempty { rotation = axisAngle ( V3 1 0 0 ) (( pi)/2) , yPos = height } 
-  _ <- addStaticPlane dynamicsWorld mempty { rotation = axisAngle ( V3 0 1 0 ) ((-pi)/2) , yPos = height }
-  _ <- addStaticPlane dynamicsWorld mempty { rotation = axisAngle ( V3 0 1 0 ) (( pi)/2) , yPos = height } 
-  _ <- addStaticPlane dynamicsWorld mempty { rotation = axisAngle ( V3 0 1 0 ) (0 )      , yPos = height } 
-  _ <- addStaticPlane dynamicsWorld mempty { rotation = axisAngle ( V3 0 1 0 ) (pi)      , yPos = height }
+addRoom :: MonadIO m => DynamicsWorld -> Float -> m ()
+addRoom dynamicsWorld height = do
+  _ <- addStaticPlane dynamicsWorld (RigidBodyID 0) mempty { pcRotation = axisAngle ( V3 1 0 0 ) ((-pi)/2) , pcYPos = height } 
+  _ <- addStaticPlane dynamicsWorld (RigidBodyID 0) mempty { pcRotation = axisAngle ( V3 1 0 0 ) (( pi)/2) , pcYPos = height } 
+  _ <- addStaticPlane dynamicsWorld (RigidBodyID 0) mempty { pcRotation = axisAngle ( V3 0 1 0 ) ((-pi)/2) , pcYPos = height }
+  _ <- addStaticPlane dynamicsWorld (RigidBodyID 0) mempty { pcRotation = axisAngle ( V3 0 1 0 ) (( pi)/2) , pcYPos = height } 
+  _ <- addStaticPlane dynamicsWorld (RigidBodyID 0) mempty { pcRotation = axisAngle ( V3 0 1 0 ) (0 )      , pcYPos = height } 
+  _ <- addStaticPlane dynamicsWorld (RigidBodyID 0) mempty { pcRotation = axisAngle ( V3 0 1 0 ) (pi)      , pcYPos = height }
   return ()
 
 

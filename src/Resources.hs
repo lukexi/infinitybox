@@ -2,7 +2,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 
 module Resources where
-import Graphics.GL.Pal2
+import Graphics.GL.Pal
 import Graphics.GL
 import Linear
 import Data.Data
