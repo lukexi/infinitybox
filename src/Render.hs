@@ -66,7 +66,7 @@ render Resources{..} projection viewMat = do
   lights34 <- getFirstRemoteHandPositions
   let lightPositions = lights12 ++ lights34
 
-  drawLights light      projectionView lightPositions
+  drawLights  light     projectionView        lightPositions
 
   drawCubes   cube      projectionView eyePos lightPositions
 
@@ -75,7 +75,7 @@ render Resources{..} projection viewMat = do
   drawRoom    plane     projectionView eyePos lightPositions
   
 drawCubes :: (MonadIO m, MonadState World m)
-          => Entity Uniforms
+          => Shape Uniforms
           -> M44 GLfloat
           -> V3 GLfloat
           -> [V3 GLfloat]
@@ -89,8 +89,8 @@ drawCubes cube projectionView eyePos lights  = do
 
   time <- realToFrac . utctDayTime <$> liftIO getCurrentTime
 
-  let Uniforms{..} = uniforms cube
-  useProgram (program cube)
+  let Uniforms{..} = sUniforms cube
+  useProgram (sProgram cube)
 
   -- putStrLnIO (show view)
   
@@ -100,7 +100,7 @@ drawCubes cube projectionView eyePos lights  = do
 
   setLightUniforms cube lights
 
-  withVAO (vAO cube) $ do
+  withVAO (sVAO cube) $ do
 
     glDisable GL_CULL_FACE
     glCullFace GL_BACK
@@ -125,28 +125,28 @@ drawCubes cube projectionView eyePos lights  = do
 
       let model = transformationFromPose (obj ^. objPose)
 
-      drawEntity model projectionView i cube
+      drawShape model projectionView i cube
 
 setLightUniforms :: (MonadIO m) 
-                 => Entity Uniforms
+                 => Shape Uniforms
                  -> [V3 GLfloat]
                  -> m ()
-setLightUniforms anEntity lights = do
-  let Uniforms{..} = uniforms anEntity
+setLightUniforms anShape lights = do
+  let Uniforms{..} = sUniforms anShape
       uniformsAndPositions = zip [uLight1, uLight2, uLight3, uLight4] lights
   forM_ uniformsAndPositions $ \(lightUniform, lightPos) ->
     uniformV3 lightUniform lightPos
 
 drawLights :: (MonadIO m)
-           => Entity Uniforms
+           => Shape Uniforms
            -> M44 GLfloat
            -> [V3 GLfloat]
            -> m ()
-drawLights anEntity projectionView lights = do
-  let Uniforms{..} = uniforms anEntity
-  useProgram (program anEntity)
+drawLights anShape projectionView lights = do
+  let Uniforms{..} = sUniforms anShape
+  useProgram (sProgram anShape)
 
-  withVAO (vAO anEntity) $ do
+  withVAO (sVAO anShape) $ do
 
     glEnable GL_CULL_FACE
     glCullFace GL_BACK
@@ -159,22 +159,22 @@ drawLights anEntity projectionView lights = do
       uniformF uParameter2 $ lightPos ^. _y
       uniformF uParameter3 $ lightPos ^. _z
       
-      drawEntity model projectionView i anEntity
+      drawShape model projectionView i anShape
 
 drawPlayers :: (MonadIO m, MonadState World m) 
-            => Entity Uniforms
-            -> Entity Uniforms
+            => Shape Uniforms
+            -> Shape Uniforms
             -> M44 GLfloat
             -> V3 GLfloat
             -> [V3 GLfloat]
             -> m ()
 drawPlayers hand face projectionView eyePos lights = do
-  useProgram (program hand)
-  let Uniforms{..} = uniforms hand
+  useProgram (sProgram hand)
+  let Uniforms{..} = sUniforms hand
   uniformV3 uCamera eyePos
   setLightUniforms hand lights
 
-  withVAO (vAO hand) $ do
+  withVAO (sVAO hand) $ do
 
     glEnable GL_CULL_FACE
     glCullFace GL_BACK
@@ -185,12 +185,13 @@ drawPlayers hand face projectionView eyePos lights = do
   drawRemoteHeads projectionView eyePos face lights
 
 drawLocalHands :: (MonadIO m, MonadState World m) 
-               => M44 GLfloat -> Entity Uniforms -> m ()
+               => M44 GLfloat -> Shape Uniforms -> m ()
 drawLocalHands projectionView hand = do
-  let Uniforms{..} = uniforms hand
+  let Uniforms{..} = sUniforms hand
   -- Draw the local player's hands
   handPoses <- use $ wldPlayer . plrHandPoses
   forM_ handPoses $ \handPose -> do
+
     let finalMatrix = transformationFromPose $ shiftBy handOffset handPose
         rotateVec = rotate ( handPose ^. posOrientation ) (V3 0 0 1)
 
@@ -202,17 +203,17 @@ drawLocalHands projectionView hand = do
     uniformF uParameter4 $ rotateVec ^. _x
     uniformF uParameter5 $ rotateVec ^. _y
 
-    drawEntity finalMatrix projectionView 0 hand
+    drawShape finalMatrix projectionView 0 hand
 
 drawRemoteHands :: (MonadIO m, MonadState World m) 
-                => M44 GLfloat -> Entity Uniforms -> m ()
+                => M44 GLfloat -> Shape Uniforms -> m ()
 drawRemoteHands projectionView hand = do
-  let Uniforms{..} = uniforms hand
+  let Uniforms{..} = sUniforms hand
   players <- use $ wldPlayers . to Map.toList
   forM_ players $ \(playerID, player) -> 
     forM_ (player ^. plrHandPoses) $ \handPose -> do
+
       let finalMatrix = transformationFromPose $ shiftBy handOffset handPose
-          
           rotateVec = rotate ( handPose ^. posOrientation ) (V3 0 0 1) 
       
       uniformF uParameter1 $ handPose ^. posPosition . _x
@@ -223,39 +224,39 @@ drawRemoteHands projectionView hand = do
       uniformF uParameter4 $ rotateVec ^. _x
       uniformF uParameter5 $ rotateVec ^. _y
       
-      drawEntity finalMatrix projectionView 0 hand
+      drawShape finalMatrix projectionView 0 hand
 
 drawRemoteHeads :: (MonadIO m, MonadState World m) 
                 => M44 GLfloat
                 -> V3 GLfloat
-                -> Entity Uniforms
+                -> Shape Uniforms
                 -> [V3 GLfloat]
                 -> m ()
 drawRemoteHeads projectionView eyePos face lights = do
-  let Uniforms{..} = uniforms face
+  let Uniforms{..} = sUniforms face
   -- Draw all remote players' heads 
   -- (we don't draw the local player's head)
-  useProgram (program face)
+  useProgram (sProgram face)
   uniformV3 uCamera eyePos
   setLightUniforms face lights
 
-  withVAO (vAO face) $ do
+  withVAO (sVAO face) $ do
     players <- use $ wldPlayers . to Map.toList
     forM_ players $ \(playerID, player) -> do
       let finalMatrix = transformationFromPose (totalHeadPose player)
 
-      drawEntity finalMatrix projectionView 0 face
+      drawShape finalMatrix projectionView 0 face
 
 drawRoom :: (MonadIO m, MonadState World m) 
-         => Entity Uniforms
+         => Shape Uniforms
          -> M44 GLfloat
          -> V3 GLfloat
          -> [V3 GLfloat]
          -> m ()
 drawRoom plane projectionView eyePos lights = do
-  let Uniforms{..} = uniforms plane
+  let Uniforms{..} = sUniforms plane
 
-  useProgram (program plane)
+  useProgram (sProgram plane)
 
   player <- use wldPlayer 
 
@@ -289,7 +290,7 @@ drawRoom plane projectionView eyePos lights = do
 
   setLightUniforms plane lights
   
-  withVAO (vAO plane) $ do
+  withVAO (sVAO plane) $ do
 
     glEnable GL_CULL_FACE
     glCullFace GL_FRONT
@@ -298,21 +299,20 @@ drawRoom plane projectionView eyePos lights = do
             ( axisAngle ( V3 1 0 0 ) 0 )
             ( V3 0 0 0 )
 
-    drawEntity model projectionView 0 plane
+    drawShape model projectionView 0 plane
 
-drawEntity :: MonadIO m => M44 GLfloat -> M44 GLfloat -> GLfloat -> Entity Uniforms -> m ()
-drawEntity model projectionView drawID anEntity = do 
+drawShape :: MonadIO m => M44 GLfloat -> M44 GLfloat -> GLfloat -> Shape Uniforms -> m ()
+drawShape model projectionView drawID shape = do 
 
-  let Uniforms{..} = uniforms anEntity
+  let Uniforms{..} = sUniforms shape
 
   uniformM44 uModelViewProjection (projectionView !*! model)
   uniformM44 uInverseModel        (fromMaybe model (inv44 model))
   uniformM44 uModel model
 
-  let dID = uID 
-  glUniform1f (unUniformLocation dID) drawID
+  uniformF uID drawID
 
-  let vc = vertCount (geometry anEntity) 
+  let vc = vertCount (sGeometry shape) 
   glDrawElements GL_TRIANGLES vc GL_UNSIGNED_INT nullPtr
 
 

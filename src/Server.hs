@@ -18,8 +18,8 @@ import Control.Lens
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
 
-import qualified Data.IntMap.Strict as IntMap
-import Data.IntMap.Strict (IntMap)
+-- import qualified Data.IntMap.Strict as IntMap
+-- import Data.IntMap.Strict (IntMap)
 
 import qualified Data.Sequence as Seq
 import Data.Sequence (Seq)

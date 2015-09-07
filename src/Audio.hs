@@ -12,7 +12,6 @@ import Control.Lens
 import Control.Monad.State
 import Control.Concurrent.STM
 import Data.Foldable
-import Data.Traversable
 
 exhaustChanIO :: MonadIO m => TChan a -> m [a]
 exhaustChanIO = liftIO . atomically . exhaustChan
@@ -63,8 +62,8 @@ updateAudio ticks = do
 
   -- Kick is always centered in the floor
   kickVoiceID <- use wldKickVoiceID
-  mSourceID <- use $ wldVoiceSources . at kickVoiceID
-  forM_ mSourceID $ \sourceID -> 
+  mKickSourceID <- use $ wldVoiceSources . at kickVoiceID
+  forM_ mKickSourceID $ \sourceID -> 
     alSourcePosition sourceID (V3 0 (-1) 0)
 
   -- Update voices with cube positions

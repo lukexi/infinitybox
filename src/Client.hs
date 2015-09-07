@@ -38,13 +38,11 @@ enableServer :: Bool
 -- enableServer = True
 enableServer = False
 
-enableVR :: Bool
-enableVR = True
--- enableVR = False
-
-enableHydra :: Bool
-enableHydra = True
--- enableHydra = False
+enableDevices :: [GamePalDevices]
+enableDevices = [UseOculus, UseHydra]
+-- enableDevices = [UseOculus]
+-- enableDevices = [UseHydra]
+-- enableDevices = []
 
 getServerNameFromFile :: IO String
 getServerNameFromFile = do
@@ -63,7 +61,7 @@ main = do
   when enableEKG    . void $ EKG.forkServer "localhost" 8000
   when enableServer . void $ forkOS physicsServer
   -- Set up GLFW/Oculus/Hydra
-  (window, events, maybeHMD, maybeRenderHMD, maybeSixenseBase) <- initWindow "Infinity Box" enableVR enableHydra  
+  gamePal@GamePal{..} <- initGamePal "Infinity Box" enableDevices  
   
   (voiceTicks, sourcesByVoice) <- initAudio
 
@@ -88,7 +86,7 @@ main = do
   -- Get a stdgen for Entity ID generation
   stdGen   <- getStdGen
   let world = newWorld playerID sourcesByVoice
-  void . flip runRandT stdGen . flip runStateT world . whileWindow window $ do
+  void . flip runRandT stdGen . flip runStateT world . whileWindow gpWindow $ do
     frameNumber <- wldFrameNumber <+= 1
 
     -- Update interpolation buffer
@@ -98,7 +96,7 @@ main = do
     interpretNetworkPackets tcVerifiedPackets interpret
 
     -- Process controllers (Keyboard, Mouse, Gamepad, Hydra, Oculus headtracking)
-    processControls window events maybeSixenseBase maybeHMD transceiver frameNumber
+    processControls gamePal transceiver frameNumber
 
     -- Send player position
     player <- use wldPlayer
@@ -110,7 +108,7 @@ main = do
     -- Render to OpenGL
     
     viewMat <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
-    renderWith window maybeRenderHMD viewMat 
+    renderWith gpWindow gpRenderHMD viewMat 
       (glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT))
       (render resources)
 

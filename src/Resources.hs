@@ -29,11 +29,11 @@ data Uniforms = Uniforms
   } deriving (Data)
 
 data Resources = Resources
-  { plane :: Entity Uniforms
-  , cube  :: Entity Uniforms
-  , light :: Entity Uniforms
-  , hand  :: Entity Uniforms
-  , face  :: Entity Uniforms
+  { plane :: Shape Uniforms
+  , cube  :: Shape Uniforms
+  , light :: Shape Uniforms
+  , hand  :: Shape Uniforms
+  , face  :: Shape Uniforms
   }
 
 -- Offset the lights to be on the end of the wands
@@ -82,10 +82,10 @@ loadResources = do
   faceProg   <- createShaderProgram "src/shaders/raytrace.vert" "src/shaders/face.frag"
   faceGeo    <- cubeGeometry ( V3 0.5 0.7 0.1 ) ( V3 1 1 1 )
 
-  plane      <- entity planeGeo planeProg 
-  cube       <- entity cubeGeo  cubeProg 
-  light      <- entity lightGeo lightProg 
-  hand       <- entity handGeo  handProg 
-  face       <- entity faceGeo  faceProg 
+  plane      <- makeShape planeGeo planeProg 
+  cube       <- makeShape cubeGeo  cubeProg 
+  light      <- makeShape lightGeo lightProg 
+  hand       <- makeShape handGeo  handProg 
+  face       <- makeShape faceGeo  faceProg 
 
   return Resources{..}

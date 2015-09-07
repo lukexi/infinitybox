@@ -21,23 +21,20 @@ import Types
 import Game.Pal
 
 processControls :: (MonadIO m, MonadState World m, MonadRandom m) 
-                => Window
-                -> Events
-                -> Maybe SixenseBase
-                -> Maybe HMD
+                => GamePal
                 -> Transceiver Op
                 -> Integer
                 -> m ()
-processControls window events sixenseBase maybeHMD transceiver frameNumber = do
+processControls GamePal{..} transceiver frameNumber = do
   -- Get latest Hydra data
-  hands <- maybe (return []) getHands sixenseBase
+  hands <- maybe (return []) getHands gpSixenseBase
 
   -- Update hand positions
   handWorldPoses <- handsToWorldPoses hands <$> use (wldPlayer . plrPose)
   wldPlayer . plrHandPoses .= handWorldPoses
 
   -- Update head position
-  wldPlayer . plrHeadPose <~ getMaybeHMDPose maybeHMD
+  wldPlayer . plrHeadPose <~ getMaybeHMDPose gpHMD
 
   -- Handle Hydra movement events, or mouse if no Hydra present
   if null hands 
@@ -49,12 +46,12 @@ processControls window events sixenseBase maybeHMD transceiver frameNumber = do
       applyHydraJoystickMovement hands (wldPlayer . plrPose)
       return ()
   -- Handle keyboard movement events
-  applyWASD window (wldPlayer . plrPose)
+  applyWASD gpWindow (wldPlayer . plrPose)
   
 
   -- Handle UI events
-  processEvents events $ \e -> do
-    closeOnEscape window e
+  processEvents gpEvents $ \e -> do
+    closeOnEscape gpWindow e
 
     applyGamepadJoystickMovement e (wldPlayer . plrPose)
 
@@ -69,9 +66,9 @@ processControls window events sixenseBase maybeHMD transceiver frameNumber = do
     -- Handle key events
     -- Spawn a cube offset by 0.1 y
     onKeyDown Key'E e (addCube transceiver (shiftBy (V3 0 0.1 0) playerPose))
-    onKeyDown Key'F e (setCursorInputMode window CursorInputMode'Disabled)
-    onKeyDown Key'G e (setCursorInputMode window CursorInputMode'Normal)
-    onKeyDown Key'O e (maybe (return ()) (liftIO . recenterPose) maybeHMD)
+    onKeyDown Key'F e (setCursorInputMode gpWindow CursorInputMode'Disabled)
+    onKeyDown Key'G e (setCursorInputMode gpWindow CursorInputMode'Normal)
+    onKeyDown Key'O e (maybe (return ()) (liftIO . recenterPose) gpHMD)
 
   -- Fire cubes from each hand when their triggers are held down
   forM_ (zip hands handWorldPoses) $ \(handData, handPose) -> do
