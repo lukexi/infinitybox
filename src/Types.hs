@@ -28,6 +28,43 @@ type ObjectID = Int
 type PlayerID = String
 type VoiceID = Int
 
+data Visuals = Visuals
+  { _cubeShader  :: !FilePath
+  , _roomShader  :: !FilePath
+  , _handShader  :: !FilePath
+  , _faceShader  :: !FilePath
+  , _lightShader :: !FilePath
+  , _vertShader  :: !FilePath
+  }
+
+data Uniforms = Uniforms
+  { uModelViewProjection :: UniformLocation (M44 GLfloat)
+  , uInverseModel        :: UniformLocation (M44 GLfloat)
+  , uModel               :: UniformLocation (M44 GLfloat)
+  , uCamera              :: UniformLocation (V3  GLfloat)
+  , uLight1              :: UniformLocation (V3  GLfloat)
+  , uLight2              :: UniformLocation (V3  GLfloat)
+  , uLight3              :: UniformLocation (V3  GLfloat)
+  , uLight4              :: UniformLocation (V3  GLfloat)
+  , uParameter1          :: UniformLocation GLfloat
+  , uParameter2          :: UniformLocation GLfloat
+  , uParameter3          :: UniformLocation GLfloat
+  , uParameter4          :: UniformLocation GLfloat
+  , uParameter5          :: UniformLocation GLfloat
+  , uParameter6          :: UniformLocation GLfloat
+  , uID                  :: UniformLocation GLfloat
+  , uTime                :: UniformLocation GLfloat
+  , uTick                :: UniformLocation GLfloat
+  } deriving (Data)
+
+data Resources = Resources
+  { plane :: Shape Uniforms
+  , cube  :: Shape Uniforms
+  , light :: Shape Uniforms
+  , hand  :: Shape Uniforms
+  , face  :: Shape Uniforms
+  }
+
 data Object = Object
   { _objPose  :: !Pose
   , _objScale :: !GLfloat
@@ -56,6 +93,7 @@ data World = World
 makeLenses ''Object
 makeLenses ''Player
 makeLenses ''World
+makeLenses ''Visuals
 
 interpolateObjects :: Object -> Object -> Object
 (Object p1 s1) `interpolateObjects` (Object p2 s2) = 
