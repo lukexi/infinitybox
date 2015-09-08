@@ -1,0 +1,16 @@
+[ ] Shrink light colliders
+
+[ ] Shrink heads
+
+[ ] Package newest demo and put up on tree.is
+
+[ ] Turn off joysticks
+
+[ ] Person should start at 0.25 into room rather than right on wall
+
+[ ] Fix visual indication of room size/collisions
+
+[ ] Fix starting position of 2nd player
+[ ] Fix lights
+[ ] Fix head sizes
+
