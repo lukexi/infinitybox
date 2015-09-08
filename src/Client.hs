@@ -35,8 +35,8 @@ enableEKG = False
 -- enableEKG = False
 
 enableServer :: Bool
--- enableServer = True
-enableServer = False
+enableServer = True
+--enableServer = False
 
 enableDevices :: [GamePalDevices]
 enableDevices = [UseOculus, UseHydra]
