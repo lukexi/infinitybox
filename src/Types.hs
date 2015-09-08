@@ -22,6 +22,8 @@ import Game.Pal
 import Network.UDP.Pal
 import Sound.Pd1
 import Data.List
+import Graphics.GL.Pal
+import Data.Data
 
 --
 type ObjectID = Int
