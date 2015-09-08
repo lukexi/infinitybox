@@ -39,11 +39,13 @@ processControls GamePal{..} transceiver frameNumber = do
   -- Handle Hydra movement events, or mouse if no Hydra present
   if null hands 
     then do
+      -- Disabled mouselook because it's dumb
       -- isFocused <- getWindowFocused window
       -- when isFocused $ applyMouseLook window (wldPlayer . plrPose)
       return ()
     else do
-      applyHydraJoystickMovement hands (wldPlayer . plrPose)
+      -- Disabled hydra joysticks for no motion sickness
+      --applyHydraJoystickMovement hands (wldPlayer . plrPose)
       return ()
   -- Handle keyboard movement events
   applyWASD gpWindow (wldPlayer . plrPose)
