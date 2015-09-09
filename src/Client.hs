@@ -106,6 +106,8 @@ main = do
     updateAudio voiceTicks
 
     -- Render to OpenGL
+    wldCubeAges . traverse += 0.02
+    --printIO =<< use wldCubeAges
     
     viewMat <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
     renderWith gpWindow gpRenderHMD viewMat 

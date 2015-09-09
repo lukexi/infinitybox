@@ -16,8 +16,7 @@ import Graphics.GL
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import System.Random
--- import Network.Socket (PortNumber)
--- import Data.Data
+import System.Hardware.Hydra
 import Game.Pal
 import Network.UDP.Pal
 import Sound.Pd1
@@ -90,6 +89,8 @@ data World = World
   , _wldVoiceOutput  :: !(Map VoiceID GLfloat)
   , _wldVoiceSources :: !(Map VoiceID OpenALSource)
   , _wldKickVoiceID  :: !VoiceID
+  , _wldCubeAges     :: !(Map ObjectID Float)
+  , _wldHandTriggers :: !(Map WhichHand Bool) -- ^ Lets us detect new trigger pushes
   }
 
 makeLenses ''Object
@@ -125,6 +126,8 @@ newWorld playerID sourcesByVoice = World
   , _wldVoiceOutput  = mempty 
   , _wldVoiceSources = sourcesByVoice
   , _wldKickVoiceID  = kickVoiceID
+  , _wldCubeAges     = mempty
+  , _wldHandTriggers = mempty
   }
   where
     allVoiceIDs = sort (Map.keys sourcesByVoice)
@@ -143,16 +146,28 @@ dequeueVoice = do
 -- can come in before the object is created and after it is destroyed.
 
 interpret :: (MonadIO m, MonadState World m) => Op -> m ()
+
 interpret (CreateObject objID obj)       = do
   voiceID <- dequeueVoice
   wldCubes      . at objID ?== obj
   wldCubeVoices . at objID ?== voiceID
-interpret (DeleteObject objID)           = wldCubes   . at objID               .== Nothing
-interpret (UpdateObject objID obj)       = wldCubes   . at objID    . traverse .== obj
-interpret (UpdatePlayer playerID player) = wldPlayers . at playerID . traverse .== player
+  wldCubeAges   . at objID ?== 0
+
+interpret (DeleteObject objID)           = do
+  wldCubes      . at objID .== Nothing
+  wldCubeAges   . at objID .== Nothing
+  wldCubeVoices . at objID .== Nothing
+
+interpret (UpdateObject objID obj)       = 
+  wldCubes   . at objID    . traverse .== obj
+
+interpret (UpdatePlayer playerID player) = 
+  wldPlayers . at playerID . traverse .== player
+
 interpret (Connect playerID)             = do
   wldPlayers . at playerID ?== newPlayer
   putStrLnIO (playerID ++ " connected")
+  
 interpret (Disconnect playerID)          = do
   wldPlayers . at playerID .== Nothing
   putStrLnIO (playerID ++ " disconnected")

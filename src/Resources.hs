@@ -5,7 +5,6 @@ module Resources where
 import Graphics.GL.Pal
 import Graphics.GL
 import Linear
-import Data.Data
 import Control.Lens
 import Types
 

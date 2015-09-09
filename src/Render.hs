@@ -123,9 +123,15 @@ drawCubes cube projectionView eyePos lights  = do
       uniformF uParameter4 $ rotateVec ^. _x
       uniformF uParameter5 $ rotateVec ^. _y
 
+      cubeAge <- min 1 . fromMaybe 0 <$> use (wldCubeAges . at objID)
       let model = transformationFromPose (obj ^. objPose)
+          -- Scale the cube up from 0 at beginning. 
+          -- This is render-only at the moment; physics object is still
+          -- full size from the beginning.
+          scaledModel = model !*! scaleMatrix (realToFrac cubeAge)
 
-      drawShape model projectionView i cube
+
+      drawShape scaledModel projectionView i cube
 
 setLightUniforms :: (MonadIO m) 
                  => Shape Uniforms
@@ -210,7 +216,7 @@ drawRemoteHands :: (MonadIO m, MonadState World m)
 drawRemoteHands projectionView hand = do
   let Uniforms{..} = sUniforms hand
   players <- use $ wldPlayers . to Map.toList
-  forM_ players $ \(playerID, player) -> 
+  forM_ players $ \(_playerID, player) -> 
     forM_ (player ^. plrHandPoses) $ \handPose -> do
 
       let finalMatrix = transformationFromPose $ shiftBy handOffset handPose
@@ -242,7 +248,7 @@ drawRemoteHeads projectionView eyePos face lights = do
 
   withVAO (sVAO face) $ do
     players <- use $ wldPlayers . to Map.toList
-    forM_ players $ \(playerID, player) -> do
+    forM_ players $ \(_playerID, player) -> do
       let finalMatrix = transformationFromPose (totalHeadPose player)
 
       drawShape finalMatrix projectionView 0 face

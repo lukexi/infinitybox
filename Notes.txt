@@ -1,6 +1,6 @@
 
 BUGS
-[ ] Fix sound sources not staying stably attached to the cube they started from
+[x] Fix sound sources not staying stably attached to the cube they started from
     (we should round robin the oldest expiring source onto the newest cube)
 [ ] Apply handOffset right at the point of putting the hands into the player struct rather than offsetting all over the codebase
 [ ] Fix shivering avatars 
@@ -26,14 +26,14 @@ FEATURES
 [ ] Head shaders should look like deformable head
 [ ] Grabbing
 
-[ ] Add view recentering to hydra start buttons
-[ ] Slow down the hydra joystick raising/lowering
-[ ] Fix cube firing timer (even though we're getting rid of that...)
+[x] Add view recentering to hydra start buttons
+[x] Slow down the hydra joystick raising/lowering
+[x] Fix cube firing timer (even though we're getting rid of that...)
 
-[ ] Simpler client/server setup for standalone executable;
-    Either have the server continually pulse out its IP and have the client listen for it
+[x] Simpler client/server setup for standalone executable;
+    [ ] Either have the server continually pulse out its IP and have the client listen for it
     (it should reset its state when it connects, besides the players current position which it can send)
-    Or have the client read from a textfile who it should connect to
+    [x] Or have the client read from a textfile who it should connect to
     (we could do a UI with freetype-gl-mini too if we want.)
     Have server obtain its own IP.
 
