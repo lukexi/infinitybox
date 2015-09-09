@@ -34,10 +34,6 @@ enableEKG :: Bool
 enableEKG = False
 -- enableEKG = False
 
-enableServer :: Bool
---enableServer = True
-enableServer = False
-
 enableDevices :: [GamePalDevices]
 enableDevices = [UseOculus, UseHydra]
 -- enableDevices = [UseOculus]
@@ -59,7 +55,7 @@ getServerNameFromFile = do
 main :: IO ()
 main = do
   when enableEKG    . void $ EKG.forkServer "localhost" 8000
-  when enableServer . void $ forkOS physicsServer
+  
   -- Set up GLFW/Oculus/Hydra
   gamePal@GamePal{..} <- initGamePal "Infinity Box" enableDevices  
   
