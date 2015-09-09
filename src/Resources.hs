@@ -25,7 +25,7 @@ loadResources = do
   
   let visuals = Visuals
         { _roomShader  = "src/shaders/background1.frag"
-        , _cubeShader  = "src/shaders/aoCube.frag"
+        , _cubeShader  = "src/shaders/spaceCube.frag"
         , _faceShader  = "src/shaders/face.frag"
         , _handShader  = "src/shaders/spaceCube.frag"
         , _lightShader = "src/shaders/spaceCube.frag"
@@ -39,7 +39,7 @@ loadResources = do
 
   -- Set up our light resources
   lightProg  <- createShaderProgram ( visuals ^. vertShader ) ( visuals ^. lightShader )
-  lightGeo   <- cubeGeometry ( V3 0.1 0.1 0.1 ) ( V3 1 1 1 )
+  lightGeo   <- cubeGeometry ( V3 0.001 0.001 0.001 ) ( V3 1 1 1 )
 
   -- Set up our cube resources
   planeProg  <- createShaderProgram ( visuals ^. vertShader ) ( visuals ^. roomShader )

@@ -25,7 +25,7 @@ out vec4 color;
 
 const float MAX_TRACE_DISTANCE = 10.;           // max trace distance
 const float INTERSECTION_PRECISION = 0.001;        // precision of the intersection
-const int NUM_OF_TRACE_STEPS = 200;
+const int NUM_OF_TRACE_STEPS = 10;
 
 
 
@@ -129,15 +129,15 @@ float sdBlob( vec3 p ){
 
 float cubeField( vec3 p ){
 
-  float fieldSize = 1.  + abs( sin( uParameter5) ) * 1.;
+  float fieldSize = .4  + abs( sin( uParameter5) ) * 1.;
   return opRepBox( p , vec3(fieldSize ), .01 + uParameter4 * .05  );
 
 }
 
 float sphereField( vec3 p ){
 
-  float fieldSize = 1.  + abs( sin( uParameter5 + uTick) ) * 1.;
-  return opRepSphere( p , vec3(fieldSize ), .01 + uParameter4 * .05 );
+  float fieldSize = .4  + abs( sin( uParameter5 + uTick) ) * .3;
+  return opRepSphere( p , vec3(fieldSize ), .1 + uParameter4 * .05 );
 
 }
 
