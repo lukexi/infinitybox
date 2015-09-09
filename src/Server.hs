@@ -137,7 +137,7 @@ interpretS _dynamicsWorld _fromAddr (UpdatePlayer playerID player) = do
       let Pose handPosition handOrientation = shiftBy handOffset handPose
       setRigidBodyWorldTransform handRigidBody handPosition handOrientation
 
-interpretS dynamicsWorld fromAddr (Connect playerID) = do
+interpretS dynamicsWorld fromAddr (Connect playerID _player) = do
   -- Associate the playerID with the fromAddr we already know,
   -- so we can send an accurate disconnect message later
   ssPlayerIDs . at fromAddr ?== playerID

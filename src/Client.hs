@@ -35,8 +35,8 @@ enableEKG = False
 -- enableEKG = False
 
 enableServer :: Bool
-enableServer = True
---enableServer = False
+--enableServer = True
+enableServer = False
 
 enableDevices :: [GamePalDevices]
 enableDevices = [UseOculus, UseHydra]
@@ -69,9 +69,15 @@ main = do
   serverName <- getServerNameFromFile
   transceiver@Transceiver{..} <- createTransceiverToAddress serverName serverPort packetSize
 
+  -- Figure out if we're player 1 or 2
+  localIP <- findLocalIP
+  let player = if localIP == serverName 
+        then newPlayer1
+        else newPlayer2
+
   -- Connect to the server
   playerID <- randomName
-  writeTransceiver transceiver $ Reliable (Connect playerID)
+  writeTransceiver transceiver $ Reliable (Connect playerID player)
 
   -- Set up OpenGL resources
   resources@Resources{..} <- loadResources
@@ -84,8 +90,10 @@ main = do
   
   -- Begin game loop
   -- Get a stdgen for Entity ID generation
+
+  
   stdGen   <- getStdGen
-  let world = newWorld playerID sourcesByVoice
+  let world = newWorld playerID player sourcesByVoice
   void . flip runRandT stdGen . flip runStateT world . whileWindow gpWindow $ do
     frameNumber <- wldFrameNumber <+= 1
 

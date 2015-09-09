@@ -106,16 +106,23 @@ interpolatePoses :: Pose -> Pose -> Pose
 interpolatePoses (Pose p1 o1) (Pose p2 o2) =
   Pose (lerp 0.5 p1 p2) (slerp o1 o2 0.5)
 
-newPlayer :: Player
-newPlayer = Player
-  { _plrPose      = Pose (V3 0 0 0.4) (axisAngle (V3 0 1 0) 0)
+newPlayer1 :: Player
+newPlayer1 = Player
+  { _plrPose      = Pose (V3 0 0 0.6) (axisAngle (V3 0 1 0) 0)
   , _plrHeadPose  = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
   , _plrHandPoses = []
   }
 
-newWorld :: PlayerID -> Map VoiceID OpenALSource -> World
-newWorld playerID sourcesByVoice = World 
-  { _wldPlayer       = newPlayer
+newPlayer2 :: Player
+newPlayer2 = Player
+  { _plrPose      = Pose (V3 0 0 (-0.6)) (axisAngle (V3 0 1 0) pi)
+  , _plrHeadPose  = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
+  , _plrHandPoses = []
+  }
+
+newWorld :: PlayerID -> Player -> Map VoiceID OpenALSource -> World
+newWorld playerID player sourcesByVoice = World 
+  { _wldPlayer       = player
   , _wldPlayerID     = playerID 
   , _wldPlayers      = mempty 
   , _wldCubes        = mempty 
@@ -164,8 +171,8 @@ interpret (UpdateObject objID obj)       =
 interpret (UpdatePlayer playerID player) = 
   wldPlayers . at playerID . traverse .== player
 
-interpret (Connect playerID)             = do
-  wldPlayers . at playerID ?== newPlayer
+interpret (Connect playerID player)      = do
+  wldPlayers . at playerID ?== player
   putStrLnIO (playerID ++ " connected")
   
 interpret (Disconnect playerID)          = do
@@ -177,7 +184,7 @@ interpret (Disconnect playerID)          = do
 data Op = CreateObject !ObjectID !Object
         | UpdateObject !ObjectID !Object
         | DeleteObject !ObjectID
-        | Connect      !PlayerID
+        | Connect      !PlayerID !Player
         | UpdatePlayer !PlayerID !Player
         | Disconnect   !PlayerID
   deriving (Generic, Binary, Show)
