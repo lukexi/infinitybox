@@ -14,3 +14,8 @@
 [ ] Fix lights
 [ ] Fix head sizes
 
+[ ] Fix HRTFs
+[ ] Bring 2nd hydras!
+
+
+[ ] Update to 0.6 for Crescent bay test????
