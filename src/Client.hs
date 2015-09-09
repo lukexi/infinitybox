@@ -78,7 +78,6 @@ main = do
   -- Set up OpenGL resources
   resources@Resources{..} <- loadResources
 
-
   -- Set up GL state
   glEnable GL_DEPTH_TEST
   glClearColor 0 0 0.1 1
@@ -87,7 +86,6 @@ main = do
   -- Begin game loop
   -- Get a stdgen for Entity ID generation
 
-  
   stdGen   <- getStdGen
   let world = newWorld playerID player sourcesByVoice
   void . flip runRandT stdGen . flip runStateT world . whileWindow gpWindow $ do
@@ -114,7 +112,7 @@ main = do
     --printIO =<< use wldCubeAges
     
     viewMat <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
-    renderWith gpWindow gpRenderHMD viewMat 
+    renderWith gpWindow gpHMD viewMat 
       (glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT))
       (render resources)
 
