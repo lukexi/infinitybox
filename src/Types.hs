@@ -59,11 +59,17 @@ data Uniforms = Uniforms
   } deriving (Data)
 
 data Resources = Resources
-  { plane :: Shape Uniforms
+  { room  :: Shape Uniforms
   , cube  :: Shape Uniforms
   , light :: Shape Uniforms
   , hand  :: Shape Uniforms
   , face  :: Shape Uniforms
+  }
+
+
+data Themes = Themes
+  { _rainbow :: Resources
+  , _ao      :: Resources
   }
 
 data Object = Object
@@ -97,6 +103,7 @@ makeLenses ''Object
 makeLenses ''Player
 makeLenses ''World
 makeLenses ''Visuals
+makeLenses ''Themes
 
 interpolateObjects :: Object -> Object -> Object
 (Object p1 s1) `interpolateObjects` (Object p2 s2) = 

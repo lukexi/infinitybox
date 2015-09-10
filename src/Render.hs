@@ -18,8 +18,10 @@ import Graphics.GL.Pal
 
 import Game.Pal
 import Types
-import Resources
+--import Resources
 import Data.Monoid
+
+import Themes
 
 listToTuple :: (t, t) -> [t] -> (t, t)
 listToTuple _   [a,b] = (a,b)
@@ -66,13 +68,12 @@ render Resources{..} projection viewMat = do
   lights34 <- getFirstRemoteHandPositions
   let lightPositions = lights12 ++ lights34
 
-  drawLights  light     projectionView        lightPositions
+  --let theme =
 
-  drawCubes   cube      projectionView eyePos lightPositions
-
-  drawPlayers hand face projectionView eyePos lightPositions
-
-  drawRoom    plane     projectionView eyePos lightPositions
+  drawLights  light                     projectionView        lightPositions
+  drawCubes   cube                      projectionView eyePos lightPositions
+  drawPlayers hand  face projectionView eyePos lightPositions
+  drawRoom    room                      projectionView eyePos lightPositions
   
 drawCubes :: (MonadIO m, MonadState World m)
           => Shape Uniforms
