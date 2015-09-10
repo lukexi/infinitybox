@@ -23,7 +23,8 @@ import Game.Pal
 import Data.Char
 
 import Types
-import Resources
+--import Resources
+import Themes
 import Render
 import Controls
 import Server
@@ -76,7 +77,7 @@ main = do
   writeTransceiver transceiver $ Reliable (Connect playerID player)
 
   -- Set up OpenGL resources
-  resources@Resources{..} <- loadResources
+  themes@Themes{..} <- loadThemes
 
   -- Set up GL state
   glEnable GL_DEPTH_TEST
@@ -88,6 +89,9 @@ main = do
 
   stdGen   <- getStdGen
   let world = newWorld playerID player sourcesByVoice
+
+      theme = themes ^. rainbow
+      
   void . flip runRandT stdGen . flip runStateT world . whileWindow gpWindow $ do
     frameNumber <- wldFrameNumber <+= 1
 
@@ -114,6 +118,6 @@ main = do
     viewMat <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
     renderWith gpWindow gpHMD viewMat 
       (glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT))
-      (render resources)
+      (render theme )
 
 
