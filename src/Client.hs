@@ -23,7 +23,6 @@ import Game.Pal
 import Data.Char
 
 import Types
---import Resources
 import Themes
 import Render
 import Controls

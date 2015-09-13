@@ -58,6 +58,7 @@ library
     , time
     , udp-pal
     , network-info
+    , animation-pal
 
 executable client
   main-is:             Main.hs
