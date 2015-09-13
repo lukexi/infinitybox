@@ -9,6 +9,7 @@ uniform float uParameter4;
 uniform float uParameter5;
 uniform float uParameter6;
 uniform float uTick;
+uniform float uFilledness;
 
 in vec3 vPos;
 in vec3 vCam;
@@ -20,6 +21,8 @@ in vec3 vLight2;
 in vec2 vUv;
 
 out vec4 color;
+
+const float traceBoxSize = 10.;
 
 
 const float MAX_TRACE_DISTANCE = 20.;           // max trace distance
@@ -100,8 +103,9 @@ float sdBlob( vec3 p ){
 
 float sphereField( vec3 p ){
 
-  float fieldSize = 2.  + abs( sin( uParameter5) ) * .1;
-  //float fieldSize = .1;
+  //float fieldSize = 2.  + abs( sin( uParameter5) ) * .1;
+  float fieldSize = (1. -  uFilledness ) *10. + 2.;
+    //float fieldSize = .1;
   return opRepSphere( p , vec3(  fieldSize ), .05 + uParameter4 * .05 );
 
 }
@@ -146,7 +150,7 @@ vec2 map( vec3 pos ){
     //res.x = opS( sdBox( pos , vec3(3.5) ) , res.x );
 
     vec2 res =  vec2( sphereField( pos ) , 2. );
-    res.x = opS( sdBox( pos , vec3(10.) ) , res.x );
+    res.x = opS( sdBox( pos , vec3(traceBoxSize) ) , res.x );
     return res;
     
 }
@@ -226,7 +230,7 @@ void main(){
   vec3 col = doCol( iLamb1 , iSpec1 );//-vNorm * .5 + .5;
   col += doCol( iLamb2 , iSpec2 );
 
-  col *= .5;
+  col *= .0000005;
 
   vec2 res = calcIntersection( ro , rd );
 
@@ -247,9 +251,16 @@ void main(){
     float spec2 = max( dot( reflDir2 , rd ), 0.);
 
     //col += vec3( sin( pos.x ) , sin( pos.y ) , sin( pos.z ));
+    float fade = ((pos.y  + (traceBoxSize / 2.) ) /traceBoxSize);
+    fade = max( 0. , ( uFilledness - fade ));
+    fade *= traceBoxSize;
+    fade = min( 1. , fade );
 
-    //col = lamb * vec3( 1. , 0. , 0. ) + pow( spec , 10.) * vec3( 0. , 0. , 1. );// norm * .5 +.5;
-    col += ( doCol( lamb1 , spec1 ) + doCol( lamb2 , spec2 ) )*.3;
+    vec3 tmpCol = ( doCol( lamb1 , spec1 ) + doCol( lamb2 , spec2 ) )*.3;
+
+    
+    //col = la9mb * vec3( 1. , 0. , 0. ) + pow( spec , 10.) * vec3( 0. , 0. , 1. );// norm * .5 +.5;
+    col += mix( vec3(length(tmpCol)) , tmpCol , fade );
 
   }
 

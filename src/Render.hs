@@ -123,6 +123,8 @@ drawCubes cube projectionView eyePos lights  = do
       uniformF uParameter4 $ rotateVec ^. _x
       uniformF uParameter5 $ rotateVec ^. _y
 
+      uniformF uFilledness =<< use wldFilledness
+
       cubeAge <- min 1 . fromMaybe 0 <$> use (wldCubeAges . at objID)
       let model = transformationFromPose (obj ^. objPose)
           -- Scale the cube up from 0 at beginning. 
@@ -143,7 +145,7 @@ setLightUniforms anShape lights = do
   forM_ uniformsAndPositions $ \(lightUniform, lightPos) ->
     uniformV3 lightUniform lightPos
 
-drawLights :: (MonadIO m)
+drawLights :: (MonadIO m , MonadState World m) 
            => Shape Uniforms
            -> M44 GLfloat
            -> [V3 GLfloat]
@@ -164,6 +166,9 @@ drawLights anShape projectionView lights = do
       uniformF uParameter1 $ lightPos ^. _x
       uniformF uParameter2 $ lightPos ^. _y
       uniformF uParameter3 $ lightPos ^. _z
+
+      uniformF uFilledness =<< use wldFilledness
+
       
       drawShape model projectionView i anShape
 
@@ -277,6 +282,9 @@ drawRoom plane projectionView eyePos lights = do
   uniformF uParameter4 $ rotateVec ^. _x
   uniformF uParameter5 $ rotateVec ^. _y
   uniformF uParameter6 $ rotateVec ^. _z
+
+  uniformF uFilledness =<< use wldFilledness
+
 
 
   --uniformF uParameter1 ( sin $ time * 0.3)

@@ -33,9 +33,7 @@ import Types
 import Game.Pal
 
 
--- | The maximum number of cubes before we start kicking cubes out
-maxCubes :: Int
-maxCubes = 16
+
 
 data ServerState = ServerState 
   { _ssRigidBodies         :: !(Map ObjectID RigidBody)
@@ -119,8 +117,8 @@ interpretS dynamicsWorld _fromAddr (CreateObject objID obj) = do
                               }
   
   -- Shoot the cube outwards
-  let v = rotate ( obj ^. objPose . posOrientation ) ( V3 0 0 ( -3 ) )
-  _ <- applyCentralForce rigidBody v
+  --let v = rotate ( obj ^. objPose . posOrientation ) ( V3 0 0 ( -3 ) )
+  --_ <- applyCentralForce rigidBody v
   ssRigidBodies . at objID ?== rigidBody
 
   -- Add the cube to the expiration queue
@@ -137,14 +135,14 @@ interpretS _dynamicsWorld _fromAddr (UpdatePlayer playerID player) = do
       let Pose handPosition handOrientation = shiftBy handOffset handPose
       setRigidBodyWorldTransform handRigidBody handPosition handOrientation
 
-interpretS dynamicsWorld fromAddr (Connect playerID _player) = do
+interpretS dynamicsWorld fromAddr (Connect playerID player) = do
   -- Associate the playerID with the fromAddr we already know,
   -- so we can send an accurate disconnect message later
   ssPlayerIDs . at fromAddr ?== playerID
 
   -- Add rigid bodies for the player's hands that we'll
   -- update with their positions on receipt later
-  handRigidBodies <- replicateM 2 $ do
+  handRigidBodies <- forM (player ^. plrHandPoses) $ \_ -> do
     body <- addCube dynamicsWorld (RigidBodyID 1)
                     mempty { pcScale = handDimensions
                            }
