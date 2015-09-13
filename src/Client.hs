@@ -37,8 +37,8 @@ enableEKG = False
 enableDevices :: [GamePalDevices]
 -- enableDevices = [UseOculus, UseHydra]
 -- enableDevices = [UseOculus]
--- enableDevices = [UseHydra]
-enableDevices = []
+enableDevices = [UseHydra]
+--enableDevices = []
 
 getServerNameFromFile :: IO String
 getServerNameFromFile = do

@@ -25,7 +25,7 @@ loadThemes = do
   
   let vRainbow = Visuals
         { _roomShader  = "src/shaders/background1.frag"
-        , _cubeShader  = "src/shaders/spaceCube.frag"
+        , _cubeShader  = "src/shaders/tree.frag"
         , _faceShader  = "src/shaders/face.frag"
         , _handShader  = "src/shaders/spaceCube.frag"
         , _lightShader = "src/shaders/spaceCube.frag"
