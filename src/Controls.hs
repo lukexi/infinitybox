@@ -67,11 +67,13 @@ processControls GamePal{..} transceiver frameNumber = do
     
     -- Handle key events
     -- Spawn a cube offset by 0.1 y
-    onKeyDown Key'Space e (addCube transceiver (shiftBy (V3 0 0.1 0) playerPose))
-    onKeyDown Key'F     e (setCursorInputMode gpWindow CursorInputMode'Disabled)
-    onKeyDown Key'G     e (setCursorInputMode gpWindow CursorInputMode'Normal)
-    onKeyDown Key'O     e (maybe (return ()) (liftIO . recenterPose) gpHMD)
-
+    onKeyDown Key'E e (addCube transceiver (shiftBy (V3 0 0.1 0) playerPose))
+    onKeyDown Key'F e (setCursorInputMode gpWindow CursorInputMode'Disabled)
+    onKeyDown Key'G e (setCursorInputMode gpWindow CursorInputMode'Normal)
+    onKeyDown Key'O e (maybe (return ()) (liftIO . recenterPose) gpHMD)
+    onKeyDown Key'Z e $ addCube transceiver $ Pose (V3 0 0 0 ) ( axisAngle ( V3 0 1 0 ) 0 ) 
+    onKeyDown Key'X e ( wldFilledness -= 0.05 )
+    
   -- Fire cubes from each hand when their triggers are held down
   forM_ (zip hands handWorldPoses) $ \(handData, handPose) -> do
     let triggerIsDown = trigger handData > 0.5
@@ -104,3 +106,6 @@ addCube transceiver pose = do
 
   writeTransceiver transceiver $ Reliable instruction
   return ()
+
+
+

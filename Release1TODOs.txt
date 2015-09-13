@@ -4,6 +4,7 @@
   [ ] Sound
   [ ] Visual
   [ ] Bounce of hands and walls triggers sound
+  [ ] Remote player hands light scene?
 
 
 STORYBOARD:

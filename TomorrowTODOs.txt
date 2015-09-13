@@ -1,20 +1,19 @@
-[x] Turn off joysticks
 
-[ ] Shrink light colliders
-[ ] Shrink heads
-[ ] Package newest demo and put up on tree.is
-[ ] Person should start at 0.25 into room rather than right on wall
-[ ] Fix visual indication of room size/collisions
-
-[ ] Fix starting position of 2nd player
-    (check if ip is same as server, switch if not)
-[ ] Fix lights
 [ ] Fix head sizes
-
-[ ] Fix HRTFs
+[ ] Package newest demo and put up on tree.is
 [ ] Bring 2nd hydras!
+[x] Update to 0.6 for Crescent bay test????
 
-[ ] Update to 0.6 for Crescent bay test????
+[ ] Try adding performGC at beginning of each frame
+
+[x] Shrink light colliders
+[x] Turn off joysticks
+[x] Person should start at 0.25 into room rather than right on wall
+[x] Fix visual indication of room size/collisions
+[x] Fix starting position of 2nd player
+    (check if ip is same as server, switch if not)
+[x] Fix lights
 [x] Add Hydra Oculus centering button
 [x] Spawn cubes from smallness
 [x] Fix timers!
+[/] Fix HRTFs (they are working, just not super sharp with the ambient sounds we use)

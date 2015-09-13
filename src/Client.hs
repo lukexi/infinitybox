@@ -23,8 +23,7 @@ import Game.Pal
 import Data.Char
 
 import Types
---import Resources
-import Themes
+import Resources
 import Render
 import Controls
 import Server
@@ -36,10 +35,10 @@ enableEKG = False
 -- enableEKG = False
 
 enableDevices :: [GamePalDevices]
-enableDevices = [UseOculus, UseHydra]
+-- enableDevices = [UseOculus, UseHydra]
 -- enableDevices = [UseOculus]
 -- enableDevices = [UseHydra]
--- enableDevices = []
+enableDevices = []
 
 getServerNameFromFile :: IO String
 getServerNameFromFile = do
@@ -77,8 +76,7 @@ main = do
   writeTransceiver transceiver $ Reliable (Connect playerID player)
 
   -- Set up OpenGL resources
-  --resources@Resources{..} <- loadResources
-  themes@Themes{..} <- loadThemes
+  resources@Resources{..} <- loadResources
 
   -- Set up GL state
   glEnable GL_DEPTH_TEST
@@ -88,12 +86,8 @@ main = do
   -- Begin game loop
   -- Get a stdgen for Entity ID generation
 
-  
   stdGen   <- getStdGen
   let world = newWorld playerID player sourcesByVoice
-
-      theme = themes ^. rainbow
-      
   void . flip runRandT stdGen . flip runStateT world . whileWindow gpWindow $ do
     frameNumber <- wldFrameNumber <+= 1
 
@@ -118,8 +112,8 @@ main = do
     --printIO =<< use wldCubeAges
     
     viewMat <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
-    renderWith gpWindow gpRenderHMD viewMat 
+    renderWith gpWindow gpHMD viewMat 
       (glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT))
-      (render theme )
+      (render resources)
 
 

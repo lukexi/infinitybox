@@ -25,6 +25,12 @@ import Graphics.GL.Pal
 import Data.Data
 
 --
+
+-- | The maximum number of cubes before we start kicking cubes out
+maxCubes :: Int
+maxCubes = 16
+
+
 type ObjectID = Int
 type PlayerID = String
 type VoiceID = Int
@@ -47,6 +53,7 @@ data Uniforms = Uniforms
   , uLight2              :: UniformLocation (V3  GLfloat)
   , uLight3              :: UniformLocation (V3  GLfloat)
   , uLight4              :: UniformLocation (V3  GLfloat)
+  , uFilledness          :: UniformLocation GLfloat
   , uParameter1          :: UniformLocation GLfloat
   , uParameter2          :: UniformLocation GLfloat
   , uParameter3          :: UniformLocation GLfloat
@@ -97,6 +104,7 @@ data World = World
   , _wldKickVoiceID  :: !VoiceID
   , _wldCubeAges     :: !(Map ObjectID Float)
   , _wldHandTriggers :: !(Map WhichHand Bool) -- ^ Lets us detect new trigger pushes
+  , _wldFilledness   :: !Float
   }
 
 makeLenses ''Object
@@ -141,8 +149,10 @@ newWorld playerID player sourcesByVoice = World
   , _wldVoiceSources = sourcesByVoice
   , _wldKickVoiceID  = kickVoiceID
   , _wldCubeAges     = mempty
-  , _wldHandTriggers = mempty
+  , _wldHandTriggers = mempty  
+  , _wldFilledness   = 0
   }
+
   where
     allVoiceIDs = sort (Map.keys sourcesByVoice)
     (kickVoiceID:polyVoiceIDs) = allVoiceIDs
@@ -163,9 +173,13 @@ interpret :: (MonadIO m, MonadState World m) => Op -> m ()
 
 interpret (CreateObject objID obj)       = do
   voiceID <- dequeueVoice
+  
   wldCubes      . at objID ?== obj
   wldCubeVoices . at objID ?== voiceID
   wldCubeAges   . at objID ?== 0
+  
+  wldFilledness += 1.0 / fromIntegral maxCubes 
+
 
 interpret (DeleteObject objID)           = do
   wldCubes      . at objID .== Nothing
