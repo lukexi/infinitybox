@@ -124,6 +124,7 @@ drawCubes cube projectionView eyePos lights  = do
       uniformF uParameter5 $ rotateVec ^. _y
 
       uniformF uFilledness =<< use wldFilledness
+      uniformF uComplete   =<< use wldComplete
 
       cubeAge <- min 1 . fromMaybe 0 <$> use (wldCubeAges . at objID)
       let model = transformationFromPose (obj ^. objPose)
@@ -168,6 +169,7 @@ drawLights anShape projectionView lights = do
       uniformF uParameter3 $ lightPos ^. _z
 
       uniformF uFilledness =<< use wldFilledness
+      uniformF uComplete   =<< use wldComplete
 
       
       drawShape model projectionView i anShape
@@ -284,6 +286,7 @@ drawRoom plane projectionView eyePos lights = do
   uniformF uParameter6 $ rotateVec ^. _z
 
   uniformF uFilledness =<< use wldFilledness
+  uniformF uComplete   =<< use wldComplete
 
 
 

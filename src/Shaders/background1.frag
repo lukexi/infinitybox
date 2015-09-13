@@ -9,7 +9,10 @@ uniform float uParameter4;
 uniform float uParameter5;
 uniform float uParameter6;
 uniform float uTick;
+
+
 uniform float uFilledness;
+uniform float uComplete;
 
 in vec3 vPos;
 in vec3 vCam;
@@ -104,7 +107,7 @@ float sdBlob( vec3 p ){
 float sphereField( vec3 p ){
 
   //float fieldSize = 2.  + abs( sin( uParameter5) ) * .1;
-  float fieldSize = (1. -  uFilledness ) *10. + 2.;
+  float fieldSize = (1. -  uFilledness ) *6. + 2.;
     //float fieldSize = .1;
   return opRepSphere( p , vec3(  fieldSize ), .05 + uParameter4 * .05 );
 
@@ -230,7 +233,7 @@ void main(){
   vec3 col = doCol( iLamb1 , iSpec1 );//-vNorm * .5 + .5;
   col += doCol( iLamb2 , iSpec2 );
 
-  col *= .0000005;
+  col *= .1;
 
   vec2 res = calcIntersection( ro , rd );
 
@@ -260,7 +263,7 @@ void main(){
 
     
     //col = la9mb * vec3( 1. , 0. , 0. ) + pow( spec , 10.) * vec3( 0. , 0. , 1. );// norm * .5 +.5;
-    col += mix( vec3(length(tmpCol)) , tmpCol , fade );
+    col += mix( vec3(length(tmpCol))*fade , tmpCol*fade , uComplete );
 
   }
 

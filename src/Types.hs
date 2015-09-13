@@ -54,6 +54,7 @@ data Uniforms = Uniforms
   , uLight3              :: UniformLocation (V3  GLfloat)
   , uLight4              :: UniformLocation (V3  GLfloat)
   , uFilledness          :: UniformLocation GLfloat
+  , uComplete            :: UniformLocation GLfloat
   , uParameter1          :: UniformLocation GLfloat
   , uParameter2          :: UniformLocation GLfloat
   , uParameter3          :: UniformLocation GLfloat
@@ -99,6 +100,7 @@ data World = World
   , _wldCubeAges     :: !(Map ObjectID Float)
   , _wldHandTriggers :: !(Map WhichHand Bool) -- ^ Lets us detect new trigger pushes
   , _wldFilledness   :: !Float
+  , _wldComplete     :: !Float
   }
 
 makeLenses ''Object
@@ -144,6 +146,7 @@ newWorld playerID player sourcesByVoice = World
   , _wldCubeAges     = mempty
   , _wldHandTriggers = mempty  
   , _wldFilledness   = 0
+  , _wldComplete     = 0
   }
 
   where
@@ -172,6 +175,15 @@ interpret (CreateObject objID obj)       = do
   wldCubeAges   . at objID ?== 0
   
   wldFilledness += 1.0 / fromIntegral maxCubes 
+
+  filledness  <- use wldFilledness
+  complete    <- use wldComplete
+ 
+  if filledness >= 1.0 && complete < 1.0
+    then 
+      wldComplete += 1.0
+    else
+      return ()
 
 
 interpret (DeleteObject objID)           = do
