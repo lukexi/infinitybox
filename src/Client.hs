@@ -23,6 +23,7 @@ import Network.UDP.Pal
 import Game.Pal
 import Data.Char
 import Data.Time
+import Halive.Utils
 
 import Types
 import Themes
@@ -59,7 +60,7 @@ main = do
   when enableEKG    . void $ EKG.forkServer "localhost" 8000
   
   -- Set up GLFW/Oculus/Hydra
-  gamePal@GamePal{..} <- initGamePal "Infinity Box" enableDevices  
+  gamePal@GamePal{..} <- reacquire 0 $ initGamePal "Infinity Box" enableDevices  
   
   (voiceTicks, sourcesByVoice) <- initAudio
 
