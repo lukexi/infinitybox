@@ -15,12 +15,14 @@ import Control.Monad.Random
 import Control.Concurrent
 import System.Directory
 import Data.Maybe
+import Animation.Pal
 
 import qualified System.Remote.Monitoring as EKG
 
 import Network.UDP.Pal
 import Game.Pal
 import Data.Char
+import Data.Time
 
 import Types
 import Themes
@@ -87,7 +89,8 @@ main = do
   -- Get a stdgen for Entity ID generation
 
   stdGen   <- getStdGen
-  let world = newWorld playerID player sourcesByVoice
+  now      <- getNow
+  let world = newWorld playerID player sourcesByVoice now
 
       theme = themes ^. rainbow
       

@@ -22,6 +22,7 @@ import Types
 import Data.Monoid
 
 import Themes
+import Animation.Pal
 
 listToTuple :: (t, t) -> [t] -> (t, t)
 listToTuple _   [a,b] = (a,b)
@@ -68,20 +69,25 @@ render Resources{..} projection viewMat = do
   lights34 <- getFirstRemoteHandPositions
   let lightPositions = lights12 ++ lights34
 
+  fillednessAnim  <- use wldFilledness
+  now <- getNow
+  let filledness = evanResult (evalAnim now fillednessAnim)
+
   --let theme =
 
-  drawLights  light                     projectionView        lightPositions
-  drawCubes   cube                      projectionView eyePos lightPositions
-  drawPlayers hand  face projectionView eyePos lightPositions
-  drawRoom    room                      projectionView eyePos lightPositions
+  drawLights  light                     projectionView        lightPositions filledness
+  drawCubes   cube                      projectionView eyePos lightPositions filledness
+  drawPlayers hand  face                projectionView eyePos lightPositions 
+  drawRoom    room                      projectionView eyePos lightPositions filledness
   
 drawCubes :: (MonadIO m, MonadState World m)
           => Shape Uniforms
           -> M44 GLfloat
           -> V3 GLfloat
           -> [V3 GLfloat]
+          -> GLfloat
           -> m ()
-drawCubes cube projectionView eyePos lights  = do
+drawCubes cube projectionView eyePos lights filledness = do
   -- Interpolate between the last and newest cube states
   newCubes  <- use wldCubes
   lastCubes <- use wldLastCubes
@@ -124,8 +130,8 @@ drawCubes cube projectionView eyePos lights  = do
       uniformF uParameter4 $ rotateVec ^. _x
       uniformF uParameter5 $ rotateVec ^. _y
 
-      uniformF uFilledness =<< use wldFilledness
-      uniformF uComplete   =<< use wldComplete
+      uniformF uFilledness filledness
+      -- uniformF uComplete   =<< use wldComplete
 
       cubeAge <- min 1 . fromMaybe 0 <$> use (wldCubeAges . at objID)
       let model = transformationFromPose (obj ^. objPose)
@@ -151,8 +157,9 @@ drawLights :: (MonadIO m , MonadState World m)
            => Shape Uniforms
            -> M44 GLfloat
            -> [V3 GLfloat]
+           -> GLfloat
            -> m ()
-drawLights anShape projectionView lights = do
+drawLights anShape projectionView lights filledness = do
   let Uniforms{..} = sUniforms anShape
   useProgram (sProgram anShape)
 
@@ -169,8 +176,8 @@ drawLights anShape projectionView lights = do
       uniformF uParameter2 $ lightPos ^. _y
       uniformF uParameter3 $ lightPos ^. _z
 
-      uniformF uFilledness =<< use wldFilledness
-      uniformF uComplete   =<< use wldComplete
+      uniformF uFilledness filledness
+      -- uniformF uComplete   =<< use wldComplete
 
       
       drawShape model projectionView i anShape
@@ -266,8 +273,9 @@ drawRoom :: (MonadIO m, MonadState World m)
          -> M44 GLfloat
          -> V3 GLfloat
          -> [V3 GLfloat]
+         -> GLfloat
          -> m ()
-drawRoom plane projectionView eyePos lights = do
+drawRoom plane projectionView eyePos lights filledness = do
   let Uniforms{..} = sUniforms plane
 
   useProgram (sProgram plane)
@@ -286,8 +294,8 @@ drawRoom plane projectionView eyePos lights = do
   uniformF uParameter5 $ rotateVec ^. _y
   uniformF uParameter6 $ rotateVec ^. _z
 
-  uniformF uFilledness =<< use wldFilledness
-  uniformF uComplete   =<< use wldComplete
+  uniformF uFilledness filledness
+  -- uniformF uComplete   =<< use wldComplete
 
 
 

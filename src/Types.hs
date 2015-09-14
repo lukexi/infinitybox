@@ -23,7 +23,8 @@ import Sound.Pd1
 import Data.List
 import Graphics.GL.Pal
 import Data.Data
-
+import Animation.Pal
+import Data.Time
 --
 
 -- | The maximum number of cubes before we start kicking cubes out
@@ -105,8 +106,8 @@ data World = World
   , _wldKickVoiceID  :: !VoiceID
   , _wldCubeAges     :: !(Map ObjectID Float)
   , _wldHandTriggers :: !(Map WhichHand Bool) -- ^ Lets us detect new trigger pushes
-  , _wldFilledness   :: !Float
-  , _wldComplete     :: !Float
+  , _wldFilledness   :: !(Animation Float)
+  , _wldComplete     :: !(Animation Float)
   }
 
 makeLenses ''Object
@@ -137,8 +138,8 @@ newPlayer2 = Player
   , _plrHandPoses = []
   }
 
-newWorld :: PlayerID -> Player -> Map VoiceID OpenALSource -> World
-newWorld playerID player sourcesByVoice = World 
+newWorld :: PlayerID -> Player -> Map VoiceID OpenALSource -> DiffTime -> World
+newWorld playerID player sourcesByVoice now = World 
   { _wldPlayer       = player
   , _wldPlayerID     = playerID 
   , _wldPlayers      = mempty 
@@ -152,8 +153,20 @@ newWorld playerID player sourcesByVoice = World
   , _wldKickVoiceID  = kickVoiceID
   , _wldCubeAges     = mempty
   , _wldHandTriggers = mempty  
-  , _wldFilledness   = 0
-  , _wldComplete     = 0
+  , _wldFilledness   = Animation
+      { animStart    = now
+      , animDuration = 1
+      , animFunc     = anim id
+      , animFrom     = 0
+      , animTo       = 0
+      }
+  , _wldComplete     = Animation
+      { animStart    = now
+      , animDuration = 1
+      , animFunc     = anim id
+      , animFrom     = 0
+      , animTo       = 0
+      }
   }
 
   where
@@ -181,16 +194,31 @@ interpret (CreateObject objID obj)       = do
   wldCubeVoices . at objID ?== voiceID
   wldCubeAges   . at objID ?== 0
   
-  wldFilledness += 1.0 / fromIntegral maxCubes 
+  -- wldFilledness += 1.0 / fromIntegral maxCubes 
 
-  filledness  <- use wldFilledness
-  complete    <- use wldComplete
+  fillednessAnim  <- use wldFilledness
+  -- completeAnim    <- use wldComplete
+
+  numCubes <- Map.size <$> use wldCubes
+  now <- getNow
+  let evaledFilledness = evalAnim now fillednessAnim
+      -- evaledComplete   = evalAnim now completeAnim
+      
+      newFillednessAnimation = Animation
+        { animStart = now
+        , animDuration = 1
+        , animFunc = anim id
+        , animFrom = evanResult evaledFilledness
+        , animTo = (1 / fromIntegral maxCubes) * fromIntegral numCubes
+        }
+  -- putStrLnIO $ "Adding animation from " ++ show (evanResult evaledFilledness) ++ " to " ++ show newFilledness
+  wldFilledness .= newFillednessAnimation
  
-  if filledness >= 1.0 && complete < 1.0
-    then 
-      wldComplete += 1.0
-    else
-      return ()
+  -- if filledness >= 1.0 && complete < 1.0
+  --   then 
+  --     wldComplete += 1.0
+  --   else
+  --     return ()
 
 
 interpret (DeleteObject objID)           = do
