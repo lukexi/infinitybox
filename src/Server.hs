@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -F -pgmF strip-ths #-}
-
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Server where
