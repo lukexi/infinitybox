@@ -1,8 +1,11 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 module Server where
 
 import Control.Monad
+import Control.Monad.Random
 import Control.Monad.State.Strict
 
 import Network.UDP.Pal hiding (newClientThread)
@@ -26,13 +29,12 @@ import Data.Foldable
 
 import Physics.Bullet
 import Physics
---import Resources
 import Themes
 import Types
 import Game.Pal
 
 
-
+handRigidBodyID = RigidBodyID 1
 
 data ServerState = ServerState 
   { _ssRigidBodies         :: !(Map ObjectID RigidBody)
@@ -40,12 +42,34 @@ data ServerState = ServerState
   , _ssPlayers             :: !(Map PlayerID Player)
   , _ssPlayerIDs           :: !(Map SockAddr PlayerID)
   , _ssCubeExpirationQueue :: !(Seq ObjectID)
+  , _ssCenterCubeID        :: !(Maybe ObjectID)
   }
 
 newServerState :: ServerState
-newServerState = ServerState mempty mempty mempty mempty mempty
+newServerState = ServerState mempty mempty mempty mempty mempty Nothing
 
 makeLenses ''ServerState
+
+objIDFromRigidBodyID = fromIntegral . unRigidBodyID
+rigidBodyIDFromObjID = RigidBodyID . fromIntegral
+
+beginToSpawnNextCube spawnEvents = do
+  ssCenterCubeID .== Nothing
+
+  void . liftIO . forkIO $ do
+    threadDelay (1000000 * 2)
+    atomically (writeTChan spawnEvents ())
+
+spawnNextCube Server{..} dynamicsWorld = do
+  
+  -- Spawn a cube at the center
+  objID <- getRandom
+  
+  let instruction = CreateObject objID (Object newPose 0.25)
+  ssCenterCubeID .== Just objID
+
+  interpretS dynamicsWorld svrSockAddr instruction
+  liftIO . svrBroadcast $ Reliable instruction
 
 physicsServer :: IO ()
 physicsServer = do
@@ -53,55 +77,83 @@ physicsServer = do
   -- This is just a dummy value to pass to interpretS when calling with a message we generated
   serverName <- findLocalIP
   writeFile "serverIP.txt" serverName
-  let serverFromAddr = SockAddrUnix serverName
-  (getPacketsFromClients, broadcastToClients, disconnectionsChan) <- createServer serverName serverPort packetSize
+
+  server@Server{..} <- createServer serverName serverPort packetSize
   putStrLn $ "Server engaged on " ++ serverName
+
+  spawnEvents <- newTChanIO
   
   -- Initialize physics
   dynamicsWorld  <- createDynamicsWorld mempty { gravity = 0.0 }
   _              <- addRoom dynamicsWorld (-1.5)
   
-  void . flip runStateT newServerState . forever $ do
-    handleDisconnections disconnectionsChan broadcastToClients dynamicsWorld
-    -- Receive updates from clients
-    interpretNetworkPacketsFromOthers getPacketsFromClients $ \fromAddr message -> 
-      -- Apply to server-only state
-      interpretS dynamicsWorld fromAddr message
-
-    -- Run the physics sim
-    stepSimulation dynamicsWorld
-    
-    -- Generate a list of instructions updating 
-    -- each object with the state from the physics sim
-    rigidBodies <- use (ssRigidBodies . to Map.toList)
-    players     <- use (ssPlayers     . to Map.toList)
-    
-    transientInstructions <- (++) 
-      <$> forM players (\(playerID, player) -> 
-            return $! UpdatePlayer playerID player)
-      <*> forM rigidBodies (\(objID, rigidBody) -> do
-            (pos, orient) <- getBodyState rigidBody
-            let scale' = 1.0
-            return $! UpdateObject objID (Object (Pose pos orient) scale'))
-
-    -- Broadcast the simulation results to all clients
-    broadcastToClients $ Unreliable transientInstructions
+  void . flip runStateT newServerState $ do
+    spawnNextCube server dynamicsWorld
+    forever $ serverLoop server dynamicsWorld spawnEvents
 
 
-    -- Generate reliable instructions
-    -- Add the cube to the queue, and delete the oldest cubes
-    deleters <- Seq.drop maxCubes <$> use ssCubeExpirationQueue
+serverLoop server@Server{..} dynamicsWorld spawnEvents = do
+  handleDisconnections server dynamicsWorld
+  -- Receive updates from clients
+  interpretNetworkPacketsFromOthers (liftIO svrReceive) $ \fromAddr message -> 
+    -- Apply to server-only state
+    interpretS dynamicsWorld fromAddr message
 
-    let reliableInstructions = DeleteObject <$> toList deleters
+  -- Check if we should spawn a new cube
+  (liftIO . atomically . tryReadTChan) spawnEvents >>= \case
+    Nothing -> return ()
+    Just () -> spawnNextCube server dynamicsWorld
+      
 
-    forM_ reliableInstructions $ \instruction -> do
-      interpretS dynamicsWorld serverFromAddr instruction
-      broadcastToClients $ Reliable instruction
+  -- Run the physics sim
+  stepSimulation dynamicsWorld
+  
+  -- Find collisions so we can transmit them to clients      
+  collisions <- getCollisions dynamicsWorld
 
-    -- Run at 60 FPS
-    liftIO $ threadDelay (1000000 `div` 60)
+  -- Generate a list of instructions updating 
+  -- each object with the state from the physics sim
+  players     <- use (ssPlayers     . to Map.toList)
+  rigidBodies <- use (ssRigidBodies . to Map.toList)
+
+  
+  collisionUpdates <- forM collisions $ \collision -> do
+    -- Must grab this in the loop, as we want the first collision
+    -- that successfully grabs it to overwrite it with Nothing
+    centerCubeID <- use ssCenterCubeID
+    let objAID = objIDFromRigidBodyID (cbBodyAID collision)
+        objBID = objIDFromRigidBodyID (cbBodyBID collision)
+        oneBodyIsCenter = Just objAID         == centerCubeID    || Just objBID         == centerCubeID
+        -- oneBodyIsHand   = cbBodyAID collision == handRigidBodyID || cbBodyAID collision == handRigidBodyID
+    -- when (oneBodyIsCenter && oneBodyIsHand) $ 
+    when oneBodyIsCenter $
+      beginToSpawnNextCube spawnEvents
+
+    return $! ObjectCollision objAID objBID
+  playerUpdates <- forM players $ \(playerID, player) -> 
+    return $! UpdatePlayer playerID player
+  objectUpdates <- forM rigidBodies $ \(objID, rigidBody) -> do
+    (pos, orient) <- getBodyState rigidBody
+    let scale' = 1.0
+    return $! UpdateObject objID (Object (Pose pos orient) scale')
+  let transientInstructions = playerUpdates ++ objectUpdates ++ collisionUpdates
+
+  -- Broadcast the simulation results to all clients
+  liftIO . svrBroadcast $ Unreliable transientInstructions
 
 
+  -- Generate reliable instructions
+  -- Add the cube to the queue, and delete the oldest cubes
+  deleters <- Seq.drop maxCubes <$> use ssCubeExpirationQueue
+
+  let reliableInstructions = DeleteObject <$> toList deleters
+
+  forM_ reliableInstructions $ \instruction -> do
+    interpretS dynamicsWorld svrSockAddr instruction
+    liftIO . svrBroadcast $ Reliable instruction
+
+  -- Run at 60 FPS
+  liftIO $ threadDelay (1000000 `div` 60)
 
 -- | Interpret a client message creating an object
 -- to add it to the physics world
@@ -109,7 +161,7 @@ interpretS :: (MonadIO m, MonadState ServerState m)
            => DynamicsWorld -> SockAddr -> Op -> m ()
 interpretS dynamicsWorld _fromAddr (CreateObject objID obj) = do
   
-  rigidBody <- addCube dynamicsWorld (RigidBodyID (fromIntegral objID))
+  rigidBody <- addCube dynamicsWorld (rigidBodyIDFromObjID objID)
                        mempty { pcPosition = obj ^. objPose  . posPosition
                               , pcRotation = obj ^. objPose  . posOrientation
                               , pcScale    = obj ^. objScale . to realToFrac
@@ -142,7 +194,7 @@ interpretS dynamicsWorld fromAddr (Connect playerID player) = do
   -- Add rigid bodies for the player's hands that we'll
   -- update with their positions on receipt later
   handRigidBodies <- forM (player ^. plrHandPoses) $ \_ -> do
-    body <- addCube dynamicsWorld (RigidBodyID 1)
+    body <- addCube dynamicsWorld handRigidBodyID
                     mempty { pcScale = handDimensions
                            }
     setRigidBodyKinematic body
@@ -170,9 +222,9 @@ interpretS _dynamicsWorld _fromAddr (UpdateObject _ _) = return ()
 
 
 handleDisconnections :: (MonadIO m, MonadState ServerState m) 
-                     => TChan SockAddr -> (AppPacket Op -> m ()) -> DynamicsWorld -> m ()
-handleDisconnections disconnectionsChan broadcastToClients dynamicsWorld = do
-  disconnections <- liftIO (atomically (exhaustChan disconnectionsChan))
+                     => Server Op -> DynamicsWorld -> m ()
+handleDisconnections Server{..} dynamicsWorld = do
+  disconnections <- liftIO svrGetDisconnects
   forM_ disconnections $ \fromAddr -> do
     -- For each SockAddr we've detected a disconnection from,
     -- find its associated player ID and broadcast a message to clients
@@ -187,6 +239,6 @@ handleDisconnections disconnectionsChan broadcastToClients dynamicsWorld = do
 
         interpretS dynamicsWorld fromAddr message
         
-        broadcastToClients (Reliable message)
+        liftIO . svrBroadcast $ (Reliable message)
 
         putStrLnIO $ "Goodbye: " ++ show fromAddr

@@ -64,7 +64,7 @@ updateAudio ticks = do
   kickVoiceID <- use wldKickVoiceID
   mKickSourceID <- use $ wldVoiceSources . at kickVoiceID
   forM_ mKickSourceID $ \sourceID -> 
-    alSourcePosition sourceID (V3 0 (-1) 0)
+    alSourcePosition sourceID (V3 0 (-1) 0 :: V3 GLfloat)
 
   -- Update voices with cube positions
   cubes <- use wldCubes

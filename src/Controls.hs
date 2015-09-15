@@ -71,7 +71,7 @@ processControls GamePal{..} transceiver frameNumber = do
     onKeyDown Key'F e (setCursorInputMode gpWindow CursorInputMode'Disabled)
     onKeyDown Key'G e (setCursorInputMode gpWindow CursorInputMode'Normal)
     onKeyDown Key'O e (maybe (return ()) (liftIO . recenterPose) gpHMD)
-    onKeyDown Key'Z e $ addCube transceiver $ Pose (V3 0 0 0 ) ( axisAngle ( V3 0 1 0 ) 0 ) 
+    onKeyDown Key'Z e (addCube transceiver newPose)
     -- onKeyDown Key'X e ( wldFilledness -= 0.05 )
 
   -- Fire cubes from each hand when their triggers are held down
@@ -98,9 +98,7 @@ processControls GamePal{..} transceiver frameNumber = do
 addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Transceiver Op -> Pose -> m ()
 addCube transceiver pose = do
   -- Spawn a cube at the player's position and orientation
-  instruction <- do
-    objID <- getRandom
-    return $ CreateObject objID (Object pose 0.25)
+  instruction <- newCubeInstruction pose
 
   interpret instruction
 

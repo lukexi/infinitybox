@@ -23,6 +23,7 @@ import Graphics.GL.Pal
 import Data.Data
 import Animation.Pal
 import Data.Time
+import Control.Monad.Random
 --
 
 -- | The maximum number of cubes before we start kicking cubes out
@@ -30,7 +31,7 @@ maxCubes :: Int
 maxCubes = 16
 
 
-type ObjectID = Int
+type ObjectID = Word32
 type PlayerID = String
 type VoiceID = Int
 
@@ -238,14 +239,18 @@ interpret (Disconnect playerID)          = do
   wldPlayers . at playerID .== Nothing
   putStrLnIO (playerID ++ " disconnected")
 
+interpret (ObjectCollision objectAID objectBID) = do
+  putStrLnIO $ "Client got collision! " ++ show objectAID ++ " " ++ show objectBID
+
 -- | Deriving Generics
 
-data Op = CreateObject !ObjectID !Object
-        | UpdateObject !ObjectID !Object
-        | DeleteObject !ObjectID
-        | Connect      !PlayerID !Player
-        | UpdatePlayer !PlayerID !Player
-        | Disconnect   !PlayerID
+data Op = CreateObject    !ObjectID !Object
+        | UpdateObject    !ObjectID !Object
+        | DeleteObject    !ObjectID
+        | Connect         !PlayerID !Player
+        | UpdatePlayer    !PlayerID !Player
+        | Disconnect      !PlayerID
+        | ObjectCollision !ObjectID !ObjectID
   deriving (Generic, Binary, Show)
 
 -- Util
@@ -288,5 +293,7 @@ transformationFromPose (Pose position orientation) = mkTransformation orientatio
 shiftBy :: V3 GLfloat -> Pose -> Pose
 shiftBy vec pose = pose & posPosition +~ rotate (pose ^. posOrientation) vec
 
-
-
+newCubeInstruction :: MonadRandom m => Pose -> m Op
+newCubeInstruction pose = do
+  objID <- getRandom
+  return $ CreateObject objID (Object pose 0.25)
