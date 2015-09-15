@@ -18,7 +18,6 @@ import Graphics.GL.Pal
 
 import Game.Pal
 import Types
---import Resources
 import Data.Monoid
 
 import Themes

@@ -12,15 +12,11 @@ import Network.UDP.Pal hiding (newClientThread)
 
 import Control.Concurrent
 import Control.Concurrent.STM
-import Linear
 
 import Control.Lens
 
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
-
--- import qualified Data.IntMap.Strict as IntMap
--- import Data.IntMap.Strict (IntMap)
 
 import qualified Data.Sequence as Seq
 import Data.Sequence (Seq)
@@ -33,7 +29,7 @@ import Themes
 import Types
 import Game.Pal
 
-
+handRigidBodyID :: RigidBodyID
 handRigidBodyID = RigidBodyID 1
 
 data ServerState = ServerState 
@@ -50,9 +46,12 @@ newServerState = ServerState mempty mempty mempty mempty mempty Nothing
 
 makeLenses ''ServerState
 
+objIDFromRigidBodyID :: RigidBodyID -> ObjectID
 objIDFromRigidBodyID = fromIntegral . unRigidBodyID
+rigidBodyIDFromObjID :: ObjectID -> RigidBodyID
 rigidBodyIDFromObjID = RigidBodyID . fromIntegral
 
+beginToSpawnNextCube :: (MonadIO m, MonadState ServerState m) => TChan () -> m ()
 beginToSpawnNextCube spawnEvents = do
   ssCenterCubeID .== Nothing
 
@@ -60,6 +59,8 @@ beginToSpawnNextCube spawnEvents = do
     threadDelay (1000000 * 2)
     atomically (writeTChan spawnEvents ())
 
+spawnNextCube :: (MonadIO m, MonadState ServerState m, MonadRandom m) 
+              => Server Op -> DynamicsWorld -> m ()
 spawnNextCube Server{..} dynamicsWorld = do
   
   -- Spawn a cube at the center
@@ -91,7 +92,8 @@ physicsServer = do
     spawnNextCube server dynamicsWorld
     forever $ serverLoop server dynamicsWorld spawnEvents
 
-
+serverLoop :: (MonadIO m, MonadState ServerState m, MonadRandom m) 
+           => Server Op -> DynamicsWorld -> TChan () -> m ()
 serverLoop server@Server{..} dynamicsWorld spawnEvents = do
   handleDisconnections server dynamicsWorld
   -- Receive updates from clients
@@ -218,7 +220,7 @@ interpretS dynamicsWorld _fromAddr (DeleteObject objID) = do
   ssRigidBodies . at objID .== Nothing
 
 interpretS _dynamicsWorld _fromAddr (UpdateObject _ _) = return ()
-
+interpretS _ _ (ObjectCollision _ _) = return ()
 
 
 handleDisconnections :: (MonadIO m, MonadState ServerState m) 
