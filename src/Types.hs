@@ -30,8 +30,11 @@ import Control.Monad.Random
 maxCubes :: Int
 maxCubes = 16
 
-
-type ObjectID = Word32
+-- FIXME: We're using Word32 because we can't pass anything 
+-- bigger as a RigidBodyID or else it will be silently truncated.
+-- Using the RigidBody userPointer might be the safer bet,
+-- or make RigidBodyID a Word32 too so Haskell will track type safety
+type ObjectID = Word32 
 type PlayerID = String
 type VoiceID = Int
 
@@ -239,8 +242,19 @@ interpret (Disconnect playerID)          = do
   wldPlayers . at playerID .== Nothing
   putStrLnIO (playerID ++ " disconnected")
 
-interpret (ObjectCollision objectAID objectBID) = do
-  putStrLnIO $ "Client got collision! " ++ show objectAID ++ " " ++ show objectBID
+interpret (ObjectCollision objectAID objectBID strength) = do
+  -- putStrLnIO $ "Client got collision! " ++ show objectAID ++ " " ++ show objectBID ++ ": " ++ show strength
+  forM_ [objectAID, objectBID] $ \objID -> do
+    mVoiceID <- use (wldCubeVoices . at objID)
+    -- The objectID may be invalid since we send hands and walls as objectIDs,
+    -- thus we may not have a voice for them.
+    let volume = strength * 5
+    
+    forM_ mVoiceID $ \voiceID -> do
+      wldVoiceOutput . at voiceID ?== volume
+      liftIO $ sendGlobal (show voiceID ++ "trigger") $ 
+        Atom (Float volume)
+
 
 -- | Deriving Generics
 
@@ -250,7 +264,7 @@ data Op = CreateObject    !ObjectID !Object
         | Connect         !PlayerID !Player
         | UpdatePlayer    !PlayerID !Player
         | Disconnect      !PlayerID
-        | ObjectCollision !ObjectID !ObjectID
+        | ObjectCollision !ObjectID !ObjectID !Float
   deriving (Generic, Binary, Show)
 
 -- Util

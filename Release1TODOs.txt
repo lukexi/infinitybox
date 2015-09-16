@@ -1,11 +1,20 @@
 
 
 [ ] Collisions
-  [ ] Sound
-  [ ] Visual
-  [ ] Bounce of hands and walls triggers sound
-  [ ] Remote player hands light scene?
+  [x] Track collisions from Bullet and transmit them to clients for reaction
+    [x] Better to do the filtering on the server, and change the event to be finer-grained
+  [x] Pass collision intensity back from Bullet so we can ignore light touches
+  [ ] Mask center-cube collision to be hand-only until it is first touched by a hand
+  [x] Sound on collision, both with hands, walls, and other cubes
+  [x] Visual on collision
+    [x] Similar system to how we're doing beats? Just a decaying value refreshed on each hit.
+[ ] Remote player hands light scene?
 
+[ ] Storyboard
+  [x] Center cube should start a timer to spawn the next cube when touched
+  [ ] Stop spawning cubes after 16 (remove expiration system)
+  [ ] Replace last cube with Tree on last hit
+  [ ] Add wireframe cube to center of room
 
 STORYBOARD:
 

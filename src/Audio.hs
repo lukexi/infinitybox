@@ -50,7 +50,7 @@ updateAudio ticks = do
   -- Set voice levels to 1 when they tick
   exhaustChanIO ticks >>= mapM_ (\val -> 
     case val of
-      Atom (Float voiceID) -> wldVoiceOutput . at (floor voiceID) ?== 1          
+      Atom (Float voiceID) -> wldVoiceOutput . at (floor voiceID) ?== 1
       _ -> return ()
     )
 

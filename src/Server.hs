@@ -7,6 +7,7 @@ module Server where
 import Control.Monad
 import Control.Monad.Random
 import Control.Monad.State.Strict
+import Data.Maybe
 
 import Network.UDP.Pal hiding (newClientThread)
 
@@ -117,21 +118,23 @@ serverLoop server@Server{..} dynamicsWorld spawnEvents = do
   -- each object with the state from the physics sim
   players     <- use (ssPlayers     . to Map.toList)
   rigidBodies <- use (ssRigidBodies . to Map.toList)
-
   
-  collisionUpdates <- forM collisions $ \collision -> do
+  collisionUpdates <- fmap catMaybes . forM collisions $ \collision -> do
     -- Must grab this in the loop, as we want the first collision
     -- that successfully grabs it to overwrite it with Nothing
     centerCubeID <- use ssCenterCubeID
     let objAID = objIDFromRigidBodyID (cbBodyAID collision)
         objBID = objIDFromRigidBodyID (cbBodyBID collision)
+        strength = cbAppliedImpulse collision
         oneBodyIsCenter = Just objAID         == centerCubeID    || Just objBID         == centerCubeID
         -- oneBodyIsHand   = cbBodyAID collision == handRigidBodyID || cbBodyAID collision == handRigidBodyID
     -- when (oneBodyIsCenter && oneBodyIsHand) $ 
     when oneBodyIsCenter $
       beginToSpawnNextCube spawnEvents
 
-    return $! ObjectCollision objAID objBID
+    return $! if strength > 0.05
+      then Just (ObjectCollision objAID objBID strength)
+      else Nothing
   playerUpdates <- forM players $ \(playerID, player) -> 
     return $! UpdatePlayer playerID player
   objectUpdates <- forM rigidBodies $ \(objID, rigidBody) -> do
@@ -172,6 +175,7 @@ interpretS dynamicsWorld _fromAddr (CreateObject objID obj) = do
   -- Shoot the cube outwards
   --let v = rotate ( obj ^. objPose . posOrientation ) ( V3 0 0 ( -3 ) )
   --_ <- applyCentralForce rigidBody v
+
   ssRigidBodies . at objID ?== rigidBody
 
   -- Add the cube to the expiration queue
@@ -220,7 +224,7 @@ interpretS dynamicsWorld _fromAddr (DeleteObject objID) = do
   ssRigidBodies . at objID .== Nothing
 
 interpretS _dynamicsWorld _fromAddr (UpdateObject _ _) = return ()
-interpretS _ _ (ObjectCollision _ _) = return ()
+interpretS _ _ (ObjectCollision _ _ _) = return ()
 
 
 handleDisconnections :: (MonadIO m, MonadState ServerState m) 

@@ -12,7 +12,6 @@ import Control.Monad.State.Strict
 import System.Random
 import Control.Lens hiding (view)
 import Control.Monad.Random
-import Control.Concurrent
 import System.Directory
 import Data.Maybe
 import Animation.Pal
@@ -22,14 +21,12 @@ import qualified System.Remote.Monitoring as EKG
 import Network.UDP.Pal
 import Game.Pal
 import Data.Char
-import Data.Time
 import Halive.Utils
 
 import Types
 import Themes
 import Render
 import Controls
-import Server
 import Audio
 
 
@@ -50,8 +47,8 @@ getServerNameFromFile = do
   if not exists 
     then return "127.0.0.1"
     else do 
-      line <- fmap (filter (not . isSpace)) . listToMaybe . lines <$> readFile serverIPFile
-      case line of
+      mLine <- fmap (filter (not . isSpace)) . listToMaybe . lines <$> readFile serverIPFile
+      case mLine of
         Just line -> return line
         Nothing -> return "127.0.0.1"
 
@@ -70,13 +67,13 @@ main = do
 
   -- Figure out if we're player 1 or 2
   localIP <- findLocalIP
-  let player = if localIP == serverName 
+  let initialPlayer = if localIP == serverName 
         then newPlayer1
         else newPlayer2
 
   -- Connect to the server
   playerID <- randomName
-  writeTransceiver transceiver $ Reliable (Connect playerID player)
+  writeTransceiver transceiver $ Reliable (Connect playerID initialPlayer)
 
   -- Set up OpenGL resources
   themes@Themes{..} <- loadThemes
@@ -91,7 +88,7 @@ main = do
 
   stdGen   <- getStdGen
   now      <- getNow
-  let world = newWorld playerID player sourcesByVoice now
+  let world = newWorld playerID initialPlayer sourcesByVoice now
 
       theme = themes ^. rainbow
       
