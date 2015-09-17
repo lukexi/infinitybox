@@ -56,9 +56,12 @@ beginToSpawnNextCube :: (MonadIO m, MonadState ServerState m) => TChan () -> m (
 beginToSpawnNextCube spawnEvents = do
   ssCenterCubeID .== Nothing
 
-  void . liftIO . forkIO $ do
-    threadDelay (1000000 * 2)
-    atomically (writeTChan spawnEvents ())
+  -- Spawn a maximum of 16 cubes
+  numberOfCubes <- Seq.length <$> use ssCubeExpirationQueue
+  when (numberOfCubes < 16) $ 
+    void . liftIO . forkIO $ do
+      threadDelay (1000000 * 2)
+      atomically (writeTChan spawnEvents ())
 
 spawnNextCube :: (MonadIO m, MonadState ServerState m, MonadRandom m) 
               => Server Op -> DynamicsWorld -> m ()
@@ -183,11 +186,27 @@ interpretS dynamicsWorld _fromAddr (CreateObject objID obj) = do
 
 -- Update our record of the player's body/head/hands positions, 
 -- and update the rigid bodies of their hands
-interpretS _dynamicsWorld _fromAddr (UpdatePlayer playerID player) = do
+interpretS dynamicsWorld _fromAddr (UpdatePlayer playerID player) = do
   ssPlayers . at playerID ?== player
 
   maybeHandRigidBodies <- use $ ssPlayerRigidBodies . at playerID
-  forM_ maybeHandRigidBodies $ \handRigidBodies -> 
+
+  -- Check if we've created rigid bodies for the hands yet.
+  -- We do this in Update to support "late hands", e.g. plugging
+  -- in the hydra after the executable is running
+  case (maybeHandRigidBodies, player ^. plrHandPoses) of
+    (Nothing, hands) | not (null hands) -> do
+      handRigidBodies <- forM (player ^. plrHandPoses) $ \_ -> do
+        body <- addCube dynamicsWorld handRigidBodyID
+                        mempty { pcScale = handDimensions
+                               }
+        setRigidBodyKinematic body
+        return body
+      ssPlayerRigidBodies . at playerID ?== handRigidBodies
+    _ -> return ()
+
+  maybeHandRigidBodies' <- use $ ssPlayerRigidBodies . at playerID
+  forM_ maybeHandRigidBodies' $ \handRigidBodies -> 
     forM_ (zip (player ^. plrHandPoses) handRigidBodies) $ \(handPose, handRigidBody) -> do
       let Pose handPosition handOrientation = shiftBy handOffset handPose
       setRigidBodyWorldTransform handRigidBody handPosition handOrientation
@@ -196,17 +215,8 @@ interpretS dynamicsWorld fromAddr (Connect playerID player) = do
   -- Associate the playerID with the fromAddr we already know,
   -- so we can send an accurate disconnect message later
   ssPlayerIDs . at fromAddr ?== playerID
-
-  -- Add rigid bodies for the player's hands that we'll
-  -- update with their positions on receipt later
-  handRigidBodies <- forM (player ^. plrHandPoses) $ \_ -> do
-    body <- addCube dynamicsWorld handRigidBodyID
-                    mempty { pcScale = handDimensions
-                           }
-    setRigidBodyKinematic body
-    return body
-
-  ssPlayerRigidBodies . at playerID ?== handRigidBodies
+  ssPlayers   . at playerID ?== player
+  
 
 interpretS dynamicsWorld fromAddr (Disconnect playerID) = do
   ssPlayerIDs . at fromAddr .== Nothing

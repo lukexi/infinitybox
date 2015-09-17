@@ -1,3 +1,6 @@
+[ ] Cubes are too big
+[ ] Client/server latency is too high
+[ ] Audio latency is too high
 
 
 [ ] Collisions

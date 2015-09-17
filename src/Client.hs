@@ -35,9 +35,9 @@ enableEKG = False
 -- enableEKG = False
 
 enableDevices :: [GamePalDevices]
--- enableDevices = [UseOculus, UseHydra]
+enableDevices = [UseOculus, UseHydra]
 -- enableDevices = [UseOculus]
-enableDevices = [UseHydra]
+--enableDevices = [UseHydra]
 --enableDevices = []
 
 getServerNameFromFile :: IO String
@@ -68,7 +68,7 @@ main = do
   -- Figure out if we're player 1 or 2
   localIP <- findLocalIP
   let initialPlayer = if localIP == serverName 
-        then newPlayer1
+        then newPlayer1 
         else newPlayer2
 
   -- Connect to the server

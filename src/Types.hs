@@ -248,7 +248,7 @@ interpret (ObjectCollision objectAID objectBID strength) = do
     mVoiceID <- use (wldCubeVoices . at objID)
     -- The objectID may be invalid since we send hands and walls as objectIDs,
     -- thus we may not have a voice for them.
-    let volume = strength * 5
+    let volume = min 1 (strength * 5)
     
     forM_ mVoiceID $ \voiceID -> do
       wldVoiceOutput . at voiceID ?== volume
