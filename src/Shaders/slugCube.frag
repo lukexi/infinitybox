@@ -28,7 +28,7 @@ out vec4 color;
 
 
 const float MAX_TRACE_DISTANCE = 5.;           // max trace distance
-const float INTERSECTION_PRECISION = 0.001;        // precision of the intersection
+const float INTERSECTION_PRECISION = 0.0001;        // precision of the intersection
 const int NUM_OF_TRACE_STEPS = 20;
 const float PI  = 3.14159;
 
@@ -248,18 +248,18 @@ vec3 doBoxShading( vec2 l1 , vec2 l2 , vec3 ro ){
 // also used for refraction
 vec3 bgCol( in vec3 p , in vec3 rd ){
  
- vec3 disPos = vec3( p +  sin( p.x * 10. ) + sin( p.y  * 10. ) + sin( p.z * 10.));
- vec3 n = normalize( disPos );
+ vec3 disPos = vec3( p +  .5 *  ( sin( p.x * 10. ) + sin( p.y  * 10. ) + sin( p.z * 10.)));
+ vec3 n = -normalize( disPos );
  
  vec2 l1 = doLight( vLight1 , disPos , n , rd );
- vec2 l2 = doLight( vLight1 , disPos , n , rd );
+ vec2 l2 = doLight( vLight2 , disPos , n , rd );
 
  vec3 col1 = doPalette( .3 + .3 * l1.x , palette1 ) * l1.x;
  vec3 col2 = doPalette( .6 + .3 * l2.x , palette2 ) * l2.x;
  
  vec3 baseCol = vec3( .3 , .3 , .3 );
     
- return col1 + col2;
+ return n * .5 + .5;
 
 }
 
@@ -317,7 +317,7 @@ void main(){
 
     vec3 refrCol = bgCol( refr * ( MAX_TRACE_DISTANCE - res.x ) + pos , rd );
 
-    col += reflCol1 + reflCol2 +  refrCol;
+    col += refrCol;
 
   }else{
 
