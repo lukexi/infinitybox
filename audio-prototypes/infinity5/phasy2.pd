@@ -1,4 +1,4 @@
-#N canvas 276 0 1021 725 10;
+#N canvas 276 50 1021 725 10;
 #X obj 362 89 f;
 #X obj 386 89 + 1;
 #X obj 362 42 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 1
@@ -91,7 +91,6 @@
 #X obj 29 697 r note;
 #X obj 29 727 unpack f f;
 #X obj 135 605 loadbang;
-#X msg 135 632 2048;
 #X obj 135 667 / 44100;
 #X obj 135 692 * 1000;
 #X text 181 633 add OpenAL buffer-size delay to trigger message;
@@ -108,6 +107,7 @@
 #X obj 902 161 s kickTick;
 #X obj 15 658 r kickTick;
 #X msg 902 136 1;
+#X msg 135 632 128;
 #X connect 0 0 1 0;
 #X connect 0 0 4 0;
 #X connect 0 0 61 0;
@@ -166,9 +166,9 @@
 #X connect 48 0 43 1;
 #X connect 49 0 31 1;
 #X connect 50 0 66 0;
-#X connect 50 0 96 0;
+#X connect 50 0 95 0;
 #X connect 51 0 52 1;
-#X connect 52 0 92 0;
+#X connect 52 0 91 0;
 #X connect 54 0 53 0;
 #X connect 55 0 8 0;
 #X connect 56 0 64 0;
@@ -193,11 +193,11 @@
 #X connect 70 0 33 0;
 #X connect 75 0 74 0;
 #X connect 77 0 78 0;
-#X connect 78 0 84 0;
-#X connect 79 0 80 0;
+#X connect 78 0 83 0;
+#X connect 79 0 96 0;
 #X connect 80 0 81 0;
-#X connect 81 0 82 0;
-#X connect 82 0 84 1;
-#X connect 84 0 71 0;
-#X connect 95 0 84 0;
-#X connect 96 0 94 0;
+#X connect 81 0 83 1;
+#X connect 83 0 71 0;
+#X connect 94 0 83 0;
+#X connect 95 0 93 0;
+#X connect 96 0 80 0;
