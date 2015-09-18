@@ -173,7 +173,7 @@ newWorld playerID player sourcesByVoice now = World
 
   where
     allVoiceIDs = sort (Map.keys sourcesByVoice)
-    (kickVoiceID:polyVoiceIDs) = allVoiceIDs
+    (kickVoiceID:polyVoiceIDs) = if null allVoiceIDs then [0] else allVoiceIDs
 
 dequeueVoice :: MonadState World m => m VoiceID
 dequeueVoice = do

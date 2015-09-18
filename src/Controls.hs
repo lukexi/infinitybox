@@ -77,7 +77,7 @@ processControls GamePal{..} transceiver frameNumber = do
     -- onKeyDown Key'X e ( wldFilledness -= 0.05 )
 
   -- Fire cubes from each hand when their triggers are held down
-  forM_ (zip hands handWorldPoses) $ \(handData, handPose) -> do
+  forM_ (zip hands handWorldPoses) $ \(handData, _handPose) -> do
     -- Bind Hydra 'Start' buttons to HMD Recenter
     when (ButtonStart `elem` (handButtons handData)) $
       maybe (return ()) (liftIO . recenterPose) gpHMD
@@ -85,7 +85,8 @@ processControls GamePal{..} transceiver frameNumber = do
     -- No more cube firing
     --processHandCubeFiring handData handPose frameNumber transceiver
 
-    
+processHandCubeFiring :: (Integral a, MonadIO m, MonadState World m, MonadRandom m) 
+                      => ControllerData -> Pose -> a -> Transceiver Op -> m ()    
 processHandCubeFiring handData handPose frameNumber transceiver  = do
   let triggerIsDown = trigger handData > 0.5
   triggerWasDown <- fromMaybe False <$> use (wldHandTriggers . at (whichHand handData))

@@ -60,6 +60,7 @@ main = do
   gamePal@GamePal{..} <- reacquire 0 $ initGamePal "Infinity Box" enableDevices  
   
   (voiceTicks, sourcesByVoice) <- initAudio
+  -- let sourcesByVoice = mempty
 
   -- Set up networking
   serverName <- getServerNameFromFile
