@@ -7,26 +7,15 @@ import Graphics.GL
 import Linear
 import Control.Lens
 import Types
---import Resources
 
--- Offset the lights to be on the end of the wands
-handLightOffset :: V3 GLfloat
-handLightOffset = handOffset * 2
-
--- Offset the hand model outward to feel like wands rather than batons
-handOffset :: V3 GLfloat
-handOffset = V3 0 0 (-(handDimensions ^. _z) / 2)
-
-handDimensions :: V3 GLfloat
-handDimensions = V3 0.05 0.05 0.5
 
 loadThemes :: IO Themes
 loadThemes = do
   
   let vRainbow = Visuals
         { _roomShader  = "src/shaders/background1.frag"
-        --, _cubeShader  = "src/shaders/tree.frag"
-        , _cubeShader  = "src/shaders/logo.frag"
+        , _logoShader  = "src/shaders/logo.frag"
+        , _cubeShader  = "src/shaders/slugCube.frag"
         , _faceShader  = "src/shaders/face.frag"
         , _handShader  = "src/shaders/slugCube.frag"
         , _lightShader = "src/shaders/slugCube.frag"
@@ -35,6 +24,7 @@ loadThemes = do
 
       vAO = Visuals
         { _roomShader  = "src/shaders/aoBG.frag"
+        , _logoShader  = "src/shaders/logo.frag"
         , _cubeShader  = "src/shaders/aoCube.frag"
         , _faceShader  = "src/shaders/face.frag"
         , _handShader  = "src/shaders/aoCube.frag"
@@ -44,7 +34,7 @@ loadThemes = do
 
 
 
-  cubeGeo    <- cubeGeometry ( 0.5 :: V3 GLfloat ) ( V3 1 1 1 )
+  cubeGeo    <- cubeGeometry ( realToFrac cubeScale ) ( V3 1 1 1 )
   lightGeo   <- cubeGeometry ( V3 0.001 0.001 0.001 ) ( V3 1 1 1 )
   roomGeo    <- cubeGeometry ( V3 3 3 3 ) ( V3 1 1 1 )
   handGeo    <- cubeGeometry handDimensions ( V3 1 1 1 )
@@ -60,7 +50,8 @@ loadThemes = do
           <*> ( makeShape cubeGeo  =<< csp ( vRainbow ^. vertShader ) ( vRainbow ^. cubeShader  ) )
           <*> ( makeShape lightGeo =<< csp ( vRainbow ^. vertShader ) ( vRainbow ^. lightShader ) )
           <*> ( makeShape handGeo  =<< csp ( vRainbow ^. vertShader ) ( vRainbow ^. handShader  ) )
-          <*> ( makeShape faceGeo  =<< csp ( vRainbow ^. vertShader ) ( vRainbow ^. faceShader  ) )
+          <*> ( makeShape faceGeo  =<< csp ( vRainbow ^. vertShader ) ( vRainbow ^. faceShader  ) )   
+          <*> ( makeShape cubeGeo  =<< csp ( vRainbow ^. vertShader ) ( vRainbow ^. logoShader  ) )
         )
     <*> (Resources
           <$> ( makeShape roomGeo  =<< csp ( vAO ^. vertShader ) ( vAO ^. roomShader  ) )
@@ -68,6 +59,7 @@ loadThemes = do
           <*> ( makeShape lightGeo =<< csp ( vAO ^. vertShader ) ( vAO ^. lightShader ) )
           <*> ( makeShape handGeo  =<< csp ( vAO ^. vertShader ) ( vAO ^. handShader  ) )
           <*> ( makeShape faceGeo  =<< csp ( vAO ^. vertShader ) ( vAO ^. faceShader  ) )
+          <*> ( makeShape cubeGeo  =<< csp ( vAO ^. vertShader ) ( vAO ^. logoShader  ) )
         )
 
 

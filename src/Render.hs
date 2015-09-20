@@ -75,9 +75,23 @@ render Resources{..} projection viewMat = do
   --let theme =
 
   drawLights  light                     projectionView        lightPositions filledness
-  drawCubes   cube                      projectionView eyePos lightPositions filledness
   drawPlayers hand  face                projectionView eyePos lightPositions 
+
+  phase <- use wldPhase
+  case phase of 
+    PhaseVoid ->
+      drawCubes   logo projectionView eyePos lightPositions filledness
+    PhaseLogo ->
+      drawCubes   logo projectionView eyePos lightPositions filledness
+    PhaseMain ->
+      drawCubes   cube projectionView eyePos lightPositions filledness
+    PhaseEnd  ->
+      drawCubes   logo  projectionView eyePos lightPositions filledness
+
+
   drawRoom    room                      projectionView eyePos lightPositions filledness
+
+
   
 drawCubes :: (MonadIO m, MonadState World m)
           => Shape Uniforms
@@ -92,9 +106,6 @@ drawCubes cube projectionView eyePos lights filledness = do
   lastCubes <- use wldLastCubes
   let cubes = Map.unionWith interpolateObjects lastCubes newCubes
 
-
-  time <- realToFrac . utctDayTime <$> liftIO getCurrentTime
-
   let Uniforms{..} = sUniforms cube
   useProgram (sProgram cube)
 
@@ -102,7 +113,7 @@ drawCubes cube projectionView eyePos lights filledness = do
   
   uniformV3 uCamera eyePos
   
-  uniformF  uTime time
+  uniformF  uTime =<< use wldTime
 
   setLightUniforms cube lights
 

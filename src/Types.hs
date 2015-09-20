@@ -40,6 +40,7 @@ type VoiceID = Int
 
 data Visuals = Visuals
   { _cubeShader  :: !FilePath
+  , _logoShader  :: !FilePath
   , _roomShader  :: !FilePath
   , _handShader  :: !FilePath
   , _faceShader  :: !FilePath
@@ -75,6 +76,7 @@ data Resources = Resources
   , light :: Shape Uniforms
   , hand  :: Shape Uniforms
   , face  :: Shape Uniforms
+  , logo  :: Shape Uniforms
   }
 
 
@@ -110,7 +112,11 @@ data World = World
   , _wldHandTriggers :: !(Map WhichHand Bool) -- ^ Lets us detect new trigger pushes
   , _wldFilledness   :: !(Animation Float)
   , _wldComplete     :: !(Animation Float)
+  , _wldPhase        :: !Phase
+  , _wldTime         :: !Float
   }
+
+data Phase = PhaseVoid | PhaseLogo | PhaseMain | PhaseEnd deriving Eq
 
 makeLenses ''Object
 makeLenses ''Player
@@ -169,6 +175,8 @@ newWorld playerID player sourcesByVoice now = World
       , animFrom     = 0
       , animTo       = 0
       }
+  , _wldPhase        = PhaseVoid
+  , _wldTime         = 0
   }
 
   where
@@ -299,4 +307,20 @@ shiftBy vec pose = pose & posPosition +~ rotate (pose ^. posOrientation) vec
 newCubeInstruction :: MonadRandom m => Pose -> m Op
 newCubeInstruction pose = do
   objID <- getRandom
-  return $ CreateObject objID (Object pose 0.25)
+  return $ CreateObject objID (Object pose cubeScale)
+
+-- Offset the lights to be on the end of the wands
+handLightOffset :: V3 GLfloat
+handLightOffset = handOffset * 2
+
+-- Offset the hand model outward to feel like wands rather than batons
+handOffset :: V3 GLfloat
+handOffset = V3 0 0 (-(handDimensions ^. _z) / 2)
+
+handDimensions :: V3 GLfloat
+handDimensions = V3 0.05 0.05 0.5
+
+
+cubeScale :: GLfloat
+cubeScale = 0.3
+

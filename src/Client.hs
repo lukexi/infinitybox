@@ -115,6 +115,10 @@ main = do
     -- Render to OpenGL
     wldCubeAges . traverse += 0.02
     --printIO =<< use wldCubeAges
+
+    phase <- use wldPhase
+
+    when (phase /= PhaseVoid) $ wldTime += 0.01
     
     viewMat <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
     renderWith gpWindow gpHMD viewMat 
