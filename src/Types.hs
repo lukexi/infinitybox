@@ -68,6 +68,7 @@ data Uniforms = Uniforms
   , uID                  :: UniformLocation GLfloat
   , uTime                :: UniformLocation GLfloat
   , uTick                :: UniformLocation GLfloat
+  , uStarted             :: UniformLocation GLfloat
   } deriving (Data)
 
 data Resources = Resources
@@ -114,6 +115,7 @@ data World = World
   , _wldComplete     :: !(Animation Float)
   , _wldPhase        :: !Phase
   , _wldTime         :: !Float
+  , _wldStarted      :: !Float
   }
 
 data Phase = PhaseVoid | PhaseLogo | PhaseMain | PhaseEnd deriving Eq
@@ -177,6 +179,7 @@ newWorld playerID player sourcesByVoice now = World
       }
   , _wldPhase        = PhaseVoid
   , _wldTime         = 0
+  , _wldStarted      = 0
   }
 
   where
@@ -297,7 +300,7 @@ totalHeadPose player = addPoses (player ^. plrPose) (player ^. plrHeadPose)
 newCubeInstruction :: MonadRandom m => Pose -> m Op
 newCubeInstruction pose = do
   objID <- getRandom
-  return $ CreateObject objID (Object pose cubeScale)
+  return $ CreateObject objID (Object pose ( cubeScale * 0.5 ) )
 
 -- Offset the lights to be on the end of the wands
 handLightOffset :: V3 GLfloat

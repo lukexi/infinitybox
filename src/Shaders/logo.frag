@@ -285,7 +285,7 @@ void main(){
     vec3 ro = vPos;
     vec3 rd = normalize( vPos - vCam );
 
-    float time = max( 0. , mod( uTime * speed , 1.2 ) - .2 );
+    float time = max( 0. ,uTime * speed);
     
     gTime = time;
     breath = getBreath(time);

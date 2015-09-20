@@ -13,6 +13,7 @@ uniform float uTick;
 
 uniform float uFilledness;
 uniform float uComplete;
+uniform float uStarted;
 
 in vec3 vPos;
 in vec3 vCam;
@@ -281,6 +282,7 @@ void main(){
   //vec3 col = vec3( hit );
 
   //col = vCam * .5 + .5;
+  col *= min( 1.  , ( uTime * 5. ) ) * uStarted;
 
   //color = vec4( 1. );
   //color = vec4(vec3( length(col)) , 1. );

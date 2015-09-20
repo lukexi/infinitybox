@@ -232,7 +232,7 @@ vec3 doBoxShading( vec2 l1 , vec2 l2 , vec3 ro ){
   spec = pow( l2.y , 40. );
   col +=  doPalette( l2.x , palette2 ) * ( spec ) * .5;
 
-
+  col *=  min( 1.  , ( uTime * 1. ) );
   float edgeSize = .05 ;// * (1. - uComplete ) + .01;
   if( vUv.x < edgeSize || vUv.x > 1. - edgeSize || vUv.y < edgeSize || vUv.y > 1. - edgeSize ){
     col += vec3( .3 , .3 , .3 );
@@ -317,11 +317,11 @@ void main(){
 
     vec3 refrCol = bgCol( refr * ( MAX_TRACE_DISTANCE - res.x ) + pos , rd );
 
-    col += (reflCol1 + reflCol2) *  .4 + refrCol;
+    col += ( (reflCol1 + reflCol2) *  .4 + refrCol ) *  min( 1.  , ( uTime * 1. ) );
 
   }else{
 
-    col += bgCol( ro + rd * MAX_TRACE_DISTANCE , rd );
+    col += bgCol( ro + rd * MAX_TRACE_DISTANCE , rd ) *min( 1.  , ( uTime * 1. ) );
 
   }
 

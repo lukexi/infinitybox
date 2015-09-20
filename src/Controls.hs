@@ -75,6 +75,7 @@ processControls GamePal{..} transceiver frameNumber = do
     onKeyDown Key'O e (maybe (return ()) (liftIO . recenterPose) gpHMD)
     onKeyDown Key'Z e (addCube transceiver newPose)
     onKeyDown Key'N e startLogo
+    onKeyDown Key'M e startMain
     -- onKeyDown Key'X e ( wldFilledness -= 0.05 )
 
   -- Fire cubes from each hand when their triggers are held down
@@ -114,5 +115,15 @@ addCube transceiver pose = do
 
 
 startLogo :: (MonadState World m) => m ()
-startLogo =
+startLogo = do
   wldPhase .= PhaseLogo
+  wldTime  .= 0
+
+startMain :: (MonadState World m) => m ()
+startMain = do
+  wldPhase .= PhaseMain
+  wldTime  .= 0
+
+
+
+

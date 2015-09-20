@@ -92,6 +92,7 @@ main = do
   let world = newWorld playerID initialPlayer sourcesByVoice now
 
       theme = themes ^. rainbow
+
       
   void . flip runRandT stdGen . flip runStateT world . whileWindow gpWindow $ do
     frameNumber <- wldFrameNumber <+= 1
@@ -112,14 +113,23 @@ main = do
     -- Render to OpenAL
     updateAudio voiceTicks
 
+    delta <- realToFrac <$> liftIO gpGetDelta
+
     -- Render to OpenGL
-    wldCubeAges . traverse += 0.02
+    wldCubeAges . traverse += delta
     --printIO =<< use wldCubeAges
 
     phase <- use wldPhase
 
-    when (phase /= PhaseVoid) $ wldTime += 0.01
     
+    when (phase /= PhaseVoid) $ wldTime += delta
+    t <- use wldTime
+    when (phase == PhaseLogo && t > 11.0 ) $ do
+      wldPhase .= PhaseMain
+      wldTime  .= 0
+      wldStarted .= 1
+      
+
     viewMat <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
     renderWith gpWindow gpHMD viewMat 
       (glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT))

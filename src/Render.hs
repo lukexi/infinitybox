@@ -74,22 +74,24 @@ render Resources{..} projection viewMat = do
 
   --let theme =
 
-  drawLights  light                     projectionView        lightPositions filledness
-  drawPlayers hand  face                projectionView eyePos lightPositions 
+  drawLights  light      projectionView        lightPositions filledness
+  drawPlayers hand face  projectionView eyePos lightPositions 
 
   phase <- use wldPhase
   case phase of 
     PhaseVoid ->
-      drawCubes   logo projectionView eyePos lightPositions filledness
+      drawCubes logo projectionView eyePos lightPositions filledness
     PhaseLogo ->
-      drawCubes   logo projectionView eyePos lightPositions filledness
+      drawCubes logo projectionView eyePos lightPositions filledness
     PhaseMain ->
-      drawCubes   cube projectionView eyePos lightPositions filledness
+      drawCubes cube projectionView eyePos lightPositions filledness
     PhaseEnd  ->
-      drawCubes   logo  projectionView eyePos lightPositions filledness
+      drawCubes logo  projectionView eyePos lightPositions filledness
+
+  drawRoom room projectionView eyePos lightPositions filledness
 
 
-  drawRoom    room                      projectionView eyePos lightPositions filledness
+  
 
 
   
@@ -109,11 +111,11 @@ drawCubes cube projectionView eyePos lights filledness = do
   let Uniforms{..} = sUniforms cube
   useProgram (sProgram cube)
 
+  uniformF  uTime =<< use wldTime
+
   -- putStrLnIO (show view)
   
   uniformV3 uCamera eyePos
-  
-  uniformF  uTime =<< use wldTime
 
   setLightUniforms cube lights
 
@@ -173,6 +175,9 @@ drawLights anShape projectionView lights filledness = do
   let Uniforms{..} = sUniforms anShape
   useProgram (sProgram anShape)
 
+  uniformF  uTime =<< use wldTime
+
+
   withVAO (sVAO anShape) $ do
 
     glEnable GL_CULL_FACE
@@ -203,6 +208,8 @@ drawPlayers hand face projectionView eyePos lights = do
   useProgram (sProgram hand)
   let Uniforms{..} = sUniforms hand
   uniformV3 uCamera eyePos
+  uniformF  uTime =<< use wldTime
+
   setLightUniforms hand lights
 
   withVAO (sVAO hand) $ do
@@ -219,6 +226,7 @@ drawLocalHands :: (MonadIO m, MonadState World m)
                => M44 GLfloat -> Shape Uniforms -> m ()
 drawLocalHands projectionView hand = do
   let Uniforms{..} = sUniforms hand
+
   -- Draw the local player's hands
   handPoses <- use $ wldPlayer . plrHandPoses
   forM_ handPoses $ \handPose -> do
@@ -240,6 +248,7 @@ drawRemoteHands :: (MonadIO m, MonadState World m)
                 => M44 GLfloat -> Shape Uniforms -> m ()
 drawRemoteHands projectionView hand = do
   let Uniforms{..} = sUniforms hand
+
   players <- use $ wldPlayers . to Map.toList
   forM_ players $ \(_playerID, player) -> 
     forM_ (player ^. plrHandPoses) $ \handPose -> do
@@ -269,6 +278,7 @@ drawRemoteHeads projectionView eyePos face lights = do
   -- (we don't draw the local player's head)
   useProgram (sProgram face)
   uniformV3 uCamera eyePos
+  uniformF  uTime =<< use wldTime
   setLightUniforms face lights
 
   withVAO (sVAO face) $ do
@@ -288,7 +298,13 @@ drawRoom :: (MonadIO m, MonadState World m)
 drawRoom plane projectionView eyePos lights filledness = do
   let Uniforms{..} = sUniforms plane
 
+  
+
+
   useProgram (sProgram plane)
+
+  uniformF  uTime =<< use wldTime
+  uniformF  uStarted =<< use wldStarted
 
   player <- use wldPlayer 
 
