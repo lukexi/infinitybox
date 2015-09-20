@@ -284,6 +284,6 @@ void main(){
 
   //color = vec4( 1. );
   //color = vec4(vec3( length(col)) , 1. );
-  color = vec4( col  , 1. );
+  color = vec4( col , 1. );
 
 }

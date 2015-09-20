@@ -203,24 +203,13 @@ interpret (CreateObject objID obj)       = do
 
   numCubes <- Map.size <$> use wldCubes
   now <- getNow
-  let evaledFilledness = evalAnim now fillednessAnim
-      -- evaledComplete   = evalAnim now completeAnim
-      
-      newFillednessAnimation = Animation
+  wldFilledness .= Animation
         { animStart = now
         , animDuration = 1
         , animFunc = anim id
-        , animFrom = evanResult evaledFilledness
+        , animFrom = evanResult (evalAnim now fillednessAnim)
         , animTo = (1 / fromIntegral maxCubes) * fromIntegral numCubes
         }
-  -- putStrLnIO $ "Adding animation from " ++ show (evanResult evaledFilledness) ++ " to " ++ show newFilledness
-  wldFilledness .= newFillednessAnimation
- 
-  -- if filledness >= 1.0 && complete < 1.0
-  --   then 
-  --     wldComplete += 1.0
-  --   else
-  --     return ()
 
 
 interpret (DeleteObject objID)           = do
