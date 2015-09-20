@@ -92,7 +92,7 @@ vec2 smoothU( vec2 d1, vec2 d2, float k)
 
 
 
-const int numSteps =3;
+const int numSteps =4;
 //-------------------------------
 // Modelling 
 //--------------------------------
@@ -310,14 +310,14 @@ void main(){
     light1 = doLight( vLight1 , pos , nor , rd );
     light2 = doLight( vLight2 , pos , nor , rd );
 
-    vec3 refr = refract( rd , nor , 1. / 1.2 );
+    vec3 refr = refract( rd , nor , 1. / 1.1 );
 
-    vec3 reflCol1= doPalette( .3 + .3 * light1.x, palette1 ) * light1.x;
-    vec3 reflCol2= doPalette( .6 + .3 * light2.y, palette2 ) * light2.x;
+    vec3 reflCol1= doPalette( .3 + .3 * light1.y, palette1 ) * light1.y;
+    vec3 reflCol2= doPalette( .6 + .3 * light2.y, palette2 ) * light2.y;
 
     vec3 refrCol = bgCol( refr * ( MAX_TRACE_DISTANCE - res.x ) + pos , rd );
 
-    col += refrCol;
+    col += (reflCol1 + reflCol2) *  .4 + refrCol;
 
   }else{
 
