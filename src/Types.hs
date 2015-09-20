@@ -291,18 +291,8 @@ randomColor = liftIO $ V4 <$> randomRIO (0, 1) <*> randomRIO (0, 1) <*> randomRI
 
 
 totalHeadPose :: Player -> Pose
-totalHeadPose player = 
-  let Pose playerPosit playerOrient = player ^. plrPose
-      Pose headPosit headOrient     = player ^. plrHeadPose
-  in  Pose 
-    (headPosit  + playerPosit) 
-    (headOrient * playerOrient) -- quat rotation order must be rotation*original
+totalHeadPose player = addPoses (player ^. plrPose) (player ^. plrHeadPose)
 
-transformationFromPose :: Pose -> M44 GLfloat
-transformationFromPose (Pose position orientation) = mkTransformation orientation position 
-
-shiftBy :: V3 GLfloat -> Pose -> Pose
-shiftBy vec pose = pose & posPosition +~ rotate (pose ^. posOrientation) vec
 
 newCubeInstruction :: MonadRandom m => Pose -> m Op
 newCubeInstruction pose = do

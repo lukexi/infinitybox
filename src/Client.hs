@@ -123,6 +123,6 @@ main = do
     viewMat <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
     renderWith gpWindow gpHMD viewMat 
       (glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT))
-      (render theme )
+      (render theme)
 
 
