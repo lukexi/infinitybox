@@ -80,9 +80,9 @@ render Resources{..} projection viewMat = do
   phase <- use wldPhase
   case phase of 
     PhaseVoid ->
-      drawCubes logo projectionView eyePos lightPositions filledness
+      drawLogo logo projectionView eyePos lightPositions
     PhaseLogo ->
-      drawCubes logo projectionView eyePos lightPositions filledness
+      drawLogo logo projectionView eyePos lightPositions
     PhaseMain ->
       drawCubes cube projectionView eyePos lightPositions filledness
     PhaseEnd  ->
@@ -150,10 +150,40 @@ drawCubes cube projectionView eyePos lights filledness = do
           -- Scale the cube up from 0 at beginning. 
           -- This is render-only at the moment; physics object is still
           -- full size from the beginning.
-          scaledModel = model !*! scaleMatrix (realToFrac cubeAge)
-
-
+          -- scaledModel = model !*! scaleMatrix 0.3
+          scaledModel = model !*! scaleMatrix (realToFrac ( cubeAge * ( obj ^. objScale ))) 
       drawShape scaledModel projectionView i cube
+
+drawLogo :: (MonadIO m, MonadState World m)
+          => Shape Uniforms
+          -> M44 GLfloat
+          -> V3 GLfloat
+          -> [V3 GLfloat]
+          -> m ()
+drawLogo cube projectionView eyePos lights = do
+
+
+  let Uniforms{..} = sUniforms cube
+  useProgram (sProgram cube)
+
+  uniformF  uTime =<< use wldTime
+
+  uniformV3 uCamera eyePos
+
+  setLightUniforms cube lights
+
+  withVAO (sVAO cube) $ do
+
+    glDisable GL_CULL_FACE
+    glCullFace GL_BACK
+    
+    let obj = Object newPose cubeScale
+    let model = transformationFromPose (obj ^. objPose)
+        scaledModel = model !*! scaleMatrix ( realToFrac (obj ^. objScale) )
+
+    drawShape scaledModel projectionView 0 cube
+
+
 
 setLightUniforms :: (MonadIO m) 
                  => Shape Uniforms

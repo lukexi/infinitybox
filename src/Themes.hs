@@ -34,7 +34,7 @@ loadThemes = do
 
 
 
-  cubeGeo    <- cubeGeometry ( realToFrac cubeScale ) ( V3 1 1 1 )
+  cubeGeo    <- cubeGeometry ( V3 1 1 1 ) ( V3 1 1 1 )
   lightGeo   <- cubeGeometry ( V3 0.001 0.001 0.001 ) ( V3 1 1 1 )
   roomGeo    <- cubeGeometry ( V3 3 3 3 ) ( V3 1 1 1 )
   handGeo    <- cubeGeometry handDimensions ( V3 1 1 1 )

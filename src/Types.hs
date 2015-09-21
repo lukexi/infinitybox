@@ -300,7 +300,7 @@ totalHeadPose player = addPoses (player ^. plrPose) (player ^. plrHeadPose)
 newCubeInstruction :: MonadRandom m => Pose -> m Op
 newCubeInstruction pose = do
   objID <- getRandom
-  return $ CreateObject objID (Object pose ( cubeScale * 0.5 ) )
+  return $ CreateObject objID (Object pose cubeScale)
 
 -- Offset the lights to be on the end of the wands
 handLightOffset :: V3 GLfloat
@@ -315,5 +315,5 @@ handDimensions = V3 0.05 0.05 0.5
 
 
 cubeScale :: GLfloat
-cubeScale = 0.3
+cubeScale = 0.4
 

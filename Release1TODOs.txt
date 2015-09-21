@@ -15,7 +15,7 @@
 
 [ ] Storyboard
   [x] Center cube should start a timer to spawn the next cube when touched
-  [ ] Stop spawning cubes after 16 (remove expiration system)
+  [x] Stop spawning cubes after 16 (remove expiration system)
   [ ] Replace last cube with Tree on last hit
   [ ] Add wireframe cube to center of room
 

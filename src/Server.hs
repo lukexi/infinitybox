@@ -70,7 +70,7 @@ spawnNextCube Server{..} dynamicsWorld = do
   -- Spawn a cube at the center
   objID <- getRandom
   
-  let instruction = CreateObject objID (Object newPose 0.25)
+  let instruction = CreateObject objID (Object newPose cubeScale)
   ssCenterCubeID .== Just objID
 
   interpretS dynamicsWorld svrSockAddr instruction
@@ -142,8 +142,8 @@ serverLoop server@Server{..} dynamicsWorld spawnEvents = do
     return $! UpdatePlayer playerID player
   objectUpdates <- forM rigidBodies $ \(objID, rigidBody) -> do
     (pos, orient) <- getBodyState rigidBody
-    let scale' = 1.0
-    return $! UpdateObject objID (Object (Pose pos orient) scale')
+
+    return $! UpdateObject objID (Object (Pose pos orient) cubeScale)
   let transientInstructions = playerUpdates ++ objectUpdates ++ collisionUpdates
 
   -- Broadcast the simulation results to all clients
