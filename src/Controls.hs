@@ -77,8 +77,8 @@ processControls GamePal{..} transceiver frameNumber = do
     onKeyDown Key'Z e (addCube transceiver newPose)
     onKeyDown Key'N e startLogo
     onKeyDown Key'M e startMain
-    onKeyDown Key'Z e (wldPlayer . plrVacuum .= True)
-    onKeyUp   Key'Z e (wldPlayer . plrVacuum .= False)
+    onKeyDown Key'X e (wldPlayer . plrVacuum .= True)
+    onKeyUp   Key'X e (wldPlayer . plrVacuum .= False)
 
   -- Til I finish per-hand vacuuming, vacuum when either bumper is down
   let anyBumperDown = or $ map (elem ButtonBumper . handButtons) hands 
