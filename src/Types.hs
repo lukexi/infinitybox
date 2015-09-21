@@ -23,6 +23,7 @@ import Data.Data
 import Animation.Pal
 import Data.Time
 import Control.Monad.Random
+import Physics.Bullet
 --
 
 -- | The maximum number of cubes before we start kicking cubes out
@@ -252,22 +253,26 @@ interpret (Disconnect playerID)          = do
   wldPlayers . at playerID .= Nothing
   putStrLnIO (playerID ++ " disconnected")
 
-interpret (ObjectCollision objectAID objectBID strength) = do
+interpret (ObjectCollision collision) = do
   -- putStrLnIO $ "Client got collision! " ++ show objectAID ++ " " ++ show objectBID ++ ": " ++ show strength
   now <- use wldTime
-  forM_ [objectAID, objectBID] $ \objID -> do
+  let objectIDs = fromIntegral <$> sequence [cbBodyAID, cbBodyBID]                collision
+      positions =                  sequence [cbPositionOnA, cbPositionOnB]          collision
+      normals   =                  sequence [negate . cbNormalOnB , cbNormalOnB]  collision
+      impulse   = cbAppliedImpulse collision
+  forM_ (zip3 objectIDs positions normals) $ \(objID, position, normal) -> do
 
     wldLastCollisions . at objID ?= CubeCollision
       { _ccTime = now
-      , _ccImpulse = strength
-      , _ccPosition = 0
-      , _ccDirection = 0
+      , _ccImpulse = impulse
+      , _ccPosition = position
+      , _ccDirection = normal
       }
 
     mVoiceID <- use (wldCubeVoices . at objID)
     -- The objectID may be invalid since we send hands and walls as objectIDs,
     -- thus we may not have a voice for them.
-    let volume = min 1 (strength * 5)
+    let volume = min 1 (impulse * 5)
     
     forM_ mVoiceID $ \voiceID -> do
       wldVoiceOutput . at voiceID ?= volume
@@ -283,7 +288,7 @@ data Op = CreateObject    !ObjectID !Object
         | Connect         !PlayerID !Player
         | UpdatePlayer    !PlayerID !Player
         | Disconnect      !PlayerID
-        | ObjectCollision !ObjectID !ObjectID !Float
+        | ObjectCollision !Collision
   deriving (Generic, Binary, Show)
 
 -- Util

@@ -44,10 +44,7 @@ newServerState = ServerState mempty mempty mempty mempty mempty
 
 makeLenses ''ServerState
 
-objIDFromRigidBodyID :: RigidBodyID -> ObjectID
-objIDFromRigidBodyID = fromIntegral . unRigidBodyID
-rigidBodyIDFromObjID :: ObjectID -> RigidBodyID
-rigidBodyIDFromObjID = RigidBodyID . fromIntegral
+
 
 physicsServer :: IO ()
 physicsServer = do
@@ -86,14 +83,8 @@ serverLoop server@Server{..} dynamicsWorld = do
   
   
   collisionUpdates <- fmap catMaybes . forM collisions $ \collision -> do
-    -- Must grab this in the loop, as we want the first collision
-    -- that successfully grabs it to overwrite it with Nothing
-    let objAID = objIDFromRigidBodyID (cbBodyAID collision)
-        objBID = objIDFromRigidBodyID (cbBodyBID collision)
-        strength = cbAppliedImpulse collision
-
-    return $! if strength > 0.05
-      then Just (ObjectCollision objAID objBID strength)
+    return $! if cbAppliedImpulse collision > 0.05
+      then Just (ObjectCollision collision)
       else Nothing
 
 
@@ -141,7 +132,7 @@ interpretS :: (MonadIO m, MonadState ServerState m)
            => DynamicsWorld -> SockAddr -> Op -> m ()
 interpretS dynamicsWorld _fromAddr (CreateObject objID obj) = do
   
-  rigidBody <- addCube dynamicsWorld (rigidBodyIDFromObjID objID)
+  rigidBody <- addCube dynamicsWorld (fromIntegral objID)
                        mempty { pcPosition = obj ^. objPose  . posPosition
                               , pcRotation = obj ^. objPose  . posOrientation
                               , pcScale    = obj ^. objScale . to realToFrac
@@ -205,7 +196,7 @@ interpretS dynamicsWorld _fromAddr (DeleteObject objID) = do
   ssRigidBodies . at objID .= Nothing
 
 interpretS _dynamicsWorld _fromAddr (UpdateObject _ _) = return ()
-interpretS _ _ (ObjectCollision _ _ _) = return ()
+interpretS _ _ (ObjectCollision _) = return ()
 
 
 handleDisconnections :: (MonadIO m, MonadState ServerState m) 

@@ -131,11 +131,12 @@ drawCubes cube projectionView eyePos lights filledness = do
       uniformF uTick tick
 
       mCollision <- use (wldLastCollisions . at objID)
-      forM_ mCollision $ \_collision -> do
+      forM_ mCollision $ \collision -> do
         -- TODO(isaac) fill in uniforms for collision here:
-        -- uniformF yadda yadda
-        -- uniformV3 yadda yadda
-        -- uniformV3 yadda yadda
+        -- uniformF  uCollisionTime      (collision ^. ccTime)
+        -- uniformF  uCollisionImpulse   (collision ^. ccImpulse)
+        -- uniformV3 uCollisionPosition  (collision ^. ccPosition)
+        -- uniformV3 uCollisionDirection (collision ^. ccDirection)
         return ()
       
 
