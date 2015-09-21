@@ -77,16 +77,16 @@ processControls GamePal{..} transceiver frameNumber = do
     onKeyDown Key'Z e (addCube transceiver newPose)
     onKeyDown Key'N e startLogo
     onKeyDown Key'M e startMain
-    -- onKeyDown Key'X e ( wldFilledness -= 0.05 )
+    onKeyDown Key'Z e (wldPlayer . plrVacuum .= True)
+    onKeyUp   Key'Z e (wldPlayer . plrVacuum .= False)
 
   -- Fire cubes from each hand when their triggers are held down
-  forM_ (zip hands handWorldPoses) $ \(handData, _handPose) -> do
+  forM_ (zip hands handWorldPoses) $ \(handData, handPose) -> do
     -- Bind Hydra 'Start' buttons to HMD Recenter
     when (ButtonStart `elem` (handButtons handData)) $
       maybe (return ()) (liftIO . recenterPose) gpHMD
 
-    -- No more cube firing
-    --processHandCubeFiring handData handPose frameNumber transceiver
+    processHandCubeFiring handData handPose frameNumber transceiver
 
 processHandCubeFiring :: (Integral a, MonadIO m, MonadState World m, MonadRandom m) 
                       => ControllerData -> Pose GLfloat -> a -> Transceiver Op -> m ()    
@@ -98,8 +98,8 @@ processHandCubeFiring handData handPose frameNumber transceiver  = do
   -- Move the cube upwards a bit so it spawns at the tip of the hand
   let cubePose = shiftBy (V3 0 0 (-0.5)) handPose
   -- Spawn every 0.1 secs, and on fresh trigger squeezes
-      shouldSpawn = triggerIsDown && not triggerWasDown
-                  || triggerIsDown && frameNumber `mod` 30 == 0
+      shouldSpawn = triggerIsDown && not triggerWasDown || 
+                    triggerIsDown && frameNumber `mod` 30 == 0
   when shouldSpawn $
     addCube transceiver cubePose
 

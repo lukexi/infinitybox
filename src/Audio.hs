@@ -1,7 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Audio where
 import Sound.Pd1
-import Game.Pal
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
 import Linear.Extra

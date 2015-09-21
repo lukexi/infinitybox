@@ -91,9 +91,11 @@ data Object = Object
   } deriving (Generic, Binary, Show)
 
 data Player = Player 
-  { _plrPose      :: !(Pose GLfloat)
-  , _plrHeadPose  :: !(Pose GLfloat)
-  , _plrHandPoses :: ![Pose GLfloat]
+  { _plrPose       :: !(Pose GLfloat)
+  , _plrHeadPose   :: !(Pose GLfloat)
+  , _plrHandPoses  :: ![Pose GLfloat]
+  , _plrHandVacuum :: ![Bool]
+  , _plrVacuum     :: !Bool
   } deriving (Generic, Binary, Show)
 
 data CubeCollision = CubeCollision
@@ -139,9 +141,11 @@ interpolateObjects :: Object -> Object -> Object
 
 newPlayer1 :: Player
 newPlayer1 = Player
-  { _plrPose      = Pose (V3 0 (-3) 5.6) (axisAngle (V3 0 1 0) 0)
-  , _plrHeadPose  = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
-  , _plrHandPoses = []
+  { _plrPose       = Pose (V3 0 (-3) 5.6) (axisAngle (V3 0 1 0) 0)
+  , _plrHeadPose   = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
+  , _plrHandPoses  = []
+  , _plrHandVacuum = []
+  , _plrVacuum     = False
   }
 
 newPlayer2 :: Player
@@ -149,6 +153,8 @@ newPlayer2 = Player
   { _plrPose      = Pose (V3 0 (-3) (-5.6)) (axisAngle (V3 0 1 0) pi)
   , _plrHeadPose  = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
   , _plrHandPoses = []
+  , _plrHandVacuum = []
+  , _plrVacuum     = False
   }
 
 newWorld :: PlayerID -> Player -> Map VoiceID OpenALSource -> DiffTime -> World

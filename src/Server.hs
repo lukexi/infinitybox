@@ -12,7 +12,6 @@ import Data.Maybe
 import Network.UDP.Pal hiding (newClientThread)
 
 import Control.Concurrent
-import Control.Concurrent.STM
 
 import Control.Lens.Extra
 
@@ -21,6 +20,7 @@ import Data.Map.Strict (Map)
 
 import qualified Data.Sequence as Seq
 import Data.Sequence (Seq)
+import Graphics.GL
 
 import Data.Foldable
 
@@ -37,11 +37,10 @@ data ServerState = ServerState
   , _ssPlayers             :: !(Map PlayerID Player)
   , _ssPlayerIDs           :: !(Map SockAddr PlayerID)
   , _ssCubeExpirationQueue :: !(Seq ObjectID)
-  , _ssCenterCubeID        :: !(Maybe ObjectID)
   }
 
 newServerState :: ServerState
-newServerState = ServerState mempty mempty mempty mempty mempty Nothing
+newServerState = ServerState mempty mempty mempty mempty mempty
 
 makeLenses ''ServerState
 
@@ -49,30 +48,6 @@ objIDFromRigidBodyID :: RigidBodyID -> ObjectID
 objIDFromRigidBodyID = fromIntegral . unRigidBodyID
 rigidBodyIDFromObjID :: ObjectID -> RigidBodyID
 rigidBodyIDFromObjID = RigidBodyID . fromIntegral
-
-beginToSpawnNextCube :: (MonadIO m, MonadState ServerState m) => TChan () -> m ()
-beginToSpawnNextCube spawnEvents = do
-  ssCenterCubeID .= Nothing
-
-  -- Spawn a maximum of 16 cubes
-  numberOfCubes <- Seq.length <$> use ssCubeExpirationQueue
-  when (numberOfCubes < 16) $ 
-    void . liftIO . forkIO $ do
-      threadDelay (1000000 * 2)
-      atomically (writeTChan spawnEvents ())
-
-spawnNextCube :: (MonadIO m, MonadState ServerState m, MonadRandom m) 
-              => Server Op -> DynamicsWorld -> m ()
-spawnNextCube Server{..} dynamicsWorld = do
-  
-  -- Spawn a cube at the center
-  objID <- getRandom
-  
-  let instruction = CreateObject objID (Object newPose cubeScale)
-  ssCenterCubeID .= Just objID
-
-  interpretS dynamicsWorld svrSockAddr instruction
-  liftIO . svrBroadcast $ Reliable instruction
 
 physicsServer :: IO ()
 physicsServer = do
@@ -83,30 +58,22 @@ physicsServer = do
 
   server@Server{..} <- createServer serverName serverPort packetSize
   putStrLn $ "Server engaged on " ++ serverName
-
-  spawnEvents <- newTChanIO
   
   -- Initialize physics
   dynamicsWorld  <- createDynamicsWorld mempty { gravity = 0.0 }
   _              <- addStaticRoom dynamicsWorld (RigidBodyID 0) (-roomScale)
   
-  void . flip runStateT newServerState $ do
-    spawnNextCube server dynamicsWorld
-    forever $ serverLoop server dynamicsWorld spawnEvents
+  void . flip runStateT newServerState $ 
+    forever $ serverLoop server dynamicsWorld
 
 serverLoop :: (MonadIO m, MonadState ServerState m, MonadRandom m) 
-           => Server Op -> DynamicsWorld -> TChan () -> m ()
-serverLoop server@Server{..} dynamicsWorld spawnEvents = do
+           => Server Op -> DynamicsWorld -> m ()
+serverLoop server@Server{..} dynamicsWorld = do
   handleDisconnections server dynamicsWorld
   -- Receive updates from clients
   interpretNetworkPacketsFromOthers (liftIO svrReceive) $ \fromAddr message -> 
     -- Apply to server-only state
     interpretS dynamicsWorld fromAddr message
-  
-  -- Check if we should spawn a new cube
-  (liftIO . atomically . tryReadTChan) spawnEvents >>= \case
-    Nothing -> return ()
-    Just () -> spawnNextCube server dynamicsWorld
 
   -- Run the physics sim
   stepSimulation dynamicsWorld
@@ -116,29 +83,37 @@ serverLoop server@Server{..} dynamicsWorld spawnEvents = do
 
   -- Generate a list of instructions updating 
   -- each object with the state from the physics sim
-  players     <- use (ssPlayers     . to Map.toList)
-  rigidBodies <- use (ssRigidBodies . to Map.toList)
+  
   
   collisionUpdates <- fmap catMaybes . forM collisions $ \collision -> do
     -- Must grab this in the loop, as we want the first collision
     -- that successfully grabs it to overwrite it with Nothing
-    centerCubeID <- use ssCenterCubeID
     let objAID = objIDFromRigidBodyID (cbBodyAID collision)
         objBID = objIDFromRigidBodyID (cbBodyBID collision)
         strength = cbAppliedImpulse collision
-        oneBodyIsCenter = Just objAID         == centerCubeID    || Just objBID         == centerCubeID
-        -- oneBodyIsHand   = cbBodyAID collision == handRigidBodyID || cbBodyAID collision == handRigidBodyID
-    -- when (oneBodyIsCenter && oneBodyIsHand) $ 
-    when oneBodyIsCenter $
-      beginToSpawnNextCube spawnEvents
 
     return $! if strength > 0.05
       then Just (ObjectCollision objAID objBID strength)
       else Nothing
+
+
+  players     <- use (ssPlayers     . to Map.toList)
   playerUpdates <- forM players $ \(playerID, player) -> 
     return $! UpdatePlayer playerID player
+
+  rigidBodies <- use (ssRigidBodies . to Map.toList)
   objectUpdates <- forM rigidBodies $ \(objID, rigidBody) -> do
     (pos, orient) <- getBodyState rigidBody
+
+    -- During the rigidBody loop, also apply vacuum forces if needed
+    forM_ players $ \(_playerID, player) -> do
+      when (player ^. plrVacuum) $ do
+        let target = player ^. plrPose . posPosition
+            -- orientation = normalize (target - pos)
+            orientation = (target - pos) * 0.01
+        setRigidBodyActive rigidBody
+        _ <- applyCentralImpulse rigidBody orientation
+        return ()
 
     return $! UpdateObject objID (Object (Pose pos orient) cubeScale)
   let transientInstructions = playerUpdates ++ objectUpdates ++ collisionUpdates
@@ -171,7 +146,6 @@ interpretS dynamicsWorld _fromAddr (CreateObject objID obj) = do
                               , pcRotation = obj ^. objPose  . posOrientation
                               , pcScale    = obj ^. objScale . to realToFrac
                               }
-  
   -- Shoot the cube outwards
   --let v = rotate ( obj ^. objPose . posOrientation ) ( V3 0 0 ( -3 ) )
   --_ <- applyCentralForce rigidBody v
