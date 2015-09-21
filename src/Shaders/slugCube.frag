@@ -292,7 +292,7 @@ void main(){
                  );
 
   float speedTime = uTime * .01 ;
-  dayNightCycle = sin( speedTime * 6.28 );
+  float dayNightCycle = sin( speedTime * 6.28 );
 
   float rad = speedTime * 6.28;
 
