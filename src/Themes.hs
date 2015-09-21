@@ -13,7 +13,7 @@ loadThemes :: IO Themes
 loadThemes = do
   
   let vRainbow = Visuals
-        { _roomShader  = "src/shaders/background1.frag"
+        { _roomShader  = "src/shaders/slugBG.frag"
         , _logoShader  = "src/shaders/logo.frag"
         , _cubeShader  = "src/shaders/slugCube.frag"
         , _faceShader  = "src/shaders/face.frag"
@@ -36,7 +36,7 @@ loadThemes = do
 
   cubeGeo    <- cubeGeometry ( realToFrac cubeScale ) ( V3 1 1 1 )
   lightGeo   <- cubeGeometry ( V3 0.001 0.001 0.001 ) ( V3 1 1 1 )
-  roomGeo    <- cubeGeometry ( V3 3 3 3 ) ( V3 1 1 1 )
+  roomGeo    <- cubeGeometry ( V3 10 10 10 ) ( V3 1 1 1 )
   handGeo    <- cubeGeometry handDimensions ( V3 1 1 1 )
   faceGeo    <- cubeGeometry ( V3 0.5 0.7 0.1 ) ( V3 1 1 1 )
 

@@ -136,14 +136,14 @@ interpolatePoses (Pose p1 o1) (Pose p2 o2) =
 
 newPlayer1 :: Player
 newPlayer1 = Player
-  { _plrPose      = Pose (V3 0 0 0.6) (axisAngle (V3 0 1 0) 0)
+  { _plrPose      = Pose (V3 0 (-3) 5.6) (axisAngle (V3 0 1 0) 0)
   , _plrHeadPose  = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
   , _plrHandPoses = []
   }
 
 newPlayer2 :: Player
 newPlayer2 = Player
-  { _plrPose      = Pose (V3 0 0 (-0.6)) (axisAngle (V3 0 1 0) pi)
+  { _plrPose      = Pose (V3 0 (-3) (-5.6)) (axisAngle (V3 0 1 0) pi)
   , _plrHeadPose  = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
   , _plrHandPoses = []
   }
@@ -316,4 +316,7 @@ handDimensions = V3 0.05 0.05 0.5
 
 cubeScale :: GLfloat
 cubeScale = 0.3
+
+roomScale :: GLfloat
+roomScale = 10
 

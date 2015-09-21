@@ -90,7 +90,7 @@ physicsServer = do
   
   -- Initialize physics
   dynamicsWorld  <- createDynamicsWorld mempty { gravity = 0.0 }
-  _              <- addRoom dynamicsWorld (-1.5)
+  _              <- addRoom dynamicsWorld (-roomScale)
   
   void . flip runStateT newServerState $ do
     spawnNextCube server dynamicsWorld
