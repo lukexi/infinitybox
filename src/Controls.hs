@@ -80,10 +80,15 @@ processControls GamePal{..} transceiver frameNumber = do
     onKeyDown Key'Z e (wldPlayer . plrVacuum .= True)
     onKeyUp   Key'Z e (wldPlayer . plrVacuum .= False)
 
+  -- Til I finish per-hand vacuuming, vacuum when either bumper is down
+  let anyBumperDown = or $ map (elem ButtonBumper . handButtons) hands 
+  wldPlayer . plrVacuum .= anyBumperDown
+
   -- Fire cubes from each hand when their triggers are held down
   forM_ (zip hands handWorldPoses) $ \(handData, handPose) -> do
+
     -- Bind Hydra 'Start' buttons to HMD Recenter
-    when (ButtonStart `elem` (handButtons handData)) $
+    when (ButtonStart `elem` handButtons handData) $
       maybe (return ()) (liftIO . recenterPose) gpHMD
 
     processHandCubeFiring handData handPose frameNumber transceiver

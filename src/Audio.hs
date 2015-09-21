@@ -20,6 +20,8 @@ exhaustChanIO = liftIO . atomically . exhaustChan
 initAudio :: IO (TChan Message, Map VoiceID OpenALSource)
 initAudio = do
   -- Set up sound
+  addToLibPdSearchPath "patches/kit"
+  addToLibPdSearchPath "patches"
   addToLibPdSearchPath "audio-prototypes/infinity5"
   _main <- makePatch "audio-prototypes/infinity5/phasy2"
   
