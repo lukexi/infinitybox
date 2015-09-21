@@ -77,12 +77,11 @@ processControls GamePal{..} transceiver frameNumber = do
     onKeyDown Key'Z e (addCube transceiver newPose)
     onKeyDown Key'N e startLogo
     onKeyDown Key'M e startMain
-    onKeyDown Key'Z e (wldPlayer . plrVacuum .= True)
-    onKeyUp   Key'Z e (wldPlayer . plrVacuum .= False)
 
+  xDown <- (== KeyState'Pressed) <$> getKey gpWindow Key'X
   -- Til I finish per-hand vacuuming, vacuum when either bumper is down
-  let anyBumperDown = or $ map (elem ButtonBumper . handButtons) hands 
-  wldPlayer . plrVacuum .= anyBumperDown
+  let shouldVacuum = or (map (elem ButtonBumper . handButtons) hands) || xDown
+  wldPlayer . plrVacuum .= shouldVacuum
 
   -- Fire cubes from each hand when their triggers are held down
   forM_ (zip hands handWorldPoses) $ \(handData, handPose) -> do
