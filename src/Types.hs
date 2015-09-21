@@ -141,16 +141,16 @@ interpolateObjects :: Object -> Object -> Object
 
 newPlayer1 :: Player
 newPlayer1 = Player
-  { _plrPose       = Pose (V3 0 (-3) 5.6) (axisAngle (V3 0 1 0) 0)
-  , _plrHeadPose   = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
-  , _plrHandPoses  = []
+  { _plrPose      = Pose (V3 0 (-3) 4) (axisAngle (V3 0 1 0) 0)
+  , _plrHeadPose  = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
+  , _plrHandPoses = []
   , _plrHandVacuum = []
   , _plrVacuum     = False
   }
 
 newPlayer2 :: Player
 newPlayer2 = Player
-  { _plrPose      = Pose (V3 0 (-3) (-5.6)) (axisAngle (V3 0 1 0) pi)
+  { _plrPose      = Pose (V3 0 (-3) (-4)) (axisAngle (V3 0 1 0) pi)
   , _plrHeadPose  = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
   , _plrHandPoses = []
   , _plrHandVacuum = []

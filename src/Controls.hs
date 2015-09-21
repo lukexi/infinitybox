@@ -93,6 +93,7 @@ processControls GamePal{..} transceiver frameNumber = do
 
     processHandCubeFiring handData handPose frameNumber transceiver
 
+
 processHandCubeFiring :: (Integral a, MonadIO m, MonadState World m, MonadRandom m) 
                       => ControllerData -> Pose GLfloat -> a -> Transceiver Op -> m ()    
 processHandCubeFiring handData handPose frameNumber transceiver  = do

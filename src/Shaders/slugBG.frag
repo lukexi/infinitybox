@@ -12,6 +12,7 @@ uniform float uTick;
 
 uniform float uFilledness;
 uniform float uCompleted;
+uniform float uStarted;
 
 in vec3 vPos;
 in vec3 vCam;
@@ -219,7 +220,7 @@ vec3 doRayShading( vec2 l1 , vec2 l2  , vec3 norm , vec3 ro ){
   spec = pow( l2.y , 10. );
   col +=  doPalette( l2.x , palette2 ) * ( l2.x  + spec );
 
-  col += doBackgroundShading( l1 , l2 , ro ); //}
+  //col += doBackgroundShading( l1 , l2 , ro ); //}
 
   return col;
 }
@@ -338,7 +339,7 @@ void main(){
   }
 
 
-  color = vec4( col , 1. );
+  color = vec4( col , 1. ) * uStarted * min( 1. , uTime * .5 );
 
 
 }
