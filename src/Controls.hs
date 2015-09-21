@@ -6,14 +6,15 @@ module Controls where
 import Graphics.UI.GLFW.Pal
 
 import Graphics.Oculus
-import Linear
+import Linear.Extra
 
 import System.Hardware.Hydra
 
 import Control.Monad
 import Control.Monad.State.Strict
-import Control.Lens hiding (view)
+import Control.Lens.Extra hiding (view)
 import Control.Monad.Random
+import Graphics.GL
 
 import Network.UDP.Pal
 import Types
@@ -88,11 +89,11 @@ processControls GamePal{..} transceiver frameNumber = do
     --processHandCubeFiring handData handPose frameNumber transceiver
 
 processHandCubeFiring :: (Integral a, MonadIO m, MonadState World m, MonadRandom m) 
-                      => ControllerData -> Pose -> a -> Transceiver Op -> m ()    
+                      => ControllerData -> Pose GLfloat -> a -> Transceiver Op -> m ()    
 processHandCubeFiring handData handPose frameNumber transceiver  = do
   let triggerIsDown = trigger handData > 0.5
   triggerWasDown <- fromMaybe False <$> use (wldHandTriggers . at (whichHand handData))
-  wldHandTriggers . at (whichHand handData) ?== triggerIsDown
+  wldHandTriggers . at (whichHand handData) ?= triggerIsDown
 
   -- Move the cube upwards a bit so it spawns at the tip of the hand
   let cubePose = shiftBy (V3 0 0 (-0.5)) handPose
@@ -103,7 +104,7 @@ processHandCubeFiring handData handPose frameNumber transceiver  = do
     addCube transceiver cubePose
 
 
-addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Transceiver Op -> Pose -> m ()
+addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Transceiver Op -> Pose GLfloat -> m ()
 addCube transceiver pose = do
   -- Spawn a cube at the player's position and orientation
   instruction <- newCubeInstruction pose

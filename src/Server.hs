@@ -14,7 +14,7 @@ import Network.UDP.Pal hiding (newClientThread)
 import Control.Concurrent
 import Control.Concurrent.STM
 
-import Control.Lens
+import Control.Lens.Extra
 
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
@@ -25,10 +25,8 @@ import Data.Sequence (Seq)
 import Data.Foldable
 
 import Physics.Bullet
-import Physics
-import Themes
 import Types
-import Game.Pal
+import Linear.Extra
 
 handRigidBodyID :: RigidBodyID
 handRigidBodyID = RigidBodyID 1
@@ -54,7 +52,7 @@ rigidBodyIDFromObjID = RigidBodyID . fromIntegral
 
 beginToSpawnNextCube :: (MonadIO m, MonadState ServerState m) => TChan () -> m ()
 beginToSpawnNextCube spawnEvents = do
-  ssCenterCubeID .== Nothing
+  ssCenterCubeID .= Nothing
 
   -- Spawn a maximum of 16 cubes
   numberOfCubes <- Seq.length <$> use ssCubeExpirationQueue
@@ -71,7 +69,7 @@ spawnNextCube Server{..} dynamicsWorld = do
   objID <- getRandom
   
   let instruction = CreateObject objID (Object newPose cubeScale)
-  ssCenterCubeID .== Just objID
+  ssCenterCubeID .= Just objID
 
   interpretS dynamicsWorld svrSockAddr instruction
   liftIO . svrBroadcast $ Reliable instruction
@@ -90,7 +88,7 @@ physicsServer = do
   
   -- Initialize physics
   dynamicsWorld  <- createDynamicsWorld mempty { gravity = 0.0 }
-  _              <- addRoom dynamicsWorld (-roomScale)
+  _              <- addStaticRoom dynamicsWorld (RigidBodyID 0) (-roomScale)
   
   void . flip runStateT newServerState $ do
     spawnNextCube server dynamicsWorld
@@ -104,12 +102,11 @@ serverLoop server@Server{..} dynamicsWorld spawnEvents = do
   interpretNetworkPacketsFromOthers (liftIO svrReceive) $ \fromAddr message -> 
     -- Apply to server-only state
     interpretS dynamicsWorld fromAddr message
-
+  
   -- Check if we should spawn a new cube
   (liftIO . atomically . tryReadTChan) spawnEvents >>= \case
     Nothing -> return ()
     Just () -> spawnNextCube server dynamicsWorld
-      
 
   -- Run the physics sim
   stepSimulation dynamicsWorld
@@ -179,15 +176,15 @@ interpretS dynamicsWorld _fromAddr (CreateObject objID obj) = do
   --let v = rotate ( obj ^. objPose . posOrientation ) ( V3 0 0 ( -3 ) )
   --_ <- applyCentralForce rigidBody v
 
-  ssRigidBodies . at objID ?== rigidBody
+  ssRigidBodies . at objID ?= rigidBody
 
   -- Add the cube to the expiration queue
-  ssCubeExpirationQueue %== (objID <|)
+  ssCubeExpirationQueue %= (objID <|)
 
 -- Update our record of the player's body/head/hands positions, 
 -- and update the rigid bodies of their hands
 interpretS dynamicsWorld _fromAddr (UpdatePlayer playerID player) = do
-  ssPlayers . at playerID ?== player
+  ssPlayers . at playerID ?= player
 
   maybeHandRigidBodies <- use $ ssPlayerRigidBodies . at playerID
 
@@ -202,7 +199,7 @@ interpretS dynamicsWorld _fromAddr (UpdatePlayer playerID player) = do
                                }
         setRigidBodyKinematic body
         return body
-      ssPlayerRigidBodies . at playerID ?== handRigidBodies
+      ssPlayerRigidBodies . at playerID ?= handRigidBodies
     _ -> return ()
 
   maybeHandRigidBodies' <- use $ ssPlayerRigidBodies . at playerID
@@ -211,27 +208,27 @@ interpretS dynamicsWorld _fromAddr (UpdatePlayer playerID player) = do
       let Pose handPosition handOrientation = shiftBy handOffset handPose
       setRigidBodyWorldTransform handRigidBody handPosition handOrientation
 
-interpretS dynamicsWorld fromAddr (Connect playerID player) = do
+interpretS _dynamicsWorld fromAddr (Connect playerID player) = do
   -- Associate the playerID with the fromAddr we already know,
   -- so we can send an accurate disconnect message later
-  ssPlayerIDs . at fromAddr ?== playerID
-  ssPlayers   . at playerID ?== player
+  ssPlayerIDs . at fromAddr ?= playerID
+  ssPlayers   . at playerID ?= player
   
 
 interpretS dynamicsWorld fromAddr (Disconnect playerID) = do
-  ssPlayerIDs . at fromAddr .== Nothing
+  ssPlayerIDs . at fromAddr .= Nothing
 
   rigidBodies <- use $ ssPlayerRigidBodies . at playerID
   maybe (return ()) (mapM_ (removeCube dynamicsWorld)) rigidBodies
-  ssPlayerRigidBodies . at playerID .== Nothing
+  ssPlayerRigidBodies . at playerID .= Nothing
 
 interpretS dynamicsWorld _fromAddr (DeleteObject objID) = do
 
   rigidBody <- use $ ssRigidBodies . at objID
   maybe (return ()) (removeCube dynamicsWorld) rigidBody
   
-  ssCubeExpirationQueue    %== Seq.filter (/= objID)
-  ssRigidBodies . at objID .== Nothing
+  ssCubeExpirationQueue    %= Seq.filter (/= objID)
+  ssRigidBodies . at objID .= Nothing
 
 interpretS _dynamicsWorld _fromAddr (UpdateObject _ _) = return ()
 interpretS _ _ (ObjectCollision _ _ _) = return ()

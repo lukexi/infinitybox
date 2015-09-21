@@ -10,7 +10,7 @@ import Graphics.GL.Pal
 import Control.Monad
 import Control.Monad.State.Strict
 import System.Random
-import Control.Lens hiding (view)
+import Control.Lens.Extra hiding (view)
 import Control.Monad.Random
 import System.Directory
 import Data.Maybe
@@ -37,7 +37,7 @@ enableEKG = False
 enableDevices :: [GamePalDevices]
 --enableDevices = [UseOculus, UseHydra]
 -- enableDevices = [UseOculus]
---enableDevices = [UseHydra]
+-- enableDevices = [UseHydra]
 enableDevices = []
 
 getServerNameFromFile :: IO String
@@ -117,18 +117,15 @@ main = do
 
     -- Render to OpenGL
     wldCubeAges . traverse += delta
-    --printIO =<< use wldCubeAges
 
     phase <- use wldPhase
-
     
     when (phase /= PhaseVoid) $ wldTime += delta
     t <- use wldTime
     when (phase == PhaseLogo && t > 11.0 ) $ do
-      wldPhase .= PhaseMain
-      wldTime  .= 0
+      wldPhase   .= PhaseMain
+      wldTime    .= 0
       wldStarted .= 1
-      
 
     viewMat <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
     renderWith gamePal viewMat 

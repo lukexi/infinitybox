@@ -4,11 +4,11 @@ import Sound.Pd1
 import Game.Pal
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
-import Linear
+import Linear.Extra
 import Graphics.GL
 import Types
 import Network.UDP.Pal
-import Control.Lens
+import Control.Lens.Extra
 import Control.Monad.State
 import Control.Concurrent.STM
 import Data.Foldable
@@ -50,7 +50,7 @@ updateAudio ticks = do
   -- Set voice levels to 1 when they tick
   exhaustChanIO ticks >>= mapM_ (\val -> 
     case val of
-      Atom (Float voiceID) -> wldVoiceOutput . at (floor voiceID) ?== 1
+      Atom (Float voiceID) -> wldVoiceOutput . at (floor voiceID) ?= 1
       _ -> return ()
     )
 

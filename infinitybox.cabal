@@ -25,7 +25,6 @@ library
     Audio
     Client
     Server
-    Physics
     Themes
     Types
     Render
@@ -46,9 +45,8 @@ library
     , glfw-pal
     , halive
     , hydra-hs
-    , lens
-    , linear
-    , linear
+    , lens-extra
+    , linear-extra
     , MonadRandom
     , mtl
     , oculus-mini
