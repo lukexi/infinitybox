@@ -5,22 +5,19 @@ module Render where
 
 import Graphics.GL
 
-import Linear
+import Linear.Extra
 
 import Control.Monad
 import Control.Monad.State.Strict
-import Control.Lens
+import Control.Lens.Extra
 import qualified Data.Map.Strict as Map
 import Data.Maybe
-import Data.Time
 
 import Graphics.GL.Pal
 
-import Game.Pal
 import Types
 import Data.Monoid
 
-import Themes
 import Animation.Pal
 
 listToTuple :: (t, t) -> [t] -> (t, t)
@@ -132,6 +129,15 @@ drawCubes cube projectionView eyePos lights filledness = do
         Just voiceID -> fromMaybe 0 <$> use (wldVoiceOutput . at voiceID)
         Nothing      -> return 0
       uniformF uTick tick
+
+      mCollision <- use (wldLastCollisions . at objID)
+      forM_ mCollision $ \_collision -> do
+        -- TODO(isaac) fill in uniforms for collision here:
+        -- uniformF yadda yadda
+        -- uniformV3 yadda yadda
+        -- uniformV3 yadda yadda
+        return ()
+      
 
       let rotateVec = rotate (obj ^. objPose . posOrientation) (V3 0 0 1) 
       

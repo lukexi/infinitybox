@@ -3,9 +3,7 @@
 
 module Themes where
 import Graphics.GL.Pal
-import Graphics.GL
-import Linear
-import Control.Lens
+import Control.Lens.Extra
 import Types
 
 

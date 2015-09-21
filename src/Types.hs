@@ -8,14 +8,13 @@ import Data.Binary
 import GHC.Generics
 import Control.Monad.State.Strict
 
-import Control.Lens
-import Linear
+import Control.Lens.Extra
+import Linear.Extra
 import Graphics.GL
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import System.Random
 import System.Hardware.Hydra
-import Game.Pal
 import Network.UDP.Pal
 import Sound.Pd1
 import Data.List
@@ -87,35 +86,45 @@ data Themes = Themes
   }
 
 data Object = Object
-  { _objPose  :: !Pose
+  { _objPose  :: !(Pose GLfloat)
   , _objScale :: !GLfloat
   } deriving (Generic, Binary, Show)
 
 data Player = Player 
-  { _plrPose      :: !Pose    
-  , _plrHeadPose  :: !Pose
-  , _plrHandPoses :: ![Pose]
+  { _plrPose       :: !(Pose GLfloat)
+  , _plrHeadPose   :: !(Pose GLfloat)
+  , _plrHandPoses  :: ![Pose GLfloat]
+  , _plrHandVacuum :: ![Bool]
+  , _plrVacuum     :: !Bool
   } deriving (Generic, Binary, Show)
 
+data CubeCollision = CubeCollision
+  { _ccPosition  :: !(V3 GLfloat)
+  , _ccImpulse   :: !GLfloat
+  , _ccDirection :: !(V3 GLfloat)
+  , _ccTime      :: !Float
+  }
+
 data World = World
-  { _wldPlayer       :: !Player
-  , _wldPlayerID     :: !PlayerID
-  , _wldPlayers      :: !(Map PlayerID Player)
-  , _wldCubes        :: !(Map ObjectID Object)
-  , _wldLastCubes    :: !(Map ObjectID Object)
-  , _wldFrameNumber  :: !Integer
-  , _wldVoiceQueue   :: ![VoiceID]
-  , _wldCubeVoices   :: !(Map ObjectID VoiceID)
-  , _wldVoiceOutput  :: !(Map VoiceID GLfloat)
-  , _wldVoiceSources :: !(Map VoiceID OpenALSource)
-  , _wldKickVoiceID  :: !VoiceID
-  , _wldCubeAges     :: !(Map ObjectID Float)
-  , _wldHandTriggers :: !(Map WhichHand Bool) -- ^ Lets us detect new trigger pushes
-  , _wldFilledness   :: !(Animation Float)
-  , _wldComplete     :: !(Animation Float)
-  , _wldPhase        :: !Phase
-  , _wldTime         :: !Float
-  , _wldStarted      :: !Float
+  { _wldPlayer         :: !Player
+  , _wldPlayerID       :: !PlayerID
+  , _wldPlayers        :: !(Map PlayerID Player)
+  , _wldCubes          :: !(Map ObjectID Object)
+  , _wldLastCubes      :: !(Map ObjectID Object)
+  , _wldLastCollisions :: !(Map ObjectID CubeCollision)
+  , _wldFrameNumber    :: !Integer
+  , _wldVoiceQueue     :: ![VoiceID]
+  , _wldCubeVoices     :: !(Map ObjectID VoiceID)
+  , _wldVoiceOutput    :: !(Map VoiceID GLfloat)
+  , _wldVoiceSources   :: !(Map VoiceID OpenALSource)
+  , _wldKickVoiceID    :: !VoiceID
+  , _wldCubeAges       :: !(Map ObjectID Float)
+  , _wldHandTriggers   :: !(Map WhichHand Bool) -- ^ Lets us detect new trigger pushes
+  , _wldFilledness     :: !(Animation Float)
+  , _wldComplete       :: !(Animation Float)
+  , _wldPhase          :: !Phase
+  , _wldTime           :: !Float
+  , _wldStarted        :: !Float
   }
 
 data Phase = PhaseVoid | PhaseLogo | PhaseMain | PhaseEnd deriving Eq
@@ -130,15 +139,13 @@ interpolateObjects :: Object -> Object -> Object
 (Object p1 s1) `interpolateObjects` (Object p2 s2) = 
   Object (interpolatePoses p1 p2) (s1 + (s2 - s1) / 2)
 
-interpolatePoses :: Pose -> Pose -> Pose
-interpolatePoses (Pose p1 o1) (Pose p2 o2) =
-  Pose (lerp 0.5 p1 p2) (slerp o1 o2 0.5)
-
 newPlayer1 :: Player
 newPlayer1 = Player
   { _plrPose      = Pose (V3 0 (-3) 4) (axisAngle (V3 0 1 0) 0)
   , _plrHeadPose  = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
   , _plrHandPoses = []
+  , _plrHandVacuum = []
+  , _plrVacuum     = False
   }
 
 newPlayer2 :: Player
@@ -146,6 +153,8 @@ newPlayer2 = Player
   { _plrPose      = Pose (V3 0 (-3) (-4)) (axisAngle (V3 0 1 0) pi)
   , _plrHeadPose  = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
   , _plrHandPoses = []
+  , _plrHandVacuum = []
+  , _plrVacuum     = False
   }
 
 newWorld :: PlayerID -> Player -> Map VoiceID OpenALSource -> DiffTime -> World
@@ -180,6 +189,7 @@ newWorld playerID player sourcesByVoice now = World
   , _wldPhase        = PhaseVoid
   , _wldTime         = 0
   , _wldStarted      = 0
+  , _wldLastCollisions = mempty
   }
 
   where
@@ -189,7 +199,7 @@ newWorld playerID player sourcesByVoice now = World
 dequeueVoice :: MonadState World m => m VoiceID
 dequeueVoice = do
   (x:xs) <- use wldVoiceQueue
-  wldVoiceQueue .== xs ++ [x]
+  wldVoiceQueue .= xs ++ [x]
   return x
 
 -- | Interpret a command into the client's world state.
@@ -203,9 +213,9 @@ interpret :: (MonadIO m, MonadState World m) => Op -> m ()
 interpret (CreateObject objID obj)       = do
   voiceID <- dequeueVoice
   
-  wldCubes      . at objID ?== obj
-  wldCubeVoices . at objID ?== voiceID
-  wldCubeAges   . at objID ?== 0
+  wldCubes      . at objID ?= obj
+  wldCubeVoices . at objID ?= voiceID
+  wldCubeAges   . at objID ?= 0
   
   -- wldFilledness += 1.0 / fromIntegral maxCubes 
 
@@ -224,34 +234,43 @@ interpret (CreateObject objID obj)       = do
 
 
 interpret (DeleteObject objID)           = do
-  wldCubes      . at objID .== Nothing
-  wldCubeAges   . at objID .== Nothing
-  wldCubeVoices . at objID .== Nothing
+  wldCubes      . at objID .= Nothing
+  wldCubeAges   . at objID .= Nothing
+  wldCubeVoices . at objID .= Nothing
 
 interpret (UpdateObject objID obj)       = 
-  wldCubes   . at objID    . traverse .== obj
+  wldCubes   . at objID    . traverse .= obj
 
 interpret (UpdatePlayer playerID player) = 
-  wldPlayers . at playerID . traverse .== player
+  wldPlayers . at playerID . traverse .= player
 
 interpret (Connect playerID player)      = do
-  wldPlayers . at playerID ?== player
+  wldPlayers . at playerID ?= player
   putStrLnIO (playerID ++ " connected")
   
 interpret (Disconnect playerID)          = do
-  wldPlayers . at playerID .== Nothing
+  wldPlayers . at playerID .= Nothing
   putStrLnIO (playerID ++ " disconnected")
 
 interpret (ObjectCollision objectAID objectBID strength) = do
   -- putStrLnIO $ "Client got collision! " ++ show objectAID ++ " " ++ show objectBID ++ ": " ++ show strength
+  now <- use wldTime
   forM_ [objectAID, objectBID] $ \objID -> do
+
+    wldLastCollisions . at objID ?= CubeCollision
+      { _ccTime = now
+      , _ccImpulse = strength
+      , _ccPosition = 0
+      , _ccDirection = 0
+      }
+
     mVoiceID <- use (wldCubeVoices . at objID)
     -- The objectID may be invalid since we send hands and walls as objectIDs,
     -- thus we may not have a voice for them.
     let volume = min 1 (strength * 5)
     
     forM_ mVoiceID $ \voiceID -> do
-      wldVoiceOutput . at voiceID ?== volume
+      wldVoiceOutput . at voiceID ?= volume
       liftIO $ sendGlobal (show voiceID ++ "trigger") $ 
         Atom (Float volume)
 
@@ -293,11 +312,11 @@ randomColor :: MonadIO m => m (V4 GLfloat)
 randomColor = liftIO $ V4 <$> randomRIO (0, 1) <*> randomRIO (0, 1) <*> randomRIO (0, 1) <*> pure 1
 
 
-totalHeadPose :: Player -> Pose
+totalHeadPose :: Player -> Pose GLfloat
 totalHeadPose player = addPoses (player ^. plrPose) (player ^. plrHeadPose)
 
 
-newCubeInstruction :: MonadRandom m => Pose -> m Op
+newCubeInstruction :: MonadRandom m => Pose GLfloat -> m Op
 newCubeInstruction pose = do
   objID <- getRandom
   return $ CreateObject objID (Object pose cubeScale)

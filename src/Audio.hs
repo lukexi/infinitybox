@@ -1,14 +1,13 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Audio where
 import Sound.Pd1
-import Game.Pal
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
-import Linear
+import Linear.Extra
 import Graphics.GL
 import Types
 import Network.UDP.Pal
-import Control.Lens
+import Control.Lens.Extra
 import Control.Monad.State
 import Control.Concurrent.STM
 import Data.Foldable
@@ -42,15 +41,12 @@ updateAudio :: (MonadIO m, MonadState World m) => TChan Message -> m ()
 updateAudio ticks = do
 
   -- Update OpenAL Listener from player's total head pose
-  player <- use wldPlayer
-  let Pose totalHeadPosit totalHeadOrient = totalHeadPose player
-  alListenerPosition totalHeadPosit
-  alListenerOrientation totalHeadOrient
+  alListenerPose =<< totalHeadPose <$> use wldPlayer
 
   -- Set voice levels to 1 when they tick
   exhaustChanIO ticks >>= mapM_ (\val -> 
     case val of
-      Atom (Float voiceID) -> wldVoiceOutput . at (floor voiceID) ?== 1
+      Atom (Float voiceID) -> wldVoiceOutput . at (floor voiceID) ?= 1
       _ -> return ()
     )
 

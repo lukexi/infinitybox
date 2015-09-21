@@ -6,14 +6,15 @@ module Controls where
 import Graphics.UI.GLFW.Pal
 
 import Graphics.Oculus
-import Linear
+import Linear.Extra
 
 import System.Hardware.Hydra
 
 import Control.Monad
 import Control.Monad.State.Strict
-import Control.Lens hiding (view)
+import Control.Lens.Extra hiding (view)
 import Control.Monad.Random
+import Graphics.GL
 
 import Network.UDP.Pal
 import Types
@@ -76,34 +77,35 @@ processControls GamePal{..} transceiver frameNumber = do
     onKeyDown Key'Z e (addCube transceiver newPose)
     onKeyDown Key'N e startLogo
     onKeyDown Key'M e startMain
-    -- onKeyDown Key'X e ( wldFilledness -= 0.05 )
+    onKeyDown Key'Z e (wldPlayer . plrVacuum .= True)
+    onKeyUp   Key'Z e (wldPlayer . plrVacuum .= False)
 
   -- Fire cubes from each hand when their triggers are held down
-  forM_ (zip hands handWorldPoses) $ \(handData, _handPose) -> do
+  forM_ (zip hands handWorldPoses) $ \(handData, handPose) -> do
     -- Bind Hydra 'Start' buttons to HMD Recenter
     when (ButtonStart `elem` (handButtons handData)) $
       maybe (return ()) (liftIO . recenterPose) gpHMD
 
-    -- No more cube firing
-    processHandCubeFiring handData _handPose frameNumber transceiver
+    processHandCubeFiring handData handPose frameNumber transceiver
+
 
 processHandCubeFiring :: (Integral a, MonadIO m, MonadState World m, MonadRandom m) 
-                      => ControllerData -> Pose -> a -> Transceiver Op -> m ()    
+                      => ControllerData -> Pose GLfloat -> a -> Transceiver Op -> m ()    
 processHandCubeFiring handData handPose frameNumber transceiver  = do
   let triggerIsDown = trigger handData > 0.5
   triggerWasDown <- fromMaybe False <$> use (wldHandTriggers . at (whichHand handData))
-  wldHandTriggers . at (whichHand handData) ?== triggerIsDown
+  wldHandTriggers . at (whichHand handData) ?= triggerIsDown
 
   -- Move the cube upwards a bit so it spawns at the tip of the hand
   let cubePose = shiftBy (V3 0 0 (-0.5)) handPose
   -- Spawn every 0.1 secs, and on fresh trigger squeezes
-      shouldSpawn = triggerIsDown && not triggerWasDown
-                  || triggerIsDown && frameNumber `mod` 30 == 0
+      shouldSpawn = triggerIsDown && not triggerWasDown || 
+                    triggerIsDown && frameNumber `mod` 30 == 0
   when shouldSpawn $
     addCube transceiver cubePose
 
 
-addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Transceiver Op -> Pose -> m ()
+addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Transceiver Op -> Pose GLfloat -> m ()
 addCube transceiver pose = do
   -- Spawn a cube at the player's position and orientation
   instruction <- newCubeInstruction pose
