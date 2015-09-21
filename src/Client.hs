@@ -57,7 +57,7 @@ main = do
   when enableEKG    . void $ EKG.forkServer "localhost" 8000
   
   -- Set up GLFW/Oculus/Hydra
-  gamePal@GamePal{..} <- reacquire 0 $ initGamePal "Infinity Box" enableDevices  
+  gamePal@GamePal{..} <- reacquire 0 $ initGamePal "Infinity Box" NoGCPerFrame enableDevices  
   
   (voiceTicks, sourcesByVoice) <- initAudio
   -- let sourcesByVoice = mempty
@@ -131,7 +131,7 @@ main = do
       
 
     viewMat <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
-    renderWith gpWindow gpHMD viewMat 
+    renderWith gamePal viewMat 
       (glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT))
       (render theme)
 
