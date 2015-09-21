@@ -46,7 +46,7 @@ float tree2City = 1. - city2Tree - treeBreath;
 
 float speed = .1;
 
-float branchSize =.15;
+float branchSize =.3;
 float reductionFactor = .5;
 //float bs = branchSize;
 float rot = -20.;
@@ -160,16 +160,17 @@ float udBox( vec3 p, vec3 b )
   return length(max(abs(p)-b,0.0));
 }
 
+float sdSphere( vec3 p, float s )
+{
+  return length(p)-s;
+}
 
 //--------------------------------
 // Modelling 
 //--------------------------------
 vec2 map( vec3 pos ){  
     
-    
 
-
-    
     mat4 m;
     float bs = branchSize;
 
@@ -205,6 +206,8 @@ vec2 map( vec3 pos ){
 
     }
 
+    res = smoothU( res , vec2( sdSphere(pos - vLight1, .1 ) , 1. ) , .5);
+    res = smoothU( res , vec2( sdSphere(pos - vLight2, .1 ) , 1. ) , .5);
 
     return res;
     
@@ -305,6 +308,8 @@ void main(){
       
         col = nor * .5 + .5;
         col = vec3( AO );
+    }else{
+        discard;
     }
     
     // apply gamma correction

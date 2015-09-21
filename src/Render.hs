@@ -112,6 +112,7 @@ drawCubes cube projectionView eyePos lights filledness = do
   useProgram (sProgram cube)
 
   uniformF  uTime =<< use wldTime
+  uniformF  uStarted =<< use wldStarted
 
   -- putStrLnIO (show view)
   
@@ -177,7 +178,7 @@ drawLogo cube projectionView eyePos lights = do
     glDisable GL_CULL_FACE
     glCullFace GL_BACK
     
-    let obj = Object newPose cubeScale
+    let obj = Object (Pose (V3 0 (-3) 0) (axisAngle (V3 0 1 0) 0)) 3
     let model = transformationFromPose (obj ^. objPose)
         scaledModel = model !*! scaleMatrix ( realToFrac (obj ^. objScale) )
 
@@ -257,6 +258,9 @@ drawLocalHands :: (MonadIO m, MonadState World m)
 drawLocalHands projectionView hand = do
   let Uniforms{..} = sUniforms hand
 
+  uniformF  uStarted =<< use wldStarted
+
+
   -- Draw the local player's hands
   handPoses <- use $ wldPlayer . plrHandPoses
   forM_ handPoses $ \handPose -> do
@@ -278,6 +282,9 @@ drawRemoteHands :: (MonadIO m, MonadState World m)
                 => M44 GLfloat -> Shape Uniforms -> m ()
 drawRemoteHands projectionView hand = do
   let Uniforms{..} = sUniforms hand
+   
+  uniformF  uStarted =<< use wldStarted
+
 
   players <- use $ wldPlayers . to Map.toList
   forM_ players $ \(_playerID, player) -> 

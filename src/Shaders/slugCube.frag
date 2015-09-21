@@ -1,6 +1,7 @@
 #version 330 core
 
 uniform float uTime;
+uniform float uStarted;
 uniform float uTick;
 
 uniform float uFilledness;
@@ -79,6 +80,12 @@ float sdBox( vec3 p, vec3 b )
          length(max(d,0.0));
 }
 
+float sdSphere( vec3 p, float s )
+{
+  return length(p)-s;
+}
+
+
 
 vec2 smoothU( vec2 d1, vec2 d2, float k)
 {
@@ -99,7 +106,7 @@ const int numSteps =4;
 vec2 map( vec3 pos ){  
     
     
-    float branchSize = .04;
+    float branchSize = .2;
     float reductionFactor = .5 + .01 * uTick;
     float bs = branchSize;
 
@@ -109,7 +116,7 @@ vec2 map( vec3 pos ){
   
     vec2 res = vec2( 10000. , 1. );
     
-    vec3 t = vec3( uParameter1 , uParameter2 , uParameter3 );
+    vec3 t = vec3( 1. , 1. , 1. );
 
     for( int i = 0; i <numSteps; i ++ ){
 
@@ -119,7 +126,7 @@ vec2 map( vec3 pos ){
 
         mat4 rot = rotateX( uParameter4 ) * rotateY( uParameter5 ) * rotateZ( uParameter6 );
         
-        m = translate( abs(t) * bs * 4.) * rot;
+        m = translate( abs(t) * bs  * 2.) * rot;
         
         p.x = abs(p.x);
         p.z = abs(p.z);
@@ -284,6 +291,10 @@ void main(){
                  , .5  * ( 1. + sin( uTime * .11 ) * .3 )  , .2 * ( 1. + sin( uTime * .06 ) * .3 )  , .25 * ( 1. + sin( uTime * .755 ) * .3 )  , 0.
                  );
 
+  float speedTime = uTime * .01 ;
+  dayNightCycle = sin( speedTime * 6.28 );
+
+  float rad = speedTime * 6.28;
 
   vec3 ro = vPos;
   vec3 rd = normalize( vPos - vCam );
@@ -325,7 +336,10 @@ void main(){
 
   }
 
-
+  if( uStarted < .9 ){
+    col = vec3( min( -vPos.z * 2. + min( uTime * 3. , 1.) * .6 , 1. ) ) ;
+  }
+ 
 
   color = vec4( col , 1. );
 

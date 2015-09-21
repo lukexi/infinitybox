@@ -85,7 +85,7 @@ processControls GamePal{..} transceiver frameNumber = do
       maybe (return ()) (liftIO . recenterPose) gpHMD
 
     -- No more cube firing
-    --processHandCubeFiring handData handPose frameNumber transceiver
+    processHandCubeFiring handData _handPose frameNumber transceiver
 
 processHandCubeFiring :: (Integral a, MonadIO m, MonadState World m, MonadRandom m) 
                       => ControllerData -> Pose -> a -> Transceiver Op -> m ()    
