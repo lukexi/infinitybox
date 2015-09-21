@@ -10,7 +10,9 @@ uniform float uParameter5;
 uniform float uParameter6;
 uniform float uTick;
 
-2
+uniform float uFilledness;
+uniform float uCompleted;
+
 in vec3 vPos;
 in vec3 vCam;
 in vec3 vNorm;
@@ -27,11 +29,12 @@ mat4 palette2;
 mat4 palette3;
 
 
-const float MAX_TRACE_DISTANCE = 5.;           // max trace distance
+const float MAX_TRACE_DISTANCE = 20.;           // max trace distance
 const float INTERSECTION_PRECISION = 0.1;        // precision of the intersection
 const int NUM_OF_TRACE_STEPS = 10;
 
 vec3 sunPos; 
+float dayNightCycle;
 
 
 
@@ -61,7 +64,7 @@ vec2 smoothU( vec2 d1, vec2 d2, float k)
 
 float sphereField( vec3 p ){
 
-  float fieldSize = 2. - illedness; //abs( sin( pa) ) * 1.;
+  float fieldSize = 2.; //abs( sin( pa) ) * 1.;
   return opRepSphere( p , vec3(fieldSize ), .04 );
 
 }
@@ -83,15 +86,19 @@ vec3 doPalette( in float val , in mat4 pType ){
 //--------------------------------
 vec2 map( vec3 pos ){  
    
-    vec2 res = vec2( sdSphere( pos - sunPos, .6) , 1. );
-    vec2 res2 = vec2( sdSphere( pos + vec3( 0., 20. , 0. ), 18. ) , 2. );
+   float starAmount =  smoothstep(  0. , .5 , -dayNightCycle );
+    vec2 res = vec2( sdSphere( pos - sunPos, 3.) , 1. );
+
+    vec3 disform =  vec3( 0. , sin( pos.x * 2. + uTime )  + sin( length( pos.xyz ) * 1. - uTime  * .1) + sin( pos.z  * 1.4   * 1. + uTime  * 1.3) , 0. ) * .4 * (1.-starAmount);
+    vec2 res2 = vec2( sdSphere(  pos + disform + vec3( 0., 24. , 0. ) , 18. ) , 2. );
 
     res = smoothU( res , res2 , .2 );
 
-    vec2 res3 =  vec2( sphereField( pos ) , 2. );
+    vec2 res3 = smoothU( res , vec2( sphereField( pos ) , 3.) , .2 );
 
+    
 
-    return res3 * uCompleted + res * (1. - uCompleted);
+    return res3 * starAmount + res * (1. - starAmount);
     
 }
 
@@ -138,8 +145,7 @@ vec3 calcNormal( in vec3 pos ){
 }
 
 
-float calcAO( in vec3 pos, in vec3 nor )
-{
+float calcAO( in vec3 pos, in vec3 nor ){
   float occ = 0.0;
     float sca = 1.0;
     for( int i=0; i<5; i++ )
@@ -172,7 +178,7 @@ vec3 doBoxShading( vec2 l1 , vec2 l2 , vec3 ro ){
 
   vec3 col = vec3( 0. );
 
-  float fillednessVal = (( ro.y + 1.5 )  / 3. ) * uFilledness;
+  float fillednessVal = (( ro.y + 1.5 )  / 3. ) ;
 
   float spec = pow( l1.y , 40. );
   col +=  doPalette( l1.x , palette1 ) * ( spec ) * .5;
@@ -181,9 +187,9 @@ vec3 doBoxShading( vec2 l1 , vec2 l2 , vec3 ro ){
   col +=  doPalette( l2.x , palette2 ) * ( spec ) * .5;
 
 
-  float edgeSize = .05  * (1. - uComplete ) + .01;
+  float edgeSize = .01;// * (1.) + .01;
   if( vUv.x < edgeSize || vUv.x > 1. - edgeSize || vUv.y < edgeSize || vUv.y > 1. - edgeSize ){
-    col += vec3( .3 , .3 , .3 );
+    col += vec3( .6 , .6 , .6 );
   }
 
   return col;
@@ -220,10 +226,36 @@ vec3 doRayShading( vec2 l1 , vec2 l2  , vec3 norm , vec3 ro ){
 
 
 
+// Gets background color if nothing is hit
+// also used for refraction
+vec3 bgCol( in vec3 p , in vec3 rd ){
+ 
+ vec3 disPos = vec3( p +  .5 *  ( sin( p.x * 10. ) + sin( p.y  * 10. ) + sin( p.z * 10.)));
+ vec3 n = -normalize( disPos );
+ 
+ vec2 l1 = doLight( vLight1 , disPos , n , rd );
+ vec2 l2 = doLight( vLight2 , disPos , n , rd );
+
+ vec3 col1 = doPalette( .3 + .3 * l1.x , palette1 ) * l1.x;
+ vec3 col2 = doPalette( .6 + .3 * l2.x , palette2 ) * l2.x;
+ 
+ vec3 baseCol = vec3( .3 , .3 , .3 );
+    
+ return n * .5 + .5;
+
+}
+
 
 void main(){
 
-  sunPos = vec3( 0. , filledness * 2. - 3. + completed * 5. , -3.6 );
+  float speedTime = uTime * .01 ;
+  dayNightCycle = sin( speedTime * 6.28 );
+
+  float rad = speedTime * 6.28;
+
+  sunPos = vec3( 0. ,  sin( rad ) * 10.,  cos( rad ) * 10. );
+
+ // sunPos = vec3( 0. , filledness * 2. - 3. + completed * 5. , -3.6 );
 
 
   /*palette1 = mat4( .5 , .5 , .5 , 0. 
@@ -246,23 +278,23 @@ void main(){
                  );*/
 
 
-  palette1 = mat4( .5  * ( 1. + sin( time * .5 ) * .3 ) , .5 * ( 1. + sin( time * .5 ) * .3 )  , .5 * ( 1. + sin( time * .5 ) * .3 )  , 0. 
-                 , .5  * ( 1. + sin( time * .8 ) * .3 ) , .5 * ( 1. + sin( time * .3 ) * .3 )  , .5 * ( 1. + sin( time * .19 ) * .3 )  , 0.
-                 , 1.  * ( 1. + sin( time * .2 ) * .3 ) , 1. * ( 1. + sin( time * .7 ) * .3 )  , 1. * ( 1. + sin( time * .4 ) * .3 )  , 0.
-                 , .3  * ( 1. + sin( time * .1 ) * .3 ) , .2 * ( 1. + sin( time * .9 ) * .3 )  , .2 * ( 1. + sin( time * 1.5 ) * .3 )  , 0.
+  palette1 = mat4( .5  * ( 1. + sin( uTime * .5 ) * .3 ) , .5 * ( 1. + sin( uTime * .5 ) * .3 )  , .5 * ( 1. + sin( uTime * .5 ) * .3 )  , 0. 
+                 , .5  * ( 1. + sin( uTime * .8 ) * .3 ) , .5 * ( 1. + sin( uTime * .3 ) * .3 )  , .5 * ( 1. + sin( uTime * .19 ) * .3 )  , 0.
+                 , 1.  * ( 1. + sin( uTime * .2 ) * .3 ) , 1. * ( 1. + sin( uTime * .7 ) * .3 )  , 1. * ( 1. + sin( uTime * .4 ) * .3 )  , 0.
+                 , .3  * ( 1. + sin( uTime * .1 ) * .3 ) , .2 * ( 1. + sin( uTime * .9 ) * .3 )  , .2 * ( 1. + sin( uTime * 1.5 ) * .3 )  , 0.
                  );
 
-  palette2 = mat4( .5 * ( 1. + sin( time * .56 ) * .3 )  , .5 * ( 1. + sin( time * .225 ) * .3 )  , .5  * ( 1. + sin( time * .111 ) * .3 ) , 0. 
-                 , .5 * ( 1. + sin( time * 1.5 ) * .3 )  , .5 * ( 1. + sin( time * .2 ) * .3 )  , .5  * ( 1. + sin( time * .3 ) * .3 ) , 0.
-                 , 1. * ( 1. + sin( time * .73 ) * .3 )  , 1. * ( 1. + sin( time * .15 ) * .3 )  , 0.  * ( 1. + sin( time * .74 ) * .3 ) , 0.
-                 , .8 * ( 1. + sin( time * 1.5 ) * .3 )  , .9 * ( 1. + sin( time * .35 ) * .3 )  , .3  * ( 1. + sin( time * .9 ) * .3 ) , 0.
+  palette2 = mat4( .5 * ( 1. + sin( uTime * .56 ) * .3 )  , .5 * ( 1. + sin( uTime * .225 ) * .3 )  , .5  * ( 1. + sin( uTime * .111 ) * .3 ) , 0. 
+                 , .5 * ( 1. + sin( uTime * 1.5 ) * .3 )  , .5 * ( 1. + sin( uTime * .2 ) * .3 )  , .5  * ( 1. + sin( uTime * .3 ) * .3 ) , 0.
+                 , 1. * ( 1. + sin( uTime * .73 ) * .3 )  , 1. * ( 1. + sin( uTime * .15 ) * .3 )  , 0.  * ( 1. + sin( uTime * .74 ) * .3 ) , 0.
+                 , .8 * ( 1. + sin( uTime * 1.5 ) * .3 )  , .9 * ( 1. + sin( uTime * .35 ) * .3 )  , .3  * ( 1. + sin( uTime * .9 ) * .3 ) , 0.
                  );
 
 
-  palette3 = mat4( .5  * ( 1. + sin( time * .86 ) * .3 )  , .5 * ( 1. + sin( time * .51 ) * .3 )  , .5  * ( 1. + sin( time * .2 ) * .3 ) , 0. 
-                 , .5  * ( 1. + sin( time * 1. ) * .3 )  , .5 * ( 1. + sin( time * .76 ) * .3 )  , .5  * ( 1. + sin( time * 1.5 ) * .3 ) , 0.
-                 , 2.  * ( 1. + sin( time * .72 ) * .3 )  , 1. * ( 1. + sin( time * .21 ) * .3 )  , 0.  * ( 1. + sin( time * .632 ) * .3 ) , 0.
-                 , .5  * ( 1. + sin( time * .11 ) * .3 )  , .2 * ( 1. + sin( time * .06 ) * .3 )  , .25 * ( 1. + sin( time * .755 ) * .3 )  , 0.
+  palette3 = mat4( .5  * ( 1. + sin( uTime * .86 ) * .3 )  , .5 * ( 1. + sin( uTime * .51 ) * .3 )  , .5  * ( 1. + sin( uTime * .2 ) * .3 ) , 0. 
+                 , .5  * ( 1. + sin( uTime * 1. ) * .3 )  , .5 * ( 1. + sin( uTime * .76 ) * .3 )  , .5  * ( 1. + sin( uTime * 1.5 ) * .3 ) , 0.
+                 , 2.  * ( 1. + sin( uTime * .72 ) * .3 )  , 1. * ( 1. + sin( uTime * .21 ) * .3 )  , 0.  * ( 1. + sin( uTime * .632 ) * .3 ) , 0.
+                 , .5  * ( 1. + sin( uTime * .11 ) * .3 )  , .2 * ( 1. + sin( uTime * .06 ) * .3 )  , .25 * ( 1. + sin( uTime * .755 ) * .3 )  , 0.
                  );
 
 
@@ -289,11 +321,19 @@ void main(){
     light2 = doLight( vLight2 , pos , norm , rd );
 
    // col += norm * .5 + .5;
-    col += doRayShading( light1 , light2 , norm , ro );
+
+    float nite = clamp(max( -dayNightCycle *4. , 0. ) , 0. , 1. );
+    col += nite * doRayShading( light1 , light2 , norm , ro );
+
+    //col = vec3( 3. / res.y );
+    col += ( norm * .5 + .5) *( 1. - nite);
+    if( res.y > 99.0 ){
+      col += max( 0. , -dayNightCycle )*( norm * .5 + .5);
+    }
 
   }else{
 
-    col += doBackgroundShading( light1 , light2 , ro );
+    col += bgCol( ro + rd * MAX_TRACE_DISTANCE , rd );// doBackgroundShading( light1 , light2 , ro );
 
   }
 
