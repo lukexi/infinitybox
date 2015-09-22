@@ -69,6 +69,7 @@ data Uniforms = Uniforms
   , uTime                :: UniformLocation GLfloat
   , uTick                :: UniformLocation GLfloat
   , uStarted             :: UniformLocation GLfloat
+  , uDayLength           :: UniformLocation GLfloat
   } deriving (Data)
 
 data Resources = Resources
@@ -126,6 +127,7 @@ data World = World
   , _wldPhase          :: !Phase
   , _wldTime           :: !Float
   , _wldStarted        :: !Float
+  , _wldDayLength      :: !Float
   }
 
 data Phase = PhaseVoid | PhaseLogo | PhaseMain | PhaseEnd deriving Eq
@@ -191,6 +193,7 @@ newWorld playerID player sourcesByVoice now = World
   , _wldTime         = 0
   , _wldStarted      = 0
   , _wldLastCollisions = mempty
+  , _wldDayLength      = 30
   }
 
   where

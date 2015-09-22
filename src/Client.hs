@@ -35,10 +35,10 @@ enableEKG = False
 -- enableEKG = False
 
 enableDevices :: [GamePalDevices]
-enableDevices = [UseOculus, UseHydra]
+-- enableDevices = [UseOculus, UseHydra]
 -- enableDevices = [UseOculus]
 -- enableDevices = [UseHydra]
--- enableDevices = []
+enableDevices = []
 
 
 getServerNameFromFile :: IO String
@@ -123,10 +123,17 @@ main = do
     
     when (phase /= PhaseVoid) $ wldTime += delta
     t <- use wldTime
+
+    --wldPhase   .= PhaseMain
+    --wldStarted .= 1
+
+    --real one 
+
     when (phase == PhaseLogo && t > 11.0 ) $ do
       wldPhase   .= PhaseMain
       wldTime    .= 0
       wldStarted .= 1
+
 
     viewMat <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
     renderWith gamePal viewMat 
