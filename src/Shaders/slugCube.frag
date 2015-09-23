@@ -15,6 +15,8 @@ uniform float uParameter3;
 uniform float uParameter4;
 uniform float uParameter5;
 uniform float uParameter6;
+uniform vec3 uCollisionPosition;
+uniform float uCollisionTime;
 
 
 in vec3 vPos;
@@ -337,7 +339,10 @@ void main(){
     col = vec3( min( -vPos.z * 2. + min( uTime * 3. , 1.) * .6 , 1. ) ) ;
   }
  
+ //col = vCollision;
 
+  col += vec3( max( 0. , .5 - length( vPos - uCollisionPosition ))) * max(0.,(.5 + ( uCollisionTime - uTime )));
+  //col = vec3( 1. );
   color = vec4( col , 1. );
 
 

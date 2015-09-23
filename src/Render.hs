@@ -126,18 +126,21 @@ drawCubes cube projectionView eyePos lights filledness = do
     
     forM_ ( zip [0..] ( Map.toList cubes ) ) $ \( i , (objID, obj) ) -> do
 
+
       mVoiceID <- use (wldCubeVoices . at objID)
       tick <- case mVoiceID of
         Just voiceID -> fromMaybe 0 <$> use (wldVoiceOutput . at voiceID)
         Nothing      -> return 0
       uniformF uTick tick
 
+
       mCollision <- use (wldLastCollisions . at objID)
       forM_ mCollision $ \collision -> do
+
         -- TODO(isaac) fill in uniforms for collision here:
-        -- uniformF  uCollisionTime      (collision ^. ccTime)
+        uniformF  uCollisionTime      (collision ^. ccTime)
         -- uniformF  uCollisionImpulse   (collision ^. ccImpulse)
-        -- uniformV3 uCollisionPosition  (collision ^. ccPosition)
+        uniformV3 uCollisionPosition  ( collision ^. ccPosition  ) 
         -- uniformV3 uCollisionDirection (collision ^. ccDirection)
         return ()
       

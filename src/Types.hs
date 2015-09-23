@@ -22,6 +22,7 @@ import Graphics.GL.Pal
 import Data.Data
 import Animation.Pal
 import Data.Time
+import Data.Maybe
 import Control.Monad.Random
 import Physics.Bullet
 --
@@ -57,6 +58,8 @@ data Uniforms = Uniforms
   , uLight2              :: UniformLocation (V3  GLfloat)
   , uLight3              :: UniformLocation (V3  GLfloat)
   , uLight4              :: UniformLocation (V3  GLfloat)
+  , uCollisionPosition   :: UniformLocation (V3  GLfloat)
+  , uCollisionTime       :: UniformLocation GLfloat
   , uFilledness          :: UniformLocation GLfloat
   , uComplete            :: UniformLocation GLfloat
   , uParameter1          :: UniformLocation GLfloat
@@ -137,6 +140,7 @@ makeLenses ''Player
 makeLenses ''World
 makeLenses ''Visuals
 makeLenses ''Themes
+makeLenses ''CubeCollision
 
 interpolateObjects :: Object -> Object -> Object
 (Object p1 s1) `interpolateObjects` (Object p2 s2) = 
@@ -265,12 +269,22 @@ interpret (ObjectCollision collision) = do
       impulse   = cbAppliedImpulse collision
   forM_ (zip3 objectIDs positions normals) $ \(objID, position, normal) -> do
 
-    wldLastCollisions . at objID ?= CubeCollision
-      { _ccTime = now
-      , _ccImpulse = impulse
-      , _ccPosition = position
-      , _ccDirection = normal
-      }
+    mObj <- use $ wldCubes . at objID 
+    case mObj of 
+      Nothing -> return ()
+      Just obj -> do
+        let model = transformationFromPose (obj ^. objPose)
+            scaledModel = model !*! scaleMatrix ( realToFrac (obj ^. objScale) )
+            invModel = fromMaybe scaledModel (inv44 scaledModel) :: M44 GLfloat
+            positionPoint = point position :: V4 GLfloat
+
+        wldLastCollisions . at objID ?= CubeCollision
+
+          { _ccTime = now
+          , _ccImpulse = impulse
+          , _ccPosition = normalizePoint (invModel !* positionPoint)
+          , _ccDirection = normal
+          }
 
     mVoiceID <- use (wldCubeVoices . at objID)
     -- The objectID may be invalid since we send hands and walls as objectIDs,
