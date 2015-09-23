@@ -44,6 +44,8 @@ initAudio = do
 updateAudio :: (MonadIO m, MonadState World m) => TChan Message -> TChan Message -> m ()
 updateAudio pitchesByVoice amplitudesByVoice = do
 
+  sendGlobal "dayNight" =<< Atom . Float . dayNightCycleAt <$> use wldTime
+
   -- Update OpenAL Listener from player's total head pose
   alListenerPose =<< totalHeadPose <$> use wldPlayer
 
@@ -76,7 +78,7 @@ updateAudio pitchesByVoice amplitudesByVoice = do
     
         alSourcePosition sourceID (cubeObj ^. objPose . posPosition)
 
-        liftIO $ sendGlobal (show voiceID ++ "xyz") $ 
+        sendGlobal (show voiceID ++ "xyz") $ 
           List (map realToFrac (toList (cubeObj ^. objPose . posPosition)))
 
 

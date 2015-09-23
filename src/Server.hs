@@ -20,7 +20,6 @@ import Data.Map.Strict (Map)
 
 import qualified Data.Sequence as Seq
 import Data.Sequence (Seq)
-import Graphics.GL
 
 import Data.Foldable
 

@@ -33,6 +33,12 @@ maxCubes = 32
 dayLength :: Float
 dayLength = 30
 
+dayNightCycleAt :: Float -> Float
+dayNightCycleAt t = dayNightCycle
+  where 
+    speedTime = t / dayLength;
+    dayNightCycle = sin (speedTime * 2 * pi)
+
 -- FIXME: We're using Word32 because we can't pass anything 
 -- bigger as a RigidBodyID or else it will be silently truncated.
 -- Using the RigidBody userPointer might be the safer bet,

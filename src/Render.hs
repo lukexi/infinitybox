@@ -20,10 +20,7 @@ import Data.Monoid
 
 import Animation.Pal
 
-dayNightCycleAt t = dayNightCycle
-  where 
-    speedTime = t / dayLength;
-    dayNightCycle = sin (speedTime * 2 * pi)
+
 
 listToTuple :: (t, t) -> [t] -> (t, t)
 listToTuple _   [a,b] = (a,b)
