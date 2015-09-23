@@ -21,6 +21,7 @@ import Types
 
 import Game.Pal
 import Data.Maybe
+import Sound.Pd1
 
 
 processControls :: (MonadIO m, MonadState World m, MonadRandom m) 
@@ -120,10 +121,11 @@ addCube transceiver pose = do
   return ()
 
 
-startLogo :: (MonadState World m) => m ()
+startLogo :: (MonadState World m, MonadIO m) => m ()
 startLogo = do
   wldPhase .= PhaseLogo
   wldTime  .= 0
+  sendGlobal "startLogo" Bang
 
 startMain :: (MonadState World m) => m ()
 startMain = do

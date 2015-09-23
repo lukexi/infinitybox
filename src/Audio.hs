@@ -29,9 +29,10 @@ initAudio = do
   -- Associate each voice number with an OpenAL source
   openALSources <- getPdSources
 
-  let sourcesByVoice = Map.fromList (zip [1..] openALSources)
+  let voiceSources = init openALSources -- reserve source 32 for the logo sound
+      sourcesByVoice = Map.fromList (zip [1..] voiceSources)
 
-  forM_  openALSources $ \sourceID -> 
+  forM_  voiceSources $ \sourceID -> 
     
     -- Initially send voices to very far away to silence them
     alSourcePosition sourceID (V3 0 0 (-10000) :: V3 GLfloat)
@@ -62,11 +63,11 @@ updateAudio pitchesByVoice amplitudesByVoice = do
       _ -> return ()
     )
 
-  -- Kick is always centered in the floor
-  kickVoiceID <- use wldKickVoiceID
-  mKickSourceID <- use $ wldVoiceSources . at kickVoiceID
-  forM_ mKickSourceID $ \sourceID -> 
-    alSourcePosition sourceID (V3 0 (-1) 0 :: V3 GLfloat)
+  -- -- Kick is always centered in the floor
+  -- kickVoiceID <- use wldKickVoiceID
+  -- mKickSourceID <- use $ wldVoiceSources . at kickVoiceID
+  -- forM_ mKickSourceID $ \sourceID -> 
+  --   alSourcePosition sourceID (V3 0 (-1) 0 :: V3 GLfloat)
 
   -- Update voices with cube positions
   cubes <- use wldCubes

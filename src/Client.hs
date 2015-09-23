@@ -124,17 +124,14 @@ main = do
     when (phase /= PhaseVoid) $ wldTime += delta
     t <- use wldTime
 
-    wldPhase   .= PhaseMain
-    wldStarted .= 1
+    -- wldPhase   .= PhaseMain
+    -- wldStarted .= 1
 
     --real one 
-{-
     when (phase == PhaseLogo && t > 11.0 ) $ do
       wldPhase   .= PhaseMain
       wldTime    .= 0
       wldStarted .= 1
-
-      -}
 
 
     viewMat <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
