@@ -6,6 +6,8 @@ uniform float uTick;
 
 uniform float uFilledness;
 uniform float uComplete;
+uniform float uDayLength;
+
 
 uniform float uParameter1;
 uniform float uParameter2;
@@ -13,6 +15,8 @@ uniform float uParameter3;
 uniform float uParameter4;
 uniform float uParameter5;
 uniform float uParameter6;
+uniform vec3 uCollisionPosition;
+uniform float uCollisionTime;
 
 
 in vec3 vPos;
@@ -27,16 +31,16 @@ in vec2 vUv;
 out vec4 color;
 
 
+vec3 sunPos; 
+float dayNightCycle;
+
+
 
 const float MAX_TRACE_DISTANCE = 5.;           // max trace distance
 const float INTERSECTION_PRECISION = 0.0001;        // precision of the intersection
 const int NUM_OF_TRACE_STEPS = 20;
 const float PI  = 3.14159;
 
-
-mat4 palette1;
-mat4 palette2;
-mat4 palette3;
 
 vec3 light1;
 vec3 light2;
@@ -106,7 +110,13 @@ const int numSteps =4;
 vec2 map( vec3 pos ){  
     
     
-    float branchSize = .2;
+    float branchSize;
+
+    if( gl_FrontFacing ){
+      branchSize = .2;
+    }else{
+      branchSize = 3.;
+    }
     float reductionFactor = .5 + .01 * uTick;
     float bs = branchSize;
 
@@ -202,17 +212,6 @@ vec2 calcIntersection( in vec3 ro, in vec3 rd ){
 }
 
 
-// From Inigos Simple Color palettes
-//http://www.iquilezles.org/www/articles/palettes/palettes.htm
-vec3 palette( in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d )
-{
-    return a + b*cos( 6.28318*(c*t+d) );
-}
-
-vec3 doPalette( in float val , in mat4 pType ){
-  return palette( val ,  pType[0].xyz , pType[1].xyz , pType[2].xyz , pType[3].xyz );
-}
-
 
 vec2 doLight( vec3 lightPos , vec3 pos , vec3 norm , vec3 eyeDir ){
 
@@ -227,22 +226,21 @@ vec2 doLight( vec3 lightPos , vec3 pos , vec3 norm , vec3 eyeDir ){
 
 }
 
-vec3 doBoxShading( vec2 l1 , vec2 l2 , vec3 ro ){
+
+vec3 doBoxShading( vec2 l1 , vec2 l2 , vec3 n , vec3 ro ){
 
   vec3 col = vec3( 0. );
-
-  float fillednessVal = (( ro.y + 1.5 )  / 3. ) * uFilledness;
+  vec3 nor = n * .5 + .5;
 
   float spec = pow( l1.y , 40. );
-  col +=  doPalette( l1.x , palette1 ) * ( spec ) * .5;
+  col +=  nor * ( spec ) * .5;
 
   spec = pow( l2.y , 40. );
-  col +=  doPalette( l2.x , palette2 ) * ( spec ) * .5;
+  col +=   nor * ( spec ) * .5;
 
-  col *=  min( 1.  , ( uTime * 1. ) );
-  float edgeSize = .05 ;// * (1. - uComplete ) + .01;
+  float edgeSize = .01;// * (1.) + .01;
   if( vUv.x < edgeSize || vUv.x > 1. - edgeSize || vUv.y < edgeSize || vUv.y > 1. - edgeSize ){
-    col += vec3( .3 , .3 , .3 );
+    col += vec3( .6 , .6 , .6 );
   }
 
   return col;
@@ -251,9 +249,28 @@ vec3 doBoxShading( vec2 l1 , vec2 l2 , vec3 ro ){
 
 
 
+
+vec3 doRayShading( vec2 l1 , vec2 l2  , vec3 norm , vec3 ro ){
+
+  vec3 col = vec3( 0. );
+  vec3 n = norm * .5 + .5;
+
+  float spec = pow( l1.y , 10. );
+  col +=  n * spec; 
+
+  spec = pow( l2.y , 10. );
+  col +=  n * spec; //doPalette( l2.x , palette2 ) * ( l2.x  + spec );
+
+  //col += doBackgroundShading( l1 , l2 , ro ); //}
+
+  return col;
+}
+
+
+
 // Gets background color if nothing is hit
 // also used for refraction
-vec3 bgCol( in vec3 p , in vec3 rd ){
+vec3 bgCol( in vec3 p , in vec3 rd , in float nite){
  
  vec3 disPos = vec3( p +  .5 *  ( sin( p.x * 10. ) + sin( p.y  * 10. ) + sin( p.z * 10.)));
  vec3 n = -normalize( disPos );
@@ -261,40 +278,23 @@ vec3 bgCol( in vec3 p , in vec3 rd ){
  vec2 l1 = doLight( vLight1 , disPos , n , rd );
  vec2 l2 = doLight( vLight2 , disPos , n , rd );
 
- vec3 col1 = doPalette( .3 + .3 * l1.x , palette1 ) * l1.x;
- vec3 col2 = doPalette( .6 + .3 * l2.x , palette2 ) * l2.x;
  
  vec3 baseCol = vec3( .3 , .3 , .3 );
     
- return n * .5 + .5;
+ return ( n * .5 + .5) * (1. -  nite);
 
 }
 
 void main(){
 
-  palette1 = mat4( .5  * ( 1. + sin( uTime * .5 ) * .3 ) , .5 * ( 1. + sin( uTime * .5 ) * .3 )  , .5 * ( 1. + sin( uTime * .5 ) * .3 )  , 0. 
-                 , .5  * ( 1. + sin( uTime * .8 ) * .3 ) , .5 * ( 1. + sin( uTime * .3 ) * .3 )  , .5 * ( 1. + sin( uTime * .19 ) * .3 )  , 0.
-                 , 1.  * ( 1. + sin( uTime * .2 ) * .3 ) , 1. * ( 1. + sin( uTime * .7 ) * .3 )  , 1. * ( 1. + sin( uTime * .4 ) * .3 )  , 0.
-                 , .3  * ( 1. + sin( uTime * .1 ) * .3 ) , .2 * ( 1. + sin( uTime * .9 ) * .3 )  , .2 * ( 1. + sin( uTime * 1.5 ) * .3 )  , 0.
-                 );
-
-  palette2 = mat4( .5 * ( 1. + sin( uTime * .56 ) * .3 )  , .5 * ( 1. + sin( uTime * .225 ) * .3 )  , .5  * ( 1. + sin( uTime * .111 ) * .3 ) , 0. 
-                 , .5 * ( 1. + sin( uTime * 1.5 ) * .3 )  , .5 * ( 1. + sin( uTime * .2 ) * .3 )  , .5  * ( 1. + sin( uTime * .3 ) * .3 ) , 0.
-                 , 1. * ( 1. + sin( uTime * .73 ) * .3 )  , 1. * ( 1. + sin( uTime * .15 ) * .3 )  , 0.  * ( 1. + sin( uTime * .74 ) * .3 ) , 0.
-                 , .8 * ( 1. + sin( uTime * 1.5 ) * .3 )  , .9 * ( 1. + sin( uTime * .35 ) * .3 )  , .3  * ( 1. + sin( uTime * .9 ) * .3 ) , 0.
-                 );
-
-
-  palette3 = mat4( .5  * ( 1. + sin( uTime * .86 ) * .3 )  , .5 * ( 1. + sin( uTime * .51 ) * .3 )  , .5  * ( 1. + sin( uTime * .2 ) * .3 ) , 0. 
-                 , .5  * ( 1. + sin( uTime * 1. ) * .3 )  , .5 * ( 1. + sin( uTime * .76 ) * .3 )  , .5  * ( 1. + sin( uTime * 1.5 ) * .3 ) , 0.
-                 , 2.  * ( 1. + sin( uTime * .72 ) * .3 )  , 1. * ( 1. + sin( uTime * .21 ) * .3 )  , 0.  * ( 1. + sin( uTime * .632 ) * .3 ) , 0.
-                 , .5  * ( 1. + sin( uTime * .11 ) * .3 )  , .2 * ( 1. + sin( uTime * .06 ) * .3 )  , .25 * ( 1. + sin( uTime * .755 ) * .3 )  , 0.
-                 );
-
-  float speedTime = uTime * .01 ;
-  float dayNightCycle = sin( speedTime * 6.28 );
+  float speedTime = uTime / uDayLength;
+  dayNightCycle = sin( speedTime * 6.28 );
+  float nite = clamp(max( -dayNightCycle *4. , 0. ) , 0. , 1. );
 
   float rad = speedTime * 6.28;
+
+  sunPos = vec3( 0. ,  sin( rad ) * 10.,  cos( rad ) * 10. );
+
 
   vec3 ro = vPos;
   vec3 rd = normalize( vPos - vCam );
@@ -307,7 +307,7 @@ void main(){
 
   vec3 col = vec3( 0. , 0. , 0. );
 
-  col += doBoxShading( light1 , light2 , ro );
+  col += doBoxShading( light1 , light2 , vNorm , ro );
 
 
 
@@ -323,16 +323,15 @@ void main(){
 
     vec3 refr = refract( rd , nor , 1. / 1.1 );
 
-    vec3 reflCol1= doPalette( .3 + .3 * light1.y, palette1 ) * light1.y;
-    vec3 reflCol2= doPalette( .6 + .3 * light2.y, palette2 ) * light2.y;
+    col += nite * doRayShading( light1 , light2 , nor , ro );
 
-    vec3 refrCol = bgCol( refr * ( MAX_TRACE_DISTANCE - res.x ) + pos , rd );
+    vec3 refrCol = bgCol( refr * ( MAX_TRACE_DISTANCE - res.x ) + pos , rd  , nite );
 
-    col += ( (reflCol1 + reflCol2) *  .4 + refrCol ) *  min( 1.  , ( uTime * 1. ) );
+    col += (1. - nite ) * refrCol;
 
   }else{
 
-    col += bgCol( ro + rd * MAX_TRACE_DISTANCE , rd ) *min( 1.  , ( uTime * 1. ) );
+    col += bgCol( ro + rd * MAX_TRACE_DISTANCE , rd , nite  ) * min( 1.  , ( uTime * 1. ) );
 
   }
 
@@ -340,7 +339,10 @@ void main(){
     col = vec3( min( -vPos.z * 2. + min( uTime * 3. , 1.) * .6 , 1. ) ) ;
   }
  
+ //col = vCollision;
 
+  col += vec3( max( 0. , .5 - length( vPos - uCollisionPosition ))) * max(0.,(.5 + ( uCollisionTime - uTime )));
+  //col = vec3( 1. );
   color = vec4( col , 1. );
 
 

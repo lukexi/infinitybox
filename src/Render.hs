@@ -110,10 +110,12 @@ drawCubes cube projectionView eyePos lights filledness = do
 
   uniformF  uTime =<< use wldTime
   uniformF  uStarted =<< use wldStarted
+  uniformF  uDayLength =<< use wldDayLength
 
   -- putStrLnIO (show view)
   
   uniformV3 uCamera eyePos
+
 
   setLightUniforms cube lights
 
@@ -124,6 +126,7 @@ drawCubes cube projectionView eyePos lights filledness = do
     
     forM_ ( zip [0..] ( Map.toList cubes ) ) $ \( i , (objID, obj) ) -> do
 
+
       mVoiceID <- use (wldCubeVoices . at objID)
       tick <- case mVoiceID of
         Just voiceID -> fromMaybe 0 <$> use (wldVoiceOutput . at voiceID)
@@ -132,12 +135,14 @@ drawCubes cube projectionView eyePos lights filledness = do
       -- liftIO $ print tick
       uniformF uParameter1 tick
 
+
       mCollision <- use (wldLastCollisions . at objID)
       forM_ mCollision $ \collision -> do
+
         -- TODO(isaac) fill in uniforms for collision here:
-        -- uniformF  uCollisionTime      (collision ^. ccTime)
+        uniformF  uCollisionTime      (collision ^. ccTime)
         -- uniformF  uCollisionImpulse   (collision ^. ccImpulse)
-        -- uniformV3 uCollisionPosition  (collision ^. ccPosition)
+        uniformV3 uCollisionPosition  ( collision ^. ccPosition  ) 
         -- uniformV3 uCollisionDirection (collision ^. ccDirection)
         return ()
       
@@ -216,6 +221,8 @@ drawLights anShape projectionView lights filledness = do
   useProgram (sProgram anShape)
 
   uniformF  uTime =<< use wldTime
+  uniformF  uDayLength =<< use wldDayLength
+
 
 
   withVAO (sVAO anShape) $ do
@@ -249,6 +256,8 @@ drawPlayers hand face projectionView eyePos lights = do
   let Uniforms{..} = sUniforms hand
   uniformV3 uCamera eyePos
   uniformF  uTime =<< use wldTime
+  uniformF  uDayLength =<< use wldDayLength
+
 
   setLightUniforms hand lights
 
@@ -293,6 +302,8 @@ drawRemoteHands projectionView hand = do
   let Uniforms{..} = sUniforms hand
    
   uniformF  uStarted =<< use wldStarted
+  uniformF  uDayLength =<< use wldDayLength
+
 
 
   players <- use $ wldPlayers . to Map.toList
@@ -325,6 +336,8 @@ drawRemoteHeads projectionView eyePos face lights = do
   useProgram (sProgram face)
   uniformV3 uCamera eyePos
   uniformF  uTime =<< use wldTime
+  uniformF  uDayLength =<< use wldDayLength
+
   setLightUniforms face lights
 
   withVAO (sVAO face) $ do
@@ -351,6 +364,8 @@ drawRoom plane projectionView eyePos lights filledness = do
 
   uniformF  uTime =<< use wldTime
   uniformF  uStarted =<< use wldStarted
+  uniformF  uDayLength =<< use wldDayLength
+
 
   player <- use wldPlayer 
 
