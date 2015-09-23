@@ -116,7 +116,7 @@ vec2 map( vec3 pos ){
   
     vec2 res = vec2( 10000. , 1. );
     
-    vec3 t = vec3( 1. , 1. , 1. );
+    vec3 t = vec3( uParameter1 , 1. , 1. );
 
     for( int i = 0; i <numSteps; i ++ ){
 

@@ -128,7 +128,9 @@ drawCubes cube projectionView eyePos lights filledness = do
       tick <- case mVoiceID of
         Just voiceID -> fromMaybe 0 <$> use (wldVoiceOutput . at voiceID)
         Nothing      -> return 0
-      uniformF uTick tick
+      -- uniformF uTick tick
+      -- liftIO $ print tick
+      uniformF uParameter1 tick
 
       mCollision <- use (wldLastCollisions . at objID)
       forM_ mCollision $ \collision -> do
@@ -142,7 +144,7 @@ drawCubes cube projectionView eyePos lights filledness = do
 
       let rotateVec = rotate (obj ^. objPose . posOrientation) (V3 0 0 1) 
       
-      uniformF uParameter1 $ obj ^. objPose . posPosition . _x
+      -- uniformF uParameter1 $ obj ^. objPose . posPosition . _x
       uniformF uParameter2 $ obj ^. objPose . posPosition . _y
       uniformF uParameter3 $ obj ^. objPose . posPosition . _z
       

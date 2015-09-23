@@ -21,9 +21,10 @@ initAudio :: IO (TChan Message, Map VoiceID OpenALSource)
 initAudio = do
   -- Set up sound
   addToLibPdSearchPath "patches/kit"
+  addToLibPdSearchPath "patches/kit/list-abs"
   addToLibPdSearchPath "patches"
-  addToLibPdSearchPath "audio-prototypes/infinity5"
-  _main <- makePatch "audio-prototypes/infinity5/phasy2"
+  addToLibPdSearchPath "audio-prototypes/infinity6"
+  _main <- makePatch   "audio-prototypes/infinity6/percy"
   
   -- Associate each voice number with an OpenAL source
   openALSources <- getPdSources
@@ -35,28 +36,28 @@ initAudio = do
     -- Initially send voices to very far away to silence them
     alSourcePosition sourceID (V3 0 0 (-10000) :: V3 GLfloat)
 
-  ticks <- makeReceiveChan "voiceTicks"
+  pitchesByVoice <- makeReceiveChan "pitchesByVoice"
   
-  return (ticks, sourcesByVoice)
+  return (pitchesByVoice, sourcesByVoice)
 
 updateAudio :: (MonadIO m, MonadState World m) => TChan Message -> m ()
-updateAudio ticks = do
+updateAudio pitchesByVoice = do
 
   -- Update OpenAL Listener from player's total head pose
   alListenerPose =<< totalHeadPose <$> use wldPlayer
 
   -- Set voice levels to 1 when they tick
-  exhaustChanIO ticks >>= mapM_ (\val -> 
+  exhaustChanIO pitchesByVoice >>= mapM_ (\val -> 
     case val of
-      Atom (Float voiceID) -> wldVoiceOutput . at (floor voiceID) ?= 1
+      List [Float voiceID, Float pitch] -> wldVoiceOutput . at (floor voiceID) ?= pitch
       _ -> return ()
     )
 
-  -- Decrement each voice by a tiny bit each frame
-  voiceIDs <- Map.keys <$> use wldVoiceSources
-  forM_ voiceIDs $ \voiceID -> do
-    wldVoiceOutput . at voiceID . traverse -= 0.01
-    wldVoiceOutput . at voiceID . traverse %= max 0
+  -- -- Decrement each voice by a tiny bit each frame
+  -- voiceIDs <- Map.keys <$> use wldVoiceSources
+  -- forM_ voiceIDs $ \voiceID -> do
+  --   wldVoiceOutput . at voiceID . traverse -= 0.01
+  --   wldVoiceOutput . at voiceID . traverse %= max 0
 
   -- Kick is always centered in the floor
   kickVoiceID <- use wldKickVoiceID
