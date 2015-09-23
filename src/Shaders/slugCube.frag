@@ -117,7 +117,7 @@ vec2 map( vec3 pos ){
     }else{
       branchSize = 3.;
     }
-    float reductionFactor = .5 + .01 * uTick;
+    float reductionFactor = .5 + .01 * uParameter2;
     float bs = branchSize;
 
     vec4 p = vec4( pos , 1. );
@@ -126,7 +126,7 @@ vec2 map( vec3 pos ){
   
     vec2 res = vec2( 10000. , 1. );
     
-    vec3 t = vec3( uParameter1 , 1. , 1. );
+    vec3 t = vec3( uParameter1 , 1. , uParameter1 );
 
     for( int i = 0; i <numSteps; i ++ ){
 
@@ -288,10 +288,10 @@ vec3 bgCol( in vec3 p , in vec3 rd , in float nite){
 void main(){
 
   float speedTime = uTime / uDayLength;
-  dayNightCycle = sin( speedTime * 6.28 );
+  dayNightCycle = sin( speedTime * 2. * PI );
   float nite = clamp(max( -dayNightCycle *4. , 0. ) , 0. , 1. );
 
-  float rad = speedTime * 6.28;
+  float rad = speedTime * 2. * PI;
 
   sunPos = vec3( 0. ,  sin( rad ) * 10.,  cos( rad ) * 10. );
 

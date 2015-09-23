@@ -60,7 +60,7 @@ main = do
   -- Set up GLFW/Oculus/Hydra
   gamePal@GamePal{..} <- reacquire 0 $ initGamePal "Infinity Box" NoGCPerFrame enableDevices  
   
-  (voiceTicks, sourcesByVoice) <- initAudio
+  (pitchesByVoice, amplitudesByVoice, sourcesByVoice) <- initAudio
   -- let sourcesByVoice = mempty
 
   -- Set up networking
@@ -112,7 +112,7 @@ main = do
     writeTransceiver transceiver $ Unreliable [UpdatePlayer playerID player]
 
     -- Render to OpenAL
-    updateAudio voiceTicks
+    updateAudio pitchesByVoice amplitudesByVoice
 
     delta <- realToFrac <$> liftIO gpGetDelta
 

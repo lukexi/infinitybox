@@ -17,7 +17,7 @@ exhaustChanIO = liftIO . atomically . exhaustChan
 
 
 
-initAudio :: IO (TChan Message, Map VoiceID OpenALSource)
+initAudio :: IO (TChan Message, TChan Message, Map VoiceID OpenALSource)
 initAudio = do
   -- Set up sound
   addToLibPdSearchPath "patches/kit"
@@ -36,12 +36,13 @@ initAudio = do
     -- Initially send voices to very far away to silence them
     alSourcePosition sourceID (V3 0 0 (-10000) :: V3 GLfloat)
 
-  pitchesByVoice <- makeReceiveChan "pitchesByVoice"
+  pitchesByVoice    <- makeReceiveChan "pitchesByVoice"
+  amplitudesByVoice <- makeReceiveChan "amplitudesByVoice"
   
-  return (pitchesByVoice, sourcesByVoice)
+  return (pitchesByVoice, amplitudesByVoice, sourcesByVoice)
 
-updateAudio :: (MonadIO m, MonadState World m) => TChan Message -> m ()
-updateAudio pitchesByVoice = do
+updateAudio :: (MonadIO m, MonadState World m) => TChan Message -> TChan Message -> m ()
+updateAudio pitchesByVoice amplitudesByVoice = do
 
   -- Update OpenAL Listener from player's total head pose
   alListenerPose =<< totalHeadPose <$> use wldPlayer
@@ -49,15 +50,15 @@ updateAudio pitchesByVoice = do
   -- Set voice levels to 1 when they tick
   exhaustChanIO pitchesByVoice >>= mapM_ (\val -> 
     case val of
-      List [Float voiceID, Float pitch] -> wldVoiceOutput . at (floor voiceID) ?= pitch
+      List [Float voiceID, Float pitch] -> wldVoicePitch . at (floor voiceID) ?= pitch
       _ -> return ()
     )
 
-  -- -- Decrement each voice by a tiny bit each frame
-  -- voiceIDs <- Map.keys <$> use wldVoiceSources
-  -- forM_ voiceIDs $ \voiceID -> do
-  --   wldVoiceOutput . at voiceID . traverse -= 0.01
-  --   wldVoiceOutput . at voiceID . traverse %= max 0
+  exhaustChanIO amplitudesByVoice >>= mapM_ (\val -> 
+    case val of
+      List [Float voiceID, Float amp]  -> wldVoiceAmplitude . at (floor voiceID) ?= amp
+      _ -> return ()
+    )
 
   -- Kick is always centered in the floor
   kickVoiceID <- use wldKickVoiceID

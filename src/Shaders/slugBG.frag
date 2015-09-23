@@ -30,7 +30,9 @@ const float MAX_TRACE_DISTANCE = 20.;           // max trace distance
 const float INTERSECTION_PRECISION = 0.1;        // precision of the intersection
 const int NUM_OF_TRACE_STEPS = 10;
 
-vec3 sunPos; 
+const float PI  = 3.14159;
+
+vec3 sunPos;
 float dayNightCycle;
 
 
@@ -247,10 +249,10 @@ vec3 bgCol( in vec3 p , in vec3 rd , in float nite){
 void main(){
 
   float speedTime = uTime / uDayLength;
-  dayNightCycle = sin( speedTime * 6.28 );
+  dayNightCycle = sin( speedTime * 2. * PI );
 
   float nite = clamp(max( -dayNightCycle *4. , 0. ) , 0. , 1. );
-  float rad = speedTime * 6.28;
+  float rad = speedTime * 2. * PI;
 
   sunPos = vec3( 0. ,  sin( rad ) * 10.,  cos( rad ) * 10. );
 

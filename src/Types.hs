@@ -31,6 +31,9 @@ import Physics.Bullet
 maxCubes :: Int
 maxCubes = 16
 
+dayLength :: Float
+dayLength = 30
+
 -- FIXME: We're using Word32 because we can't pass anything 
 -- bigger as a RigidBodyID or else it will be silently truncated.
 -- Using the RigidBody userPointer might be the safer bet,
@@ -120,7 +123,8 @@ data World = World
   , _wldFrameNumber    :: !Integer
   , _wldVoiceQueue     :: ![VoiceID]
   , _wldCubeVoices     :: !(Map ObjectID VoiceID)
-  , _wldVoiceOutput    :: !(Map VoiceID GLfloat)
+  , _wldVoicePitch     :: !(Map VoiceID GLfloat)
+  , _wldVoiceAmplitude :: !(Map VoiceID GLfloat)
   , _wldVoiceSources   :: !(Map VoiceID OpenALSource)
   , _wldKickVoiceID    :: !VoiceID
   , _wldCubeAges       :: !(Map ObjectID Float)
@@ -130,7 +134,6 @@ data World = World
   , _wldPhase          :: !Phase
   , _wldTime           :: !Float
   , _wldStarted        :: !Float
-  , _wldDayLength      :: !Float
   }
 
 data Phase = PhaseVoid | PhaseLogo | PhaseMain | PhaseEnd deriving Eq
@@ -166,43 +169,45 @@ newPlayer2 = Player
 
 newWorld :: PlayerID -> Player -> Map VoiceID OpenALSource -> DiffTime -> World
 newWorld playerID player sourcesByVoice now = World 
-  { _wldPlayer       = player
-  , _wldPlayerID     = playerID 
-  , _wldPlayers      = mempty 
-  , _wldCubes        = mempty 
-  , _wldLastCubes    = mempty 
-  , _wldFrameNumber  = 0
-  , _wldCubeVoices   = mempty
-  , _wldVoiceQueue   = polyVoiceIDs
-  , _wldVoiceOutput  = mempty 
-  , _wldVoiceSources = sourcesByVoice
-  , _wldKickVoiceID  = kickVoiceID
-  , _wldCubeAges     = mempty
-  , _wldHandTriggers = mempty  
-  , _wldFilledness   = Animation
-      { animStart    = now
-      , animDuration = 1
-      , animFunc     = anim id
-      , animFrom     = 0
-      , animTo       = 0
+  { _wldPlayer         = player
+  , _wldPlayerID       = playerID 
+  , _wldPlayers        = mempty 
+  , _wldCubes          = mempty 
+  , _wldLastCubes      = mempty 
+  , _wldFrameNumber    = 0
+  , _wldCubeVoices     = mempty
+  , _wldVoiceQueue     = polyVoiceIDs
+  , _wldVoicePitch     = mempty 
+  , _wldVoiceAmplitude = mempty 
+  , _wldVoiceSources   = sourcesByVoice
+  , _wldKickVoiceID    = kickVoiceID
+  , _wldCubeAges       = mempty
+  , _wldHandTriggers   = mempty  
+  , _wldFilledness     = Animation
+      { animStart      = now
+      , animDuration   = 1
+      , animFunc       = anim id
+      , animFrom       = 0
+      , animTo         = 0
       }
-  , _wldComplete     = Animation
-      { animStart    = now
-      , animDuration = 1
-      , animFunc     = anim id
-      , animFrom     = 0
-      , animTo       = 0
+  , _wldComplete       = Animation
+      { animStart      = now
+      , animDuration   = 1
+      , animFunc       = anim id
+      , animFrom       = 0
+      , animTo         = 0
       }
-  , _wldPhase        = PhaseVoid
-  , _wldTime         = 0
-  , _wldStarted      = 0
+  , _wldPhase          = PhaseVoid
+  , _wldTime           = 0
+  , _wldStarted        = 0
   , _wldLastCollisions = mempty
-  , _wldDayLength      = 30
   }
 
   where
     allVoiceIDs = sort (Map.keys sourcesByVoice)
     (kickVoiceID:polyVoiceIDs) = if null allVoiceIDs then [0] else allVoiceIDs
+
+
 
 dequeueVoice :: MonadState World m => m VoiceID
 dequeueVoice = do
@@ -292,7 +297,7 @@ interpret (ObjectCollision collision) = do
     let volume = min 1 (impulse * 5)
     
     forM_ mVoiceID $ \voiceID -> do
-      wldVoiceOutput . at voiceID ?= volume
+      wldVoicePitch . at voiceID ?= volume
       liftIO $ sendGlobal (show voiceID ++ "trigger") $ 
         Atom (Float volume)
 

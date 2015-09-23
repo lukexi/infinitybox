@@ -110,7 +110,7 @@ drawCubes cube projectionView eyePos lights filledness = do
 
   uniformF  uTime =<< use wldTime
   uniformF  uStarted =<< use wldStarted
-  uniformF  uDayLength =<< use wldDayLength
+  uniformF  uDayLength dayLength
 
   -- putStrLnIO (show view)
   
@@ -128,12 +128,14 @@ drawCubes cube projectionView eyePos lights filledness = do
 
 
       mVoiceID <- use (wldCubeVoices . at objID)
-      tick <- case mVoiceID of
-        Just voiceID -> fromMaybe 0 <$> use (wldVoiceOutput . at voiceID)
-        Nothing      -> return 0
-      -- uniformF uTick tick
-      -- liftIO $ print tick
-      uniformF uParameter1 tick
+      (pitch, amp) <- case mVoiceID of
+        Just voiceID -> do
+          pitch <- fromMaybe 0 <$> use (wldVoicePitch . at voiceID)
+          amp   <- fromMaybe 0 <$> use (wldVoiceAmplitude . at voiceID)
+          return (pitch, amp)
+        Nothing      -> return (0, 0)
+      uniformF uParameter1 pitch
+      uniformF uParameter2 amp
 
 
       mCollision <- use (wldLastCollisions . at objID)
@@ -148,10 +150,6 @@ drawCubes cube projectionView eyePos lights filledness = do
       
 
       let rotateVec = rotate (obj ^. objPose . posOrientation) (V3 0 0 1) 
-      
-      -- uniformF uParameter1 $ obj ^. objPose . posPosition . _x
-      uniformF uParameter2 $ obj ^. objPose . posPosition . _y
-      uniformF uParameter3 $ obj ^. objPose . posPosition . _z
       
       uniformF uParameter6 $ rotateVec ^. _z
       uniformF uParameter4 $ rotateVec ^. _x
@@ -221,7 +219,7 @@ drawLights anShape projectionView lights filledness = do
   useProgram (sProgram anShape)
 
   uniformF  uTime =<< use wldTime
-  uniformF  uDayLength =<< use wldDayLength
+  uniformF  uDayLength dayLength
 
 
 
@@ -256,7 +254,7 @@ drawPlayers hand face projectionView eyePos lights = do
   let Uniforms{..} = sUniforms hand
   uniformV3 uCamera eyePos
   uniformF  uTime =<< use wldTime
-  uniformF  uDayLength =<< use wldDayLength
+  uniformF  uDayLength dayLength
 
 
   setLightUniforms hand lights
@@ -302,7 +300,7 @@ drawRemoteHands projectionView hand = do
   let Uniforms{..} = sUniforms hand
    
   uniformF  uStarted =<< use wldStarted
-  uniformF  uDayLength =<< use wldDayLength
+  uniformF  uDayLength dayLength
 
 
 
@@ -336,7 +334,7 @@ drawRemoteHeads projectionView eyePos face lights = do
   useProgram (sProgram face)
   uniformV3 uCamera eyePos
   uniformF  uTime =<< use wldTime
-  uniformF  uDayLength =<< use wldDayLength
+  uniformF  uDayLength dayLength
 
   setLightUniforms face lights
 
@@ -364,7 +362,7 @@ drawRoom plane projectionView eyePos lights filledness = do
 
   uniformF  uTime =<< use wldTime
   uniformF  uStarted =<< use wldStarted
-  uniformF  uDayLength =<< use wldDayLength
+  uniformF  uDayLength dayLength
 
 
   player <- use wldPlayer 
@@ -395,7 +393,7 @@ drawRoom plane projectionView eyePos lights filledness = do
 
 
   kickVoiceID <- use wldKickVoiceID
-  tick <- fromMaybe 0 <$> use (wldVoiceOutput . at kickVoiceID)
+  tick <- fromMaybe 0 <$> use (wldVoicePitch . at kickVoiceID)
   uniformF uTick tick
 
   -- printIO view
