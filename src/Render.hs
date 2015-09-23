@@ -20,6 +20,11 @@ import Data.Monoid
 
 import Animation.Pal
 
+dayNightCycleAt t = dayNightCycle
+  where 
+    speedTime = t / dayLength;
+    dayNightCycle = sin (speedTime * 2 * pi)
+
 listToTuple :: (t, t) -> [t] -> (t, t)
 listToTuple _   [a,b] = (a,b)
 listToTuple def _     = def
@@ -110,8 +115,8 @@ drawCubes cube projectionView eyePos lights filledness = do
 
   uniformF  uTime =<< use wldTime
   uniformF  uStarted =<< use wldStarted
+  uniformF  uDayNight =<< dayNightCycleAt <$> use wldTime
   uniformF  uDayLength dayLength
-
   -- putStrLnIO (show view)
   
   uniformV3 uCamera eyePos
@@ -219,6 +224,7 @@ drawLights anShape projectionView lights filledness = do
   useProgram (sProgram anShape)
 
   uniformF  uTime =<< use wldTime
+  uniformF  uDayNight =<< dayNightCycleAt <$> use wldTime
   uniformF  uDayLength dayLength
 
 
@@ -254,8 +260,8 @@ drawPlayers hand face projectionView eyePos lights = do
   let Uniforms{..} = sUniforms hand
   uniformV3 uCamera eyePos
   uniformF  uTime =<< use wldTime
+  uniformF  uDayNight =<< dayNightCycleAt <$> use wldTime
   uniformF  uDayLength dayLength
-
 
   setLightUniforms hand lights
 
@@ -300,8 +306,8 @@ drawRemoteHands projectionView hand = do
   let Uniforms{..} = sUniforms hand
    
   uniformF  uStarted =<< use wldStarted
+  uniformF  uDayNight =<< dayNightCycleAt <$> use wldTime
   uniformF  uDayLength dayLength
-
 
 
   players <- use $ wldPlayers . to Map.toList
@@ -334,8 +340,9 @@ drawRemoteHeads projectionView eyePos face lights = do
   useProgram (sProgram face)
   uniformV3 uCamera eyePos
   uniformF  uTime =<< use wldTime
+  uniformF  uDayNight =<< dayNightCycleAt <$> use wldTime
   uniformF  uDayLength dayLength
-
+  
   setLightUniforms face lights
 
   withVAO (sVAO face) $ do
@@ -362,8 +369,8 @@ drawRoom plane projectionView eyePos lights filledness = do
 
   uniformF  uTime =<< use wldTime
   uniformF  uStarted =<< use wldStarted
+  uniformF  uDayNight =<< dayNightCycleAt <$> use wldTime
   uniformF  uDayLength dayLength
-
 
   player <- use wldPlayer 
 

@@ -6,6 +6,7 @@ uniform float uTick;
 
 uniform float uFilledness;
 uniform float uComplete;
+uniform float uDayNight;
 uniform float uDayLength;
 
 
@@ -31,8 +32,7 @@ in vec2 vUv;
 out vec4 color;
 
 
-vec3 sunPos; 
-float dayNightCycle;
+vec3 sunPos;
 
 
 
@@ -287,10 +287,8 @@ vec3 bgCol( in vec3 p , in vec3 rd , in float nite){
 
 void main(){
 
+  float nite = clamp(max( -uDayNight *4. , 0. ) , 0. , 1. );
   float speedTime = uTime / uDayLength;
-  dayNightCycle = sin( speedTime * 2. * PI );
-  float nite = clamp(max( -dayNightCycle *4. , 0. ) , 0. , 1. );
-
   float rad = speedTime * 2. * PI;
 
   sunPos = vec3( 0. ,  sin( rad ) * 10.,  cos( rad ) * 10. );

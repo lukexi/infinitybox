@@ -25,11 +25,10 @@ import Data.Time
 import Data.Maybe
 import Control.Monad.Random
 import Physics.Bullet
---
 
 -- | The maximum number of cubes before we start kicking cubes out
 maxCubes :: Int
-maxCubes = 16
+maxCubes = 32
 
 dayLength :: Float
 dayLength = 30
@@ -75,6 +74,7 @@ data Uniforms = Uniforms
   , uTime                :: UniformLocation GLfloat
   , uTick                :: UniformLocation GLfloat
   , uStarted             :: UniformLocation GLfloat
+  , uDayNight            :: UniformLocation GLfloat
   , uDayLength           :: UniformLocation GLfloat
   } deriving (Data)
 
@@ -229,6 +229,8 @@ interpret (CreateObject objID obj)       = do
   wldCubes      . at objID ?= obj
   wldCubeVoices . at objID ?= voiceID
   wldCubeAges   . at objID ?= 0
+
+  liftIO $ sendGlobal (show voiceID ++ "new-phrase") Bang
   
   -- wldFilledness += 1.0 / fromIntegral maxCubes 
 

@@ -9,6 +9,7 @@ uniform float uParameter4;
 uniform float uParameter5;
 uniform float uParameter6;
 uniform float uTick;
+uniform float uDayNight;
 uniform float uDayLength;
 
 uniform float uFilledness;
@@ -33,7 +34,6 @@ const int NUM_OF_TRACE_STEPS = 10;
 const float PI  = 3.14159;
 
 vec3 sunPos;
-float dayNightCycle;
 
 
 
@@ -85,7 +85,7 @@ vec3 doPalette( in float val , in mat4 pType ){
 //--------------------------------
 vec2 map( vec3 pos ){  
    
-   float starAmount =  smoothstep(  0. , .5 , -dayNightCycle );
+   float starAmount =  smoothstep(  0. , .5 , -uDayNight );
     vec2 res = vec2( sdSphere( pos - sunPos, 3.) , 1. );
 
     vec3 disform =  vec3( 0. , sin( pos.x * 2. + uTime )  + sin( length( pos.xyz ) * 1. - uTime  * .1) + sin( pos.z  * 1.4   * 1. + uTime  * 1.3) , 0. ) * .4 * (1.-starAmount);
@@ -248,10 +248,8 @@ vec3 bgCol( in vec3 p , in vec3 rd , in float nite){
 
 void main(){
 
+  float nite = clamp(max( -uDayNight *4. , 0. ) , 0. , 1. );
   float speedTime = uTime / uDayLength;
-  dayNightCycle = sin( speedTime * 2. * PI );
-
-  float nite = clamp(max( -dayNightCycle *4. , 0. ) , 0. , 1. );
   float rad = speedTime * 2. * PI;
 
   sunPos = vec3( 0. ,  sin( rad ) * 10.,  cos( rad ) * 10. );
@@ -293,7 +291,7 @@ void main(){
     //col = vec3( 3. / res.y );
     col += (1. - nite ) * refrCol;// * ( 1. - nite);
     /*if( res.y > 99.0 ){
-      col += max( 0. , -dayNightCycle )*( norm * .5 + .5);
+      col += max( 0. , -uDayNight )*( norm * .5 + .5);
     }*/
 
   }else{

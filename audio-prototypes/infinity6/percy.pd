@@ -443,7 +443,7 @@ Scale Delay Global params Reverb Filter Portamento;
 #X obj 780 662 list-loop;
 #X obj 1035 581 s decay-time;
 #X obj 1038 553 hsl 128 15 0 1000 0 0 empty empty empty -2 -8 0 10
--262144 -1 -1 8869 1;
+-262144 -1 -1 7301 1;
 #X obj 1035 456 snapshot~;
 #X obj 1104 423 metro 20;
 #X obj 1104 401 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144
@@ -486,6 +486,21 @@ is super cool!!! daynight for hihats change phrase per voice on spawn
 #X obj 93 263 voice 14;
 #X obj 93 283 voice 15;
 #X obj 93 303 voice 16;
+#X obj 153 163 voice 17;
+#X obj 153 183 voice 18;
+#X obj 153 203 voice 19;
+#X obj 153 223 voice 20;
+#X obj 153 243 voice 21;
+#X obj 153 263 voice 22;
+#X obj 153 283 voice 23;
+#X obj 153 303 voice 24;
+#X obj 213 163 voice 25;
+#X obj 213 183 voice 26;
+#X obj 213 203 voice 27;
+#X obj 213 223 voice 28;
+#X obj 213 243 voice 29;
+#X obj 213 263 voice 30;
+#X obj 213 283 voice 31;
 #X connect 0 0 9 0;
 #X connect 4 0 3 0;
 #X connect 6 0 36 0;
