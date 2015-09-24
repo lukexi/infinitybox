@@ -26,9 +26,12 @@ import Data.Maybe
 import Control.Monad.Random
 import Physics.Bullet
 
+import System.CPUTime
+import Text.Printf
+
 -- | The maximum number of cubes before we start kicking cubes out
 maxCubes :: Int
-maxCubes = 32
+maxCubes = 15
 
 dayLength :: Float
 dayLength = 30
@@ -172,6 +175,9 @@ newPlayer2 = Player
   , _plrHandVacuum = []
   , _plrVacuum     = False
   }
+
+logoObject :: Object
+logoObject = Object (Pose (V3 0 (-3) 0) (axisAngle (V3 0 1 0) 0)) 3
 
 newWorld :: PlayerID -> Player -> Map VoiceID OpenALSource -> DiffTime -> World
 newWorld playerID player sourcesByVoice now = World 
@@ -330,6 +336,14 @@ printIO :: (Show s, MonadIO m) => s -> m ()
 printIO = putStrLnIO . show
 
 
+profile :: MonadIO m => m b -> m b
+profile action = do
+  before <- liftIO getCPUTime
+  x <- action
+  after <- liftIO getCPUTime
+  let diff = (fromIntegral (after - before)) / (10^12)
+  liftIO $ printf "Computation time: %0.3f sec\n" (diff :: Double)
+  return x
 
 serverPort :: PortNumber
 serverPort = 3000

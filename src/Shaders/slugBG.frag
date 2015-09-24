@@ -302,6 +302,7 @@ void main(){
 
 
   color = vec4( col , 1. ) * uStarted * min( 1. , uTime * .5 );
+  //color = vec4(1. );
 
 
 }

@@ -101,13 +101,19 @@ processHandCubeFiring handData handPose frameNumber transceiver  = do
   triggerWasDown <- fromMaybe False <$> use (wldHandTriggers . at (whichHand handData))
   wldHandTriggers . at (whichHand handData) ?= triggerIsDown
 
-  -- Move the cube upwards a bit so it spawns at the tip of the hand
-  let cubePose = shiftBy (V3 0 0 (-0.5)) handPose
-  -- Spawn every 0.1 secs, and on fresh trigger squeezes
-      shouldSpawn = triggerIsDown && not triggerWasDown || 
-                    triggerIsDown && frameNumber `mod` 30 == 0
-  when shouldSpawn $
-    addCube transceiver cubePose
+  phase <- use wldPhase
+
+  case phase of
+    PhaseVoid -> when triggerIsDown $ startLogo
+    PhaseLogo -> return ()
+    _ -> do
+      -- Move the cube upwards a bit so it spawns at the tip of the hand
+      let cubePose = shiftBy (V3 0 0 (-0.5)) handPose
+      -- Spawn every 0.1 secs, and on fresh trigger squeezes
+          shouldSpawn = triggerIsDown && not triggerWasDown 
+                        -- || triggerIsDown && frameNumber `mod` 30 == 0
+      when shouldSpawn $
+        addCube transceiver cubePose
 
 
 addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Transceiver Op -> Pose GLfloat -> m ()

@@ -37,8 +37,8 @@ vec3 sunPos;
 
 
 const float MAX_TRACE_DISTANCE = 5.;           // max trace distance
-const float INTERSECTION_PRECISION = 0.0001;        // precision of the intersection
-const int NUM_OF_TRACE_STEPS = 20;
+const float INTERSECTION_PRECISION = 0.01;        // precision of the intersection
+const int NUM_OF_TRACE_STEPS = 10;
 const float PI  = 3.14159;
 
 

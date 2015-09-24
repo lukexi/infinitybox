@@ -1,4 +1,4 @@
-#N canvas 245 22 1195 756 10;
+#N canvas 245 50 1195 756 10;
 #X obj 35 548 mtof;
 #X obj 35 593 s note;
 #X obj 36 418 multidac~;
@@ -71,7 +71,7 @@
 #X floatatom 391 698 5 0 0 0 - - -, f 5;
 #X obj 421 592 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144
 -1 -1;
-#N canvas 0 22 1012 552 kick 0;
+#N canvas 0 50 1012 552 kick 0;
 #X obj 89 249 osc~;
 #X obj 39 310 *~;
 #X obj 89 227 *~ 100;
@@ -139,7 +139,7 @@
 #X floatatom 601 698 5 0 0 0 - - -, f 5;
 #X obj 631 592 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144
 -1 -1;
-#N canvas 0 22 1012 552 kick 0;
+#N canvas 0 50 1012 552 kick 0;
 #X obj 436 9 inlet;
 #X obj 436 42 sel 1 2 3;
 #X obj 708 310 *~;
@@ -245,7 +245,7 @@
 #X restore 580 721 pd kick;
 #X msg 756 206 0 2 3 5 7 9 10 12;
 #X obj 756 184 loadbang;
-#N canvas 0 22 451 387 NOTES 0;
+#N canvas 0 50 451 387 NOTES 0;
 #X text 74 56 Tempo (1/2 \, 1/3 \, 1/4 \, 1/8 \, 1/16) Length 4-20
 beats Envelope attack and decay Filter strength and resonance Rests
 Scale Delay Global params Reverb Filter Portamento;
@@ -262,7 +262,7 @@ Scale Delay Global params Reverb Filter Portamento;
 #X floatatom 801 698 5 0 0 0 - - -, f 5;
 #X obj 831 592 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144
 -1 -1;
-#N canvas 0 22 1012 552 kick 0;
+#N canvas 0 50 1012 552 kick 0;
 #X obj 436 9 inlet;
 #X obj 436 42 sel 1 2 3;
 #X obj 708 310 *~;
@@ -466,13 +466,11 @@ is super cool!!! daynight for hihats change phrase per voice on spawn
 #X obj 1007 133 s snapshot;
 #X obj 975 510 r dayNight;
 #X obj 975 537 + 1.1;
-#X obj 975 558 * 500;
 #X obj 240 673 snapshot~;
 #X obj 309 640 metro 20;
 #X obj 240 641 osc~ 0.01;
 #X obj 240 696 s dayNight;
 #X obj 1069 611 s portamento-time;
-#X obj 1069 556 / 8;
 #X obj 93 163 voice 9;
 #X obj 33 183 voice 2;
 #X obj 33 203 voice 3;
@@ -487,25 +485,11 @@ is super cool!!! daynight for hihats change phrase per voice on spawn
 #X obj 93 243 voice 13;
 #X obj 93 263 voice 14;
 #X obj 93 283 voice 15;
-#X obj 93 303 voice 16;
-#X obj 153 163 voice 17;
-#X obj 153 183 voice 18;
-#X obj 153 203 voice 19;
-#X obj 153 223 voice 20;
-#X obj 153 243 voice 21;
-#X obj 153 263 voice 22;
-#X obj 153 283 voice 23;
-#X obj 153 303 voice 24;
-#X obj 213 163 voice 25;
-#X obj 213 183 voice 26;
-#X obj 213 203 voice 27;
-#X obj 213 223 voice 28;
-#X obj 213 243 voice 29;
-#X obj 213 263 voice 30;
-#X obj 213 283 voice 31;
 #X obj 1043 273 logo;
 #X text 1023 250 logo is here!;
-#X text 206 305 32 for logo;
+#X text 206 305 16 for logo;
+#X obj 1069 556 / 16;
+#X obj 975 558 * 300;
 #X connect 0 0 9 0;
 #X connect 4 0 3 0;
 #X connect 6 0 36 0;
@@ -572,7 +556,7 @@ is super cool!!! daynight for hihats change phrase per voice on spawn
 #X connect 87 0 88 0;
 #X connect 87 0 89 0;
 #X connect 87 0 90 0;
-#X connect 87 0 122 0;
+#X connect 87 0 121 0;
 #X connect 89 0 91 0;
 #X connect 93 0 35 0;
 #X connect 93 0 96 0;
@@ -597,10 +581,10 @@ is super cool!!! daynight for hihats change phrase per voice on spawn
 #X connect 115 0 114 0;
 #X connect 116 0 114 0;
 #X connect 118 0 119 0;
-#X connect 119 0 120 0;
-#X connect 120 0 103 0;
-#X connect 120 0 126 0;
-#X connect 121 0 124 0;
-#X connect 122 0 121 0;
-#X connect 123 0 121 0;
-#X connect 126 0 125 0;
+#X connect 119 0 143 0;
+#X connect 120 0 123 0;
+#X connect 121 0 120 0;
+#X connect 122 0 120 0;
+#X connect 142 0 124 0;
+#X connect 143 0 103 0;
+#X connect 143 0 142 0;

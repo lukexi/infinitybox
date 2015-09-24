@@ -29,13 +29,17 @@ initAudio = do
   -- Associate each voice number with an OpenAL source
   openALSources <- getPdSources
 
-  let voiceSources = init openALSources -- reserve source 32 for the logo sound
+  let voiceSources = init openALSources -- reserve last source for the logo sound
       sourcesByVoice = Map.fromList (zip [1..] voiceSources)
+
+  alSourcePosition (last openALSources) (logoObject ^. objPose . posPosition)
 
   forM_  voiceSources $ \sourceID -> 
     
     -- Initially send voices to very far away to silence them
     alSourcePosition sourceID (V3 0 0 (-10000) :: V3 GLfloat)
+
+  alListenerGain 3
 
   pitchesByVoice    <- makeReceiveChan "pitchesByVoice"
   amplitudesByVoice <- makeReceiveChan "amplitudesByVoice"

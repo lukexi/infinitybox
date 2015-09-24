@@ -21,7 +21,6 @@ import Data.Monoid
 import Animation.Pal
 
 
-
 listToTuple :: (t, t) -> [t] -> (t, t)
 listToTuple _   [a,b] = (a,b)
 listToTuple def _     = def
@@ -192,8 +191,8 @@ drawLogo cube projectionView eyePos lights = do
     glDisable GL_CULL_FACE
     glCullFace GL_BACK
     
-    let obj = Object (Pose (V3 0 (-3) 0) (axisAngle (V3 0 1 0) 0)) 3
-    let model = transformationFromPose (obj ^. objPose)
+    let obj = logoObject
+        model = transformationFromPose (obj ^. objPose)
         scaledModel = model !*! scaleMatrix ( realToFrac (obj ^. objScale) )
 
     drawShape scaledModel projectionView 0 cube

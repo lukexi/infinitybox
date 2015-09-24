@@ -6,6 +6,7 @@ import Graphics.UI.GLFW.Pal
 
 import Graphics.GL
 import Graphics.GL.Pal
+import Graphics.Oculus
 
 import Control.Monad
 import Control.Monad.State.Strict
@@ -21,6 +22,7 @@ import qualified System.Remote.Monitoring as EKG
 import Network.UDP.Pal
 import Game.Pal
 import Data.Char
+import Data.Time
 import Halive.Utils
 
 import Types
@@ -32,13 +34,13 @@ import Audio
 
 enableEKG :: Bool
 enableEKG = False
--- enableEKG = False
+--enableEKG = True
 
 enableDevices :: [GamePalDevices]
--- enableDevices = [UseOculus, UseHydra]
+enableDevices = [UseOculus, UseHydra]
 -- enableDevices = [UseOculus]
 -- enableDevices = [UseHydra]
-enableDevices = []
+-- enableDevices = []
 
 
 getServerNameFromFile :: IO String
@@ -58,7 +60,7 @@ main = do
   when enableEKG    . void $ EKG.forkServer "localhost" 8000
   
   -- Set up GLFW/Oculus/Hydra
-  gamePal@GamePal{..} <- reacquire 0 $ initGamePal "Infinity Box" NoGCPerFrame enableDevices  
+  gamePal@GamePal{..} <- reacquire 0 $ initGamePal "Infinity Box" GCPerFrame enableDevices
   
   (pitchesByVoice, amplitudesByVoice, sourcesByVoice) <- initAudio
   -- let sourcesByVoice = mempty
@@ -95,7 +97,11 @@ main = do
       theme = themes ^. rainbow
 
       
-  void . flip runRandT stdGen . flip runStateT world . whileWindow gpWindow $ do
+  void . flip runRandT stdGen . flip runStateT world . whileWindow gpWindow $ profile $ do
+    case gpHMD of
+      Just hmd -> setPerformanceHUDMode hmd PerfHUDModeRender
+      Nothing -> return ()
+    
     frameNumber <- wldFrameNumber <+= 1
 
     -- Update interpolation buffer
