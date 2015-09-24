@@ -2,12 +2,8 @@
 
 uniform float uTime;
 
-uniform float uParameter1;
-uniform float uParameter2;
-uniform float uParameter3;
-uniform float uParameter4;
-uniform float uParameter5;
-uniform float uParameter6;
+uniform vec3 uParameterA;
+uniform vec3 uParameterB;
 
 in vec3 vPos;
 in vec3 vCam;
@@ -134,24 +130,24 @@ float smin( float a, float b )
 float sdBlob( vec3 p ){
 
   return length(
-    .05 * cos( 9. * (sin( uParameter1 )+ 1.) * p.y * p.x )
-    + cos(p) * (sin( uParameter2 ) * .01 + 1.) 
-    -.1 * cos( 9. * ( p.z + .3 * (sin(uParameter3) + 1.)   * p.x - p.y * (sin( uParameter4 )+ 1.)   ) ) )
+    .05 * cos( 9. * (sin( uParameterA.x )+ 1.) * p.y * p.x )
+    + cos(p) * (sin( uParameterA.y ) * .01 + 1.) 
+    -.1 * cos( 9. * ( p.z + .3 * (sin(uParameterA.z) + 1.)   * p.x - p.y * (sin( uParameterB.x )+ 1.)   ) ) )
     -1.; 
 
 }
 
 float cubeField( vec3 p ){
 
-  float fieldSize = 1.  + abs( sin( uParameter5) ) * 1.;
-  return opRepBox( p , vec3(fieldSize ), .01 + uParameter4 * .05  );
+  float fieldSize = 1.  + abs( sin( uParameterB.y) ) * 1.;
+  return opRepBox( p , vec3(fieldSize ), .01 + uParameterB.x * .05  );
 
 }
 
 float sphereField( vec3 p ){
 
-  float fieldSize = 1.  + abs( sin( uParameter5) ) * 1.;
-  return opRepSphere( p , vec3(fieldSize ), .01 + uParameter4 * .05 );
+  float fieldSize = 1.  + abs( sin( uParameterB.y) ) * 1.;
+  return opRepSphere( p , vec3(fieldSize ), .01 + uParameterB.x * .05 );
 
 }
 
@@ -159,7 +155,7 @@ float sdBlob2( vec3 p ){
  
   vec3 pos = p;
 
-  return length( p ) - .2 + .3 * .2 * sin( uParameter4 )*sin(300.0 * sin(uParameter1 ) *pos.x * sin( length(pos) ))*sin(200.0*sin( uParameter2 ) *pos.y )*sin(50.0 * sin( uParameter3 * 4. )*pos.z);
+  return length( p ) - .2 + .3 * .2 * sin( uParameterB.x )*sin(300.0 * sin(uParameterA.x ) *pos.x * sin( length(pos) ))*sin(200.0*sin( uParameterA.y ) *pos.y )*sin(50.0 * sin( uParameterA.z * 4. )*pos.z);
 
 }
 
@@ -196,7 +192,7 @@ float face( vec3 pos , vec3 p ){
     f = smin_2_3( f , le    , .04 );
     f = smin_2_3( f , re    , .04 );
     f = smin_2_3( f , mouth , .04 );
-    f = f + .005 * uParameter1 * abs( sin( pos.x * 300. * uParameter2 ) * sin( pos.y * 300. * uParameter3 ) );
+    f = f + .005 * uParameterA.x * abs( sin( pos.x * 300. * uParameterA.y ) * sin( pos.y * 300. * uParameterA.z ) );
                        
     return f;
     
@@ -214,10 +210,10 @@ vec2 map( vec3 pos ){
     vec3 rot = vec3( 0.,0.,0. );
    // vec2 res = vec2( rotatedBox( pos , rot , size , .001 ) , 1.0 );
     
-    float repSize = ( uParameter1 * .4 + .4) * 2.;
+    float repSize = ( uParameterA.x * .4 + .4) * 2.;
     repSize = 2.;
 
-    float radius = .4 * uParameter2  + .1;
+    float radius = .4 * uParameterA.y  + .1;
 
     radius = .01;
 
@@ -272,7 +268,7 @@ vec3 calcNoiseNormal( in vec3 pos ){
       map(pos+eps.yxy).x - map(pos-eps.yxy).x,
       map(pos+eps.yyx).x - map(pos-eps.yyx).x );
 
-  float noiseS = sin( uParameter3 * 1. ) * 3. + 4.;
+  float noiseS = sin( uParameterA.z * 1. ) * 3. + 4.;
   vec3 noiseNorm = vec3(
       triNoise3D(pos*noiseS+eps.xyy, .4 ) - triNoise3D(pos*noiseS-eps.xyy, .4 ),
       triNoise3D(pos*noiseS+eps.yxy, .4 ) - triNoise3D(pos*noiseS-eps.yxy, .4 ),
@@ -302,22 +298,22 @@ vec3 calcNormal( in vec3 pos ){
 
 /*vec3 doCol( float lamb , float spec ){
 
-  float nSpec= pow( spec , abs(sin(uParameter1 * 1.1))* 10. + 2. );
+  float nSpec= pow( spec , abs(sin(uParameterA.x * 1.1))* 10. + 2. );
   return
-      vec3( 1. , .6 , .2 ) * hsv( uParameter6 , 1. , 1. ) *  lamb //hsv( lamb , abs( sin( uParameter6 )) * .2 + .6 , abs( sin( uParameter2 ) * .4 + .6 )) * lamb 
-    + vec3( .3 , .6 , 1. ) *  hsv( uParameter5 , 1. , 1. ) * nSpec;// hsv( nSpec , abs( sin( uParameter5 )) * .4 + .6 , abs( sin( uParameter4 ) * .3 + .8 )) * nSpec;
+      vec3( 1. , .6 , .2 ) * hsv( uParameterB.z , 1. , 1. ) *  lamb //hsv( lamb , abs( sin( uParameterB.z )) * .2 + .6 , abs( sin( uParameterA.y ) * .4 + .6 )) * lamb 
+    + vec3( .3 , .6 , 1. ) *  hsv( uParameterB.y , 1. , 1. ) * nSpec;// hsv( nSpec , abs( sin( uParameterB.y )) * .4 + .6 , abs( sin( uParameterB.x ) * .3 + .8 )) * nSpec;
 }*/
 
 
 vec3 doCol( float lamb1 , float spec1  , float lamb2 , float spec2){
 
-  float nSpec1= pow( spec1 , abs(sin(uParameter1 * 1.1))* 10. + 2. );
-  float nSpec2= pow( spec2 , abs(sin(uParameter1 * 1.1))* 10. + 2. );
+  float nSpec1= pow( spec1 , abs(sin(uParameterA.x * 1.1))* 10. + 2. );
+  float nSpec2= pow( spec2 , abs(sin(uParameterA.x * 1.1))* 10. + 2. );
   return
-      .5 *  hsv( lamb1  * .3 + uParameter2 , abs( sin( uParameter6 )) * .2 + .6 , abs( sin( uParameter2 ) * .4 + .6 )) * lamb1 
-    +  hsv( nSpec1 * .6 + uParameter3 , abs( sin( uParameter5 )) * .4 + .6 , abs( sin( uParameter4 ) * .3 + .8 )) * nSpec1
-    + .5 *  hsv( lamb2  * .3 + uParameter2 , abs( cos( uParameter6 )) * .2 + .6 , abs( cos( uParameter2 ) * .4 + .6 )) * lamb2
-    +  hsv( nSpec2 * .6 + uParameter3 , abs( cos( uParameter5 )) * .4 + .6 , abs( cos( uParameter4 ) * .3 + .8 )) * nSpec2;
+      .5 *  hsv( lamb1  * .3 + uParameterA.y , abs( sin( uParameterB.z )) * .2 + .6 , abs( sin( uParameterA.y ) * .4 + .6 )) * lamb1 
+    +  hsv( nSpec1 * .6 + uParameterA.z , abs( sin( uParameterB.y )) * .4 + .6 , abs( sin( uParameterB.x ) * .3 + .8 )) * nSpec1
+    + .5 *  hsv( lamb2  * .3 + uParameterA.y , abs( cos( uParameterB.z )) * .2 + .6 , abs( cos( uParameterA.y ) * .4 + .6 )) * lamb2
+    +  hsv( nSpec2 * .6 + uParameterA.z , abs( cos( uParameterB.y )) * .4 + .6 , abs( cos( uParameterB.x ) * .3 + .8 )) * nSpec2;
 }
 
 

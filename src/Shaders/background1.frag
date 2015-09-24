@@ -2,12 +2,9 @@
 
 uniform float uTime;
 
-uniform float uParameter1;
-uniform float uParameter2;
-uniform float uParameter3;
-uniform float uParameter4;
-uniform float uParameter5;
-uniform float uParameter6;
+uniform vec3 uParameterA;
+uniform vec3 uParameterB;
+
 uniform float uTick;
 
 
@@ -97,9 +94,9 @@ float opRepBox( vec3 p, vec3 c , float r)
 float sdBlob( vec3 p ){
   p = p * 1.;
   return length(
-    .05 * cos( 9. * (sin( uParameter1 )+ 1.) * p.y * p.x )
-    + cos(p) * (sin( uParameter2 ) * .01 + 1.) 
-    -.1 * cos( 9. * ( p.z + .3 * (sin(uParameter3) + 1.)   * p.x - p.y * (sin( uParameter4 )+ 1.)   ) ) )
+    .05 * cos( 9. * (sin( uParameterA.x )+ 1.) * p.y * p.x )
+    + cos(p) * (sin( uParameterA.y ) * .01 + 1.) 
+    -.1 * cos( 9. * ( p.z + .3 * (sin(uParameterA.z) + 1.)   * p.x - p.y * (sin( uParameterB.x )+ 1.)   ) ) )
     -1.; 
 
 }
@@ -107,18 +104,18 @@ float sdBlob( vec3 p ){
 
 float sphereField( vec3 p ){
 
-  //float fieldSize = 2.  + abs( sin( uParameter5) ) * .1;
+  //float fieldSize = 2.  + abs( sin( uParameterB.y) ) * .1;
   float fieldSize = (1. -  uFilledness ) *6. + 2.;
     //float fieldSize = .1;
-  return opRepSphere( p , vec3(  fieldSize ), .05 + uParameter4 * .05 );
+  return opRepSphere( p , vec3(  fieldSize ), .05 + uParameterB.x * .05 );
 
 }
 
 
 float cubeField( vec3 p ){
 
-  float fieldSize = 1.  + abs( sin( uParameter5) ) * 1.;
-  return opRepBox( p , vec3(fieldSize ), .3 + uParameter4 * .05  );
+  float fieldSize = 1.  + abs( sin( uParameterB.y) ) * 1.;
+  return opRepBox( p , vec3(fieldSize ), .3 + uParameterB.x * .05  );
 
 }
 
@@ -126,7 +123,7 @@ float sdBlob2( vec3 p ){
  
   vec3 pos = p;
 
-  return length( p ) - .2 + .3 * .2 * sin( uParameter4 )*sin(300.0 * sin(uParameter1 ) *pos.x * sin( length(pos) ))*sin(200.0*sin( uParameter2 ) *pos.y )*sin(50.0 * sin( uParameter3 * 4. )*pos.z);
+  return length( p ) - .2 + .3 * .2 * sin( uParameterB.x )*sin(300.0 * sin(uParameterA.x ) *pos.x * sin( length(pos) ))*sin(200.0*sin( uParameterA.y ) *pos.y )*sin(50.0 * sin( uParameterA.z * 4. )*pos.z);
 
 }
 
@@ -141,10 +138,10 @@ vec2 map( vec3 pos ){
     vec3 rot = vec3( 0.,0.,0. );
    // vec2 res = vec2( rotatedBox( pos , rot , size , .001 ) , 1.0 );
     
-    float repSize = ( uParameter1 * .4 + .4) * 2.;
+    float repSize = ( uParameterA.x * .4 + .4) * 2.;
     repSize = 2.;
 
-    float radius = .4 * uParameter2  + .1;
+    float radius = .4 * uParameterA.y  + .1;
 
     radius = .01;
 
@@ -204,10 +201,10 @@ vec3 calcNormal( in vec3 pos ){
 
 vec3 doCol( float lamb , float spec ){
 
-  float nSpec= pow( spec , abs(sin(uParameter1 * 1.1))* 10. + 2. );
+  float nSpec= pow( spec , abs(sin(uParameterA.x * 1.1))* 10. + 2. );
   return
-      hsv( lamb * .3 + uParameter2 , abs( sin( uParameter6 )) * .2 + .6 , abs( sin( uParameter2 ) * .4 + .6 )) * lamb 
-    + hsv( nSpec * .6 + uParameter3 , abs( sin( uParameter5 )) * .4 + .6 , abs( sin( uParameter1 ) * .3 + .8 )) * nSpec;
+      hsv( lamb * .3 + uParameterA.y , abs( sin( uParameterB.z )) * .2 + .6 , abs( sin( uParameterA.y ) * .4 + .6 )) * lamb 
+    + hsv( nSpec * .6 + uParameterA.z , abs( sin( uParameterB.y )) * .4 + .6 , abs( sin( uParameterA.x ) * .3 + .8 )) * nSpec;
 }
 
 

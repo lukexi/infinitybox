@@ -135,26 +135,22 @@ drawCubes cube projectionView eyePos lights filledness = do
           amp   <- fromMaybe 0 <$> use (wldVoiceAmplitude . at voiceID)
           return (pitch, amp)
         Nothing      -> return (0, 0)
-      uniformF uParameter1 pitch
-      uniformF uParameter2 amp
+      uniformV3 uParameterA (V3 pitch amp 0)
 
+      -- mCollision <- use (wldLastCollisions . at objID)
+      -- forM_ mCollision $ \collision -> do
 
-      mCollision <- use (wldLastCollisions . at objID)
-      forM_ mCollision $ \collision -> do
-
-        -- TODO(isaac) fill in uniforms for collision here:
-        uniformF  uCollisionTime      (collision ^. ccTime)
-        -- uniformF  uCollisionImpulse   (collision ^. ccImpulse)
-        uniformV3 uCollisionPosition  ( collision ^. ccPosition  ) 
-        -- uniformV3 uCollisionDirection (collision ^. ccDirection)
-        return ()
+      --   -- TODO(isaac) fill in uniforms for collision here:
+      --   uniformF  uCollisionTime      (collision ^. ccTime)
+      --   -- uniformF  uCollisionImpulse   (collision ^. ccImpulse)
+      --   uniformV3 uCollisionPosition  ( collision ^. ccPosition  ) 
+      --   -- uniformV3 uCollisionDirection (collision ^. ccDirection)
+      --   return ()
       
 
       let rotateVec = rotate (obj ^. objPose . posOrientation) (V3 0 0 1) 
       
-      uniformF uParameter6 $ rotateVec ^. _z
-      uniformF uParameter4 $ rotateVec ^. _x
-      uniformF uParameter5 $ rotateVec ^. _y
+      uniformV3 uParameterB rotateVec
 
       uniformF uFilledness filledness
       -- uniformF uComplete   =<< use wldComplete
@@ -234,9 +230,7 @@ drawLights anShape projectionView lights filledness = do
       let model = mkTransformation (axisAngle (V3 1 0 0) 0.0) lightPos
       -- printIO (i, lightPos)
       
-      uniformF uParameter1 $ lightPos ^. _x
-      uniformF uParameter2 $ lightPos ^. _y
-      uniformF uParameter3 $ lightPos ^. _z
+      uniformV3 uParameterA lightPos
 
       uniformF uFilledness filledness
       -- uniformF uComplete   =<< use wldComplete
@@ -286,13 +280,8 @@ drawLocalHands projectionView hand = do
     let finalMatrix = transformationFromPose $ shiftBy handOffset handPose
         rotateVec = rotate ( handPose ^. posOrientation ) (V3 0 0 1)
 
-    uniformF uParameter1 $ handPose ^. posPosition . _x
-    uniformF uParameter2 $ handPose ^. posPosition . _y
-    uniformF uParameter3 $ handPose ^. posPosition . _z
-    
-    uniformF uParameter6 $ rotateVec ^. _z
-    uniformF uParameter4 $ rotateVec ^. _x
-    uniformF uParameter5 $ rotateVec ^. _y
+    uniformV3 uParameterA $ handPose ^. posPosition
+    uniformV3 uParameterB $ rotateVec
 
     drawShape finalMatrix projectionView 0 hand
 
@@ -313,13 +302,8 @@ drawRemoteHands projectionView hand = do
       let finalMatrix = transformationFromPose $ shiftBy handOffset handPose
           rotateVec = rotate ( handPose ^. posOrientation ) (V3 0 0 1) 
       
-      uniformF uParameter1 $ handPose ^. posPosition . _x
-      uniformF uParameter2 $ handPose ^. posPosition . _y
-      uniformF uParameter3 $ handPose ^. posPosition . _z
-      
-      uniformF uParameter6 $ rotateVec ^. _z
-      uniformF uParameter4 $ rotateVec ^. _x
-      uniformF uParameter5 $ rotateVec ^. _y
+      uniformV3 uParameterA $ handPose ^. posPosition
+      uniformV3 uParameterB rotateVec
       
       drawShape finalMatrix projectionView 0 hand
 
@@ -374,26 +358,11 @@ drawRoom plane projectionView eyePos lights filledness = do
   
   let rotateVec = rotate totalHeadOriention (V3 0 0 1)   
 
-  uniformF uParameter1 $ totalHeadPosition ^. _x
-  uniformF uParameter2 $ totalHeadPosition ^. _y
-  uniformF uParameter3 $ totalHeadPosition ^. _z
-  
-  uniformF uParameter4 $ rotateVec ^. _x
-  uniformF uParameter5 $ rotateVec ^. _y
-  uniformF uParameter6 $ rotateVec ^. _z
+  uniformV3 uParameterA totalHeadPosition
+  uniformV3 uParameterB rotateVec
 
   uniformF uFilledness filledness
   -- uniformF uComplete   =<< use wldComplete
-
-
-
-  --uniformF uParameter1 ( sin $ time * 0.3)
-  --uniformF uParameter2 ( sin $ time * 0.01)
-  --uniformF uParameter3 ( sin $ time * 0.23)
-  --uniformF uParameter6 ( sin $ time * 0.074)
-  --uniformF uParameter4 ( sin $ time * 0.037)
-  --uniformF uParameter5 ( sin $ time * 0.69 )
-
 
   kickVoiceID <- use wldKickVoiceID
   tick <- fromMaybe 0 <$> use (wldVoicePitch . at kickVoiceID)

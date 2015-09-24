@@ -83,7 +83,8 @@ updateAudio pitchesByVoice amplitudesByVoice = do
     
         alSourcePosition sourceID (cubeObj ^. objPose . posPosition)
 
-        sendGlobal (show voiceID ++ "xyz") $ 
-          List (map realToFrac (toList (cubeObj ^. objPose . posPosition)))
+        -- This is a little expensive, as it's getting the pd ref and sending a list per cube.
+        -- sendGlobal (show voiceID ++ "xyz") $ 
+        --   List (map realToFrac (toList (cubeObj ^. objPose . posPosition)))
 
 

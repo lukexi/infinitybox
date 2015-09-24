@@ -73,12 +73,8 @@ data Uniforms = Uniforms
   , uCollisionTime       :: UniformLocation GLfloat
   , uFilledness          :: UniformLocation GLfloat
   , uComplete            :: UniformLocation GLfloat
-  , uParameter1          :: UniformLocation GLfloat
-  , uParameter2          :: UniformLocation GLfloat
-  , uParameter3          :: UniformLocation GLfloat
-  , uParameter4          :: UniformLocation GLfloat
-  , uParameter5          :: UniformLocation GLfloat
-  , uParameter6          :: UniformLocation GLfloat
+  , uParameterA          :: UniformLocation (V3  GLfloat)
+  , uParameterB          :: UniformLocation (V3  GLfloat)
   , uID                  :: UniformLocation GLfloat
   , uTime                :: UniformLocation GLfloat
   , uTick                :: UniformLocation GLfloat
@@ -280,40 +276,41 @@ interpret (Disconnect playerID)          = do
   putStrLnIO (playerID ++ " disconnected")
 
 interpret (ObjectCollision collision) = do
+  return ()
   -- putStrLnIO $ "Client got collision! " ++ show objectAID ++ " " ++ show objectBID ++ ": " ++ show strength
-  now <- use wldTime
-  let objectIDs = fromIntegral <$> sequence [cbBodyAID, cbBodyBID]                collision
-      positions =                  sequence [cbPositionOnA, cbPositionOnB]          collision
-      normals   =                  sequence [negate . cbNormalOnB , cbNormalOnB]  collision
-      impulse   = cbAppliedImpulse collision
-  forM_ (zip3 objectIDs positions normals) $ \(objID, position, normal) -> do
+  -- now <- use wldTime
+  -- let objectIDs = fromIntegral <$> sequence [cbBodyAID, cbBodyBID]                collision
+  --     positions =                  sequence [cbPositionOnA, cbPositionOnB]          collision
+  --     normals   =                  sequence [negate . cbNormalOnB , cbNormalOnB]  collision
+  --     impulse   = cbAppliedImpulse collision
+  -- forM_ (zip3 objectIDs positions normals) $ \(objID, position, normal) -> do
 
-    mObj <- use $ wldCubes . at objID 
-    case mObj of 
-      Nothing -> return ()
-      Just obj -> do
-        let model = transformationFromPose (obj ^. objPose)
-            scaledModel = model !*! scaleMatrix ( realToFrac (obj ^. objScale) )
-            invModel = fromMaybe scaledModel (inv44 scaledModel) :: M44 GLfloat
-            positionPoint = point position :: V4 GLfloat
+  --   mObj <- use $ wldCubes . at objID 
+  --   case mObj of 
+  --     Nothing -> return ()
+  --     Just obj -> do
+  --       let model = transformationFromPose (obj ^. objPose)
+  --           scaledModel = model !*! scaleMatrix ( realToFrac (obj ^. objScale) )
+  --           invModel = fromMaybe scaledModel (inv44 scaledModel) :: M44 GLfloat
+  --           positionPoint = point position :: V4 GLfloat
 
-        wldLastCollisions . at objID ?= CubeCollision
+  --       wldLastCollisions . at objID ?= CubeCollision
 
-          { _ccTime = now
-          , _ccImpulse = impulse
-          , _ccPosition = normalizePoint (invModel !* positionPoint)
-          , _ccDirection = normal
-          }
+  --         { _ccTime = now
+  --         , _ccImpulse = impulse
+  --         , _ccPosition = normalizePoint (invModel !* positionPoint)
+  --         , _ccDirection = normal
+  --         }
 
-    mVoiceID <- use (wldCubeVoices . at objID)
-    -- The objectID may be invalid since we send hands and walls as objectIDs,
-    -- thus we may not have a voice for them.
-    let volume = min 1 (impulse * 5)
+  --   mVoiceID <- use (wldCubeVoices . at objID)
+  --   -- The objectID may be invalid since we send hands and walls as objectIDs,
+  --   -- thus we may not have a voice for them.
+  --   let volume = min 1 (impulse * 5)
     
-    forM_ mVoiceID $ \voiceID -> do
-      wldVoicePitch . at voiceID ?= volume
-      liftIO $ sendGlobal (show voiceID ++ "trigger") $ 
-        Atom (Float volume)
+  --   forM_ mVoiceID $ \voiceID -> do
+  --     wldVoicePitch . at voiceID ?= volume
+  --     liftIO $ sendGlobal (show voiceID ++ "trigger") $ 
+  --       Atom (Float volume)
 
 
 -- | Deriving Generics

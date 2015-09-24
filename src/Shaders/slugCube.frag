@@ -10,12 +10,9 @@ uniform float uDayNight;
 uniform float uDayLength;
 
 
-uniform float uParameter1;
-uniform float uParameter2;
-uniform float uParameter3;
-uniform float uParameter4;
-uniform float uParameter5;
-uniform float uParameter6;
+uniform vec3 uParameterA;
+uniform vec3 uParameterB;
+
 uniform vec3 uCollisionPosition;
 uniform float uCollisionTime;
 
@@ -117,7 +114,7 @@ vec2 map( vec3 pos ){
     }else{
       branchSize = 3.;
     }
-    float reductionFactor = .5 + .01 * uParameter2;
+    float reductionFactor = .5 + .01 * uParameterA.y;
     float bs = branchSize;
 
     vec4 p = vec4( pos , 1. );
@@ -126,7 +123,7 @@ vec2 map( vec3 pos ){
   
     vec2 res = vec2( 10000. , 1. );
     
-    vec3 t = vec3( uParameter1 , 1. , uParameter1 );
+    vec3 t = vec3( uParameterA.x , 1. , uParameterA.x );
 
     for( int i = 0; i <numSteps; i ++ ){
 
@@ -134,7 +131,7 @@ vec2 map( vec3 pos ){
         
         float id =  float( i ) / float( numSteps );
 
-        mat4 rot = rotateX( uParameter4 ) * rotateY( uParameter5 ) * rotateZ( uParameter6 );
+        mat4 rot = rotateX( uParameterB.x ) * rotateY( uParameterB.y ) * rotateZ( uParameterB.z );
         
         m = translate( abs(t) * bs  * 2.) * rot;
         

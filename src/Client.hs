@@ -97,7 +97,7 @@ main = do
       theme = themes ^. rainbow
 
       
-  void . flip runRandT stdGen . flip runStateT world . whileWindow gpWindow $ profile $ do
+  void . flip runRandT stdGen . flip runStateT world . whileWindow gpWindow $ do
     case gpHMD of
       Just hmd -> setPerformanceHUDMode hmd PerfHUDModeRender
       Nothing -> return ()
