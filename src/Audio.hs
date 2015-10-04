@@ -15,8 +15,6 @@ import Data.Foldable
 exhaustChanIO :: MonadIO m => TChan a -> m [a]
 exhaustChanIO = liftIO . atomically . exhaustChan
 
-
-
 initAudio :: IO (TChan Message, TChan Message, Map VoiceID OpenALSource)
 initAudio = do
   -- Set up sound
@@ -34,10 +32,8 @@ initAudio = do
 
   alSourcePosition (last openALSources) (logoObject ^. objPose . posPosition)
 
-  forM_  voiceSources $ \sourceID -> 
-    
-    -- Initially send voices to very far away to silence them
-    alSourcePosition sourceID (V3 0 0 (-10000) :: V3 GLfloat)
+  -- Initially send voices to very far away to silence them
+  forM_ voiceSources silenceVoice
 
   alListenerGain 3
 

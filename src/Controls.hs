@@ -78,6 +78,7 @@ processControls GamePal{..} transceiver frameNumber = do
     onKeyDown Key'Z e (addCube transceiver newPose)
     onKeyDown Key'N e startLogo
     onKeyDown Key'M e startMain
+    onKeyDown Key'0 e (restart transceiver)
 
   xDown <- (== KeyState'Pressed) <$> getKey gpWindow Key'X
   -- Til I finish per-hand vacuuming, vacuum when either bumper is down
@@ -137,6 +138,15 @@ startMain :: (MonadState World m) => m ()
 startMain = do
   wldPhase .= PhaseMain
   wldTime  .= 0
+
+restart :: (MonadState World m, MonadIO m) => Transceiver Op -> m ()
+restart transceiver = do
+  writeTransceiver transceiver $ Reliable Restart
+  wldStarted .= 0
+  wldPhase .= PhaseVoid
+  wldTime  .= 0
+
+
 
 
 

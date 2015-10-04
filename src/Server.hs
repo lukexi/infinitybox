@@ -69,7 +69,7 @@ serverLoop server@Server{..} dynamicsWorld = do
   -- Receive updates from clients
   interpretNetworkPacketsFromOthers (liftIO svrReceive) $ \fromAddr message -> 
     -- Apply to server-only state
-    interpretS dynamicsWorld fromAddr message
+    interpretS server dynamicsWorld fromAddr message
 
   -- Run the physics sim
   stepSimulation dynamicsWorld
@@ -119,17 +119,19 @@ serverLoop server@Server{..} dynamicsWorld = do
   let reliableInstructions = DeleteObject <$> toList deleters
 
   forM_ reliableInstructions $ \instruction -> do
-    interpretS dynamicsWorld svrSockAddr instruction
+    interpretS server dynamicsWorld svrSockAddr instruction
     liftIO . svrBroadcast $ Reliable instruction
 
   -- Run at 60 FPS
   liftIO $ threadDelay (1000000 `div` 60)
 
+
+
 -- | Interpret a client message creating an object
 -- to add it to the physics world
 interpretS :: (MonadIO m, MonadState ServerState m) 
-           => DynamicsWorld -> SockAddr -> Op -> m ()
-interpretS dynamicsWorld _fromAddr (CreateObject objID obj) = do
+           => Server Op -> DynamicsWorld -> SockAddr -> Op -> m ()
+interpretS _ dynamicsWorld _fromAddr (CreateObject objID obj) = do
   
   rigidBody <- addCube dynamicsWorld (fromIntegral objID)
                        mempty { pcPosition = obj ^. objPose  . posPosition
@@ -147,7 +149,7 @@ interpretS dynamicsWorld _fromAddr (CreateObject objID obj) = do
 
 -- Update our record of the player's body/head/hands positions, 
 -- and update the rigid bodies of their hands
-interpretS dynamicsWorld _fromAddr (UpdatePlayer playerID player) = do
+interpretS _ dynamicsWorld _fromAddr (UpdatePlayer playerID player) = do
   ssPlayers . at playerID ?= player
 
   maybeHandRigidBodies <- use $ ssPlayerRigidBodies . at playerID
@@ -172,21 +174,21 @@ interpretS dynamicsWorld _fromAddr (UpdatePlayer playerID player) = do
       let Pose handPosition handOrientation = shiftBy handOffset handPose
       setRigidBodyWorldTransform handRigidBody handPosition handOrientation
 
-interpretS _dynamicsWorld fromAddr (Connect playerID player) = do
+interpretS _ _dynamicsWorld fromAddr (Connect playerID player) = do
   -- Associate the playerID with the fromAddr we already know,
   -- so we can send an accurate disconnect message later
   ssPlayerIDs . at fromAddr ?= playerID
   ssPlayers   . at playerID ?= player
   
 
-interpretS dynamicsWorld fromAddr (Disconnect playerID) = do
+interpretS _ dynamicsWorld fromAddr (Disconnect playerID) = do
   ssPlayerIDs . at fromAddr .= Nothing
 
   rigidBodies <- use $ ssPlayerRigidBodies . at playerID
   maybe (return ()) (mapM_ (removeCube dynamicsWorld)) rigidBodies
   ssPlayerRigidBodies . at playerID .= Nothing
 
-interpretS dynamicsWorld _fromAddr (DeleteObject objID) = do
+interpretS _ dynamicsWorld _fromAddr (DeleteObject objID) = do
 
   rigidBody <- use $ ssRigidBodies . at objID
   maybe (return ()) (removeCube dynamicsWorld) rigidBody
@@ -194,13 +196,22 @@ interpretS dynamicsWorld _fromAddr (DeleteObject objID) = do
   ssCubeExpirationQueue    %= Seq.filter (/= objID)
   ssRigidBodies . at objID .= Nothing
 
-interpretS _dynamicsWorld _fromAddr (UpdateObject _ _) = return ()
-interpretS _ _ (ObjectCollision _) = return ()
+interpretS _ _dynamicsWorld _fromAddr (UpdateObject _ _) = return ()
+interpretS _ _ _ (ObjectCollision _) = return ()
+interpretS server@Server{..} dynamicsWorld _ (Restart) = do
+  deleters <- use ssCubeExpirationQueue
+  let reliableInstructions = DeleteObject <$> toList deleters
+
+  forM_ reliableInstructions $ \instruction -> do
+    interpretS server dynamicsWorld svrSockAddr instruction
+    liftIO . svrBroadcast $ Reliable instruction
+  return ()
+
 
 
 handleDisconnections :: (MonadIO m, MonadState ServerState m) 
                      => Server Op -> DynamicsWorld -> m ()
-handleDisconnections Server{..} dynamicsWorld = do
+handleDisconnections server@Server{..} dynamicsWorld = do
   disconnections <- liftIO svrGetDisconnects
   forM_ disconnections $ \fromAddr -> do
     -- For each SockAddr we've detected a disconnection from,
@@ -214,7 +225,7 @@ handleDisconnections Server{..} dynamicsWorld = do
       Just playerID -> do
         let message = Disconnect playerID
 
-        interpretS dynamicsWorld fromAddr message
+        interpretS server dynamicsWorld fromAddr message
         
         liftIO . svrBroadcast $ (Reliable message)
 

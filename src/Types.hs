@@ -257,6 +257,10 @@ interpret (CreateObject objID obj)       = do
 
 
 interpret (DeleteObject objID)           = do
+  mVoiceID <- use $ wldCubeVoices . at objID
+  forM_ mVoiceID $ \voiceID -> do
+    mSourceID <- use $ wldVoiceSources . at voiceID
+    forM_ mSourceID silenceVoice
   wldCubes      . at objID .= Nothing
   wldCubeAges   . at objID .= Nothing
   wldCubeVoices . at objID .= Nothing
@@ -311,6 +315,7 @@ interpret (ObjectCollision collision) = do
   --     wldVoicePitch . at voiceID ?= volume
   --     liftIO $ sendGlobal (show voiceID ++ "trigger") $ 
   --       Atom (Float volume)
+interpret Restart = return ()
 
 
 -- | Deriving Generics
@@ -322,6 +327,7 @@ data Op = CreateObject    !ObjectID !Object
         | UpdatePlayer    !PlayerID !Player
         | Disconnect      !PlayerID
         | ObjectCollision !Collision
+        | Restart
   deriving (Generic, Binary, Show)
 
 -- Util
@@ -385,3 +391,5 @@ cubeScale = 0.4
 roomScale :: GLfloat
 roomScale = 10
 
+silenceVoice sourceID = 
+  alSourcePosition sourceID (V3 0 0 (-10000) :: V3 GLfloat)
