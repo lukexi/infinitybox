@@ -8,7 +8,6 @@ import Graphics.UI.GLFW.Pal
 import Graphics.Oculus
 import Linear.Extra
 
-import System.Hardware.Hydra
 
 import Control.Monad
 import Control.Monad.State.Strict
@@ -24,21 +23,23 @@ import Data.Maybe
 import Sound.Pd1
 
 
+
+
 processControls :: (MonadIO m, MonadState World m, MonadRandom m) 
                 => GamePal
                 -> Transceiver Op
                 -> Integer
                 -> m ()
-processControls GamePal{..} transceiver frameNumber = do
+processControls gamePal@GamePal{..} transceiver frameNumber = do
   -- Get latest Hydra data
-  hands <- maybe (return []) getHands gpSixenseBase
+  hands <- getHands gamePal
 
   -- Update hand positions
-  handWorldPoses <- handsToWorldPoses hands <$> use (wldPlayer . plrPose)
-  wldPlayer . plrHandPoses .= handWorldPoses
+  handWorldPoses <- flip handsToWorldPoses hands . transformationFromPose <$> use (wldPlayer . plrPose)
+  wldPlayer . plrHandPoses .= map poseFromMatrix handWorldPoses
 
   -- Update head position
-  wldPlayer . plrHeadPose <~ getMaybeHMDPose gpHMD
+  wldPlayer . plrHeadPose <~ poseFromMatrix <$> getPoseForHMDType gpHMD
 
   -- Handle Hydra movement events, or mouse if no Hydra present
   if null hands 
@@ -49,7 +50,7 @@ processControls GamePal{..} transceiver frameNumber = do
       return ()
     else do
       -- Disabled hydra joysticks for no motion sickness
-      --applyHydraJoystickMovement hands (wldPlayer . plrPose)
+      --applyHandJoystickMovement hands (wldPlayer . plrPose)
       return ()
   -- Handle keyboard movement events
   applyWASD gpWindow (wldPlayer . plrPose)
@@ -74,32 +75,34 @@ processControls GamePal{..} transceiver frameNumber = do
     onKeyDown Key'Space e (addCube transceiver (shiftBy (V3 0 0.1 0) playerPose))
     onKeyDown Key'F e (setCursorInputMode gpWindow CursorInputMode'Disabled)
     onKeyDown Key'G e (setCursorInputMode gpWindow CursorInputMode'Normal)
-    onKeyDown Key'O e (maybe (return ()) (liftIO . recenterPose) gpHMD)
+    onKeyDown Key'O e (recenterWhenOculus gamePal)
     onKeyDown Key'Z e (addCube transceiver newPose)
     onKeyDown Key'N e startLogo
     onKeyDown Key'M e startMain
 
   xDown <- (== KeyState'Pressed) <$> getKey gpWindow Key'X
   -- Til I finish per-hand vacuuming, vacuum when either bumper is down
-  let shouldVacuum = or (map (elem ButtonBumper . handButtons) hands) || xDown
+  let shouldVacuum = or (map (^. hndGrip . to (> 0.5)) hands) || xDown
   wldPlayer . plrVacuum .= shouldVacuum
 
   -- Fire cubes from each hand when their triggers are held down
-  forM_ (zip hands handWorldPoses) $ \(handData, handPose) -> do
+  forM_ (zip hands handWorldPoses) $ \(hand, handMatrix) -> do
 
     -- Bind Hydra 'Start' buttons to HMD Recenter
-    when (ButtonStart `elem` handButtons handData) $
-      maybe (return ()) (liftIO . recenterPose) gpHMD
+    when (hand ^. hndButtonS) $ recenterWhenOculus gamePal
 
-    processHandCubeFiring handData handPose frameNumber transceiver
+    processHandCubeFiring hand (poseFromMatrix handMatrix) frameNumber transceiver
 
+recenterWhenOculus gamePal = case gpHMD gamePal of
+  OculusHMD hmd -> liftIO $ recenterPose hmd
+  _ -> return ()
 
 processHandCubeFiring :: (Integral a, MonadIO m, MonadState World m, MonadRandom m) 
-                      => ControllerData -> Pose GLfloat -> a -> Transceiver Op -> m ()    
-processHandCubeFiring handData handPose frameNumber transceiver  = do
-  let triggerIsDown = trigger handData > 0.5
-  triggerWasDown <- fromMaybe False <$> use (wldHandTriggers . at (whichHand handData))
-  wldHandTriggers . at (whichHand handData) ?= triggerIsDown
+                      => Hand -> Pose GLfloat -> a -> Transceiver Op -> m ()    
+processHandCubeFiring hand handPose frameNumber transceiver  = do
+  let triggerIsDown = hand ^. hndTrigger > 0.5
+  triggerWasDown <- fromMaybe False <$> use (wldHandTriggers . at (hand ^. hndID))
+  wldHandTriggers . at (hand ^. hndID) ?= triggerIsDown
 
   phase <- use wldPhase
 

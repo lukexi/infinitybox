@@ -28,7 +28,7 @@ import Physics.Bullet
 
 import System.CPUTime
 import Text.Printf
-
+import Game.Pal
 -- | The maximum number of cubes before we start kicking cubes out
 maxCubes :: Int
 maxCubes = 15
@@ -133,7 +133,7 @@ data World = World
   , _wldVoiceSources   :: !(Map VoiceID OpenALSource)
   , _wldKickVoiceID    :: !VoiceID
   , _wldCubeAges       :: !(Map ObjectID Float)
-  , _wldHandTriggers   :: !(Map WhichHand Bool) -- ^ Lets us detect new trigger pushes
+  , _wldHandTriggers   :: !(Map HandID Bool) -- ^ Lets us detect new trigger pushes
   , _wldFilledness     :: !(Animation Float)
   , _wldComplete       :: !(Animation Float)
   , _wldPhase          :: !Phase

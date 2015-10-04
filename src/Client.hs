@@ -34,10 +34,11 @@ import Audio
 
 enableEKG :: Bool
 enableEKG = False
---enableEKG = True
+-- enableEKG = True
 
 enableDevices :: [GamePalDevices]
-enableDevices = [UseOculus, UseHydra]
+enableDevices = [UseOpenVR]
+-- enableDevices = [UseOculus, UseHydra]
 -- enableDevices = [UseOculus]
 -- enableDevices = [UseHydra]
 -- enableDevices = []
@@ -98,9 +99,9 @@ main = do
 
       
   void . flip runRandT stdGen . flip runStateT world . whileWindow gpWindow $ do
-    case gpHMD of
-      Just hmd -> setPerformanceHUDMode hmd PerfHUDModeRender
-      Nothing -> return ()
+    -- case gpHMD of
+    --   Just hmd -> setPerformanceHUDMode hmd PerfHUDModeRender
+    --   Nothing -> return ()
     
     frameNumber <- wldFrameNumber <+= 1
 
