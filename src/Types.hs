@@ -156,8 +156,8 @@ interpolateObjects :: Object -> Object -> Object
 
 newPlayer1 :: Player
 newPlayer1 = Player
-  { _plrPose      = Pose (V3 0 (-3) 4) (axisAngle (V3 0 1 0) 0)
-  , _plrHeadPose  = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
+  { _plrPose      = Pose (V3 0 (-5) 0) (axisAngle (V3 0 1 0) 0)
+  , _plrHeadPose  = Pose (V3 0 0 0)    (axisAngle (V3 0 1 0) 0)
   , _plrHandPoses = []
   , _plrHandVacuum = []
   , _plrVacuum     = False
@@ -165,15 +165,15 @@ newPlayer1 = Player
 
 newPlayer2 :: Player
 newPlayer2 = Player
-  { _plrPose      = Pose (V3 0 (-3) (-4)) (axisAngle (V3 0 1 0) pi)
-  , _plrHeadPose  = Pose (V3 0 0 0) (axisAngle (V3 0 1 0) 0)
+  { _plrPose      = Pose (V3 0 (-5) 0) (axisAngle (V3 0 1 0) pi)
+  , _plrHeadPose  = Pose (V3 0 0 0)    (axisAngle (V3 0 1 0) 0)
   , _plrHandPoses = []
   , _plrHandVacuum = []
   , _plrVacuum     = False
   }
 
 logoObject :: Object
-logoObject = Object (Pose (V3 0 (-3) 0) (axisAngle (V3 0 1 0) 0)) 3
+logoObject = Object (Pose (V3 0 (-4) (-5)) (axisAngle (V3 0 1 0) 0)) 3
 
 newWorld :: PlayerID -> Player -> Map VoiceID OpenALSource -> DiffTime -> World
 newWorld playerID player sourcesByVoice now = World 

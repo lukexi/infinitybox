@@ -101,11 +101,12 @@ recenterWhenOculus gamePal = case gpHMD gamePal of
 processHandCubeFiring :: (Integral a, MonadIO m, MonadState World m, MonadRandom m) 
                       => Hand -> Pose GLfloat -> a -> Transceiver Op -> m ()    
 processHandCubeFiring hand handPose frameNumber transceiver  = do
-  let triggerIsDown = hand ^. hndTrigger > 0.5
+  let triggerIsDown = hand ^. hndGrip > 0.5
   triggerWasDown <- fromMaybe False <$> use (wldHandTriggers . at (hand ^. hndID))
   wldHandTriggers . at (hand ^. hndID) ?= triggerIsDown
 
   phase <- use wldPhase
+  --printIO triggerIsDown
 
   case phase of
     PhaseVoid -> when triggerIsDown $ startLogo

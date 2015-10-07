@@ -94,10 +94,8 @@ main = do
   stdGen   <- getStdGen
   now      <- getNow
   let world = newWorld playerID initialPlayer sourcesByVoice now
-
       theme = themes ^. rainbow
 
-      
   void . flip runRandT stdGen . flip runStateT world . whileWindow gpWindow $ do
   
     frameNumber <- wldFrameNumber <+= 1

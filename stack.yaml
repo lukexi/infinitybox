@@ -13,7 +13,7 @@ packages:
 - ../animation-pal
 - ../linear-extra
 - ../lens-extra
-- ../vr-pal
+- ../openvr-hs
 extra-deps:
 - GLFW-b-1.4.7.2
 - bindings-GLFW-3.1.1.3
