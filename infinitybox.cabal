@@ -58,7 +58,7 @@ library
     , network-info
     , animation-pal
 
-executable client
+executable infinitybox-multiplayer-client
   main-is:             Main.hs
   hs-source-dirs:      app/client
   -- other-modules:
@@ -69,7 +69,7 @@ executable client
   ghc-options:         -Wall -O2 -threaded -rtsopts "-with-rtsopts=-N -A4M -qb -H128m"
   ghc-prof-options:    -Wall -O2 -threaded -rtsopts -prof -fprof-auto "-with-rtsopts=-N -T -p -s"
 
-executable server
+executable infinitybox-multiplayer-server
   main-is:             Main.hs
   hs-source-dirs:      app/server
   -- other-modules:
@@ -79,9 +79,9 @@ executable server
   ghc-options:         -Wall -O2 -threaded -rtsopts "-with-rtsopts=-N"
   ghc-prof-options:    -Wall -O2 -threaded -rtsopts -prof -fprof-auto "-with-rtsopts=-N -T -p -s"
 
-executable clientplus
+executable infinitybox
   main-is:             Main.hs
-  hs-source-dirs:      app/clientplus
+  hs-source-dirs:      app/infinitybox
   -- other-modules:
   build-depends:
     base, infinitybox

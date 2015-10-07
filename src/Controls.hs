@@ -83,7 +83,7 @@ processControls gamePal@GamePal{..} transceiver frameNumber = do
 
   xDown <- (== KeyState'Pressed) <$> getKey gpWindow Key'X
   -- Til I finish per-hand vacuuming, vacuum when either bumper is down
-  let shouldVacuum = or (map (^. hndGrip . to (> 0.5)) hands) || xDown
+  let shouldVacuum = or (map (^. hndTrigger . to (> 0.5)) hands) || xDown
   wldPlayer . plrVacuum .= shouldVacuum
 
   -- Fire cubes from each hand when their triggers are held down
@@ -101,7 +101,7 @@ recenterWhenOculus gamePal = case gpHMD gamePal of
 processHandCubeFiring :: (Integral a, MonadIO m, MonadState World m, MonadRandom m) 
                       => Hand -> Pose GLfloat -> a -> Transceiver Op -> m ()    
 processHandCubeFiring hand handPose frameNumber transceiver  = do
-  let triggerIsDown = hand ^. hndGrip > 0.5
+  let triggerIsDown = hand ^. hndTrigger > 0.5
   triggerWasDown <- fromMaybe False <$> use (wldHandTriggers . at (hand ^. hndID))
   wldHandTriggers . at (hand ^. hndID) ?= triggerIsDown
 

@@ -4,13 +4,13 @@ import Sound.Pd1
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
 import Linear.Extra
-import Graphics.GL
+-- import Graphics.GL
 import Types
 import Network.UDP.Pal
 import Control.Lens.Extra
 import Control.Monad.State
 import Control.Concurrent.STM
-import Data.Foldable
+-- import Data.Foldable
 
 exhaustChanIO :: MonadIO m => TChan a -> m [a]
 exhaustChanIO = liftIO . atomically . exhaustChan
@@ -35,7 +35,7 @@ initAudio = do
   -- Initially send voices to very far away to silence them
   forM_ voiceSources silenceVoice
 
-  alListenerGain 3
+  alListenerGain (3::Double)
 
   pitchesByVoice    <- makeReceiveChan "pitchesByVoice"
   amplitudesByVoice <- makeReceiveChan "amplitudesByVoice"
