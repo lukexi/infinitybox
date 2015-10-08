@@ -11,10 +11,6 @@ src/server
 *.hi
 *.dyn_o
 *.dyn_hi
-.strip-ths/
-
-*.dump-splices
-*.no-pre.hs
 
 *.aux
 *.hp
@@ -22,9 +18,7 @@ src/server
 *.pdf
 *.prof
 
-infinitybox.tar.gz
+infinitybox*.tar.gz
 
-release/src
-release/audio-prototypes
-release/serverIP.txt
+release-tmp/
 serverIP.txt

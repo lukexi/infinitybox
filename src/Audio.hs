@@ -10,13 +10,19 @@ import Network.UDP.Pal
 import Control.Lens.Extra
 import Control.Monad.State
 import Control.Concurrent.STM
+
+import System.Environment
+import System.Directory
 -- import Data.Foldable
+
 
 exhaustChanIO :: MonadIO m => TChan a -> m [a]
 exhaustChanIO = liftIO . atomically . exhaustChan
 
 initAudio :: IO (TChan Message, TChan Message, Map VoiceID OpenALSource)
 initAudio = do
+  copyOpenALHRTFs
+
   -- Set up sound
   addToLibPdSearchPath "patches/kit"
   addToLibPdSearchPath "patches/kit/list-abs"
