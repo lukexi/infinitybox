@@ -1,4 +1,4 @@
 import qualified Client as Client
-
+import Types
 main :: IO ()
-main = Client.main
+main = Client.infinityClient UsePublicIP

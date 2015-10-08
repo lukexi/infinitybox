@@ -56,8 +56,8 @@ getServerNameFromFile = do
         Just line -> return line
         Nothing -> return "127.0.0.1"
 
-main :: IO ()
-main = do
+infinityClient :: ServerIPType -> IO ()
+infinityClient serverIPType = do
   when enableEKG    . void $ EKG.forkServer "localhost" 8000
   
   -- Set up GLFW/Oculus/Hydra
@@ -67,7 +67,10 @@ main = do
   -- let sourcesByVoice = mempty
 
   -- Set up networking
-  serverName <- getServerNameFromFile
+  serverName <- case serverIPType of
+    UseLocalhost -> return "127.0.0.1"
+    UsePublicIP -> getServerNameFromFile
+
   transceiver@Transceiver{..} <- createTransceiverToAddress serverName serverPort packetSize
 
   -- Figure out if we're player 1 or 2

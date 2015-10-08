@@ -29,6 +29,9 @@ import Physics.Bullet
 import System.CPUTime
 import Text.Printf
 import Game.Pal
+
+data ServerIPType = UseLocalhost | UsePublicIP
+
 -- | The maximum number of cubes before we start kicking cubes out
 maxCubes :: Int
 maxCubes = 15

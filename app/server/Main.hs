@@ -1,4 +1,5 @@
-import qualified Server as Server
+import Server
+import Types
 
 main :: IO ()
-main = Server.physicsServer
+main = physicsServer UsePublicIP

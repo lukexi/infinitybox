@@ -45,12 +45,15 @@ makeLenses ''ServerState
 
 
 
-physicsServer :: IO ()
-physicsServer = do
+physicsServer :: ServerIPType -> IO ()
+physicsServer serverIPType = do
 
-  -- This is just a dummy value to pass to interpretS when calling with a message we generated
-  serverName <- findLocalIP
-  writeFile "serverIP.txt" serverName
+  serverName <- case serverIPType of
+    UseLocalhost -> return "127.0.0.1"
+    UsePublicIP -> do
+      localIP <- findLocalIP
+      writeFile "serverIP.txt" localIP
+      return localIP
 
   server@Server{..} <- createServer serverName serverPort packetSize
   putStrLn $ "Server engaged on " ++ serverName
