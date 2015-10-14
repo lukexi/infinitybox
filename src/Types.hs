@@ -14,7 +14,6 @@ import Graphics.GL
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import System.Random
-import System.Hardware.Hydra
 import Network.UDP.Pal
 import Sound.Pd1
 import Data.List
@@ -22,7 +21,7 @@ import Graphics.GL.Pal
 import Data.Data
 import Animation.Pal
 import Data.Time
-import Data.Maybe
+-- import Data.Maybe
 import Control.Monad.Random
 import Physics.Bullet
 
@@ -394,5 +393,6 @@ cubeScale = 0.4
 roomScale :: GLfloat
 roomScale = 10
 
+silenceVoice :: MonadIO m => OpenALSource -> m ()
 silenceVoice sourceID = 
   alSourcePosition sourceID (V3 0 0 (-10000) :: V3 GLfloat)

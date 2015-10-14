@@ -11,23 +11,23 @@ loadThemes :: IO Themes
 loadThemes = do
   
   let vRainbow = Visuals
-        { _roomShader  = "src/shaders/slugBG.frag"
-        , _logoShader  = "src/shaders/logo.frag"
-        , _cubeShader  = "src/shaders/slugCube.frag"
-        , _faceShader  = "src/shaders/face.frag"
-        , _handShader  = "src/shaders/slugCube.frag"
-        , _lightShader = "src/shaders/slugCube.frag"
-        , _vertShader  = "src/shaders/raytrace.vert"
+        { _roomShader  = "shaders/slugBG.frag"
+        , _logoShader  = "shaders/logo.frag"
+        , _cubeShader  = "shaders/slugCube.frag"
+        , _faceShader  = "shaders/face.frag"
+        , _handShader  = "shaders/slugCube.frag"
+        , _lightShader = "shaders/slugCube.frag"
+        , _vertShader  = "shaders/raytrace.vert"
         }
 
       vAO = Visuals
-        { _roomShader  = "src/shaders/aoBG.frag"
-        , _logoShader  = "src/shaders/logo.frag"
-        , _cubeShader  = "src/shaders/aoCube.frag"
-        , _faceShader  = "src/shaders/face.frag"
-        , _handShader  = "src/shaders/aoCube.frag"
-        , _lightShader = "src/shaders/aoCube.frag"
-        , _vertShader  = "src/shaders/raytrace.vert"
+        { _roomShader  = "shaders/aoBG.frag"
+        , _logoShader  = "shaders/logo.frag"
+        , _cubeShader  = "shaders/aoCube.frag"
+        , _faceShader  = "shaders/face.frag"
+        , _handShader  = "shaders/aoCube.frag"
+        , _lightShader = "shaders/aoCube.frag"
+        , _vertShader  = "shaders/raytrace.vert"
         }
 
 

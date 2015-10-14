@@ -20,5 +20,5 @@ src/server
 
 infinitybox*.tar.gz
 
-release-tmp/
+infinitybox-r/
 serverIP.txt

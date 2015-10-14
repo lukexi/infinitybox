@@ -94,9 +94,7 @@ processControls gamePal@GamePal{..} transceiver frameNumber = do
 
     processHandCubeFiring hand (poseFromMatrix handMatrix) frameNumber transceiver
 
-recenterWhenOculus gamePal = case gpHMD gamePal of
-  OculusHMD hmd -> liftIO $ recenterPose hmd
-  _ -> return ()
+
 
 processHandCubeFiring :: (Integral a, MonadIO m, MonadState World m, MonadRandom m) 
                       => Hand -> Pose GLfloat -> a -> Transceiver Op -> m ()    
