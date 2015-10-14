@@ -74,7 +74,9 @@ infinityClient serverIPType = do
   transceiver@Transceiver{..} <- createTransceiverToAddress serverName serverPort packetSize
 
   -- Figure out if we're player 1 or 2
-  localIP <- findLocalIP
+  localIP <- case serverIPType of
+    UseLocalhost -> return "127.0.0.1"
+    UsePublicIP  -> findLocalIP 
   let initialPlayer = if localIP == serverName 
         then newPlayer1 
         else newPlayer2

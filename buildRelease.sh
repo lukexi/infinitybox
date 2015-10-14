@@ -10,5 +10,6 @@ cp -R shaders/ infinitybox-r/
 cp -R patches/ infinitybox-r/
 cp -R audio-prototypes/ infinitybox-r/
 cp -R openal/ infinitybox-r/
+cp README.txt infinitybox-r/
 
 7z a -tzip infinitybox-$GIT_HASH.zip infinitybox-r/
