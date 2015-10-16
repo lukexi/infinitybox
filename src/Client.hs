@@ -6,7 +6,6 @@ import Graphics.UI.GLFW.Pal
 
 import Graphics.GL
 import Graphics.GL.Pal
-import Graphics.Oculus
 
 import Control.Monad
 import Control.Monad.State.Strict
@@ -22,7 +21,6 @@ import qualified System.Remote.Monitoring as EKG
 import Network.UDP.Pal
 import Game.Pal
 import Data.Char
-import Data.Time
 import Halive.Utils
 
 import Types
@@ -129,10 +127,11 @@ infinityClient serverIPType = do
     when (phase /= PhaseVoid) $ wldTime += delta
     t <- use wldTime
 
+    -- DEBUG: Jump straight to main
     -- wldPhase   .= PhaseMain
     -- wldStarted .= 1
 
-    --real one 
+    -- Real one 
     when (phase == PhaseLogo && t > 11.0 ) $ do
       wldPhase   .= PhaseMain
       wldTime    .= 0
