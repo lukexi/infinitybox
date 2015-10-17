@@ -5,7 +5,6 @@ module Controls where
 
 import Graphics.UI.GLFW.Pal
 
-import Graphics.Oculus
 import Linear.Extra
 
 
@@ -22,15 +21,15 @@ import Game.Pal
 import Data.Maybe
 import Sound.Pd1
 
-
+import Control.Concurrent
 
 
 processControls :: (MonadIO m, MonadState World m, MonadRandom m) 
                 => GamePal
-                -> Transceiver Op
+                -> MVar (Transceiver Op)
                 -> Integer
                 -> m ()
-processControls gamePal@GamePal{..} transceiver frameNumber = do
+processControls gamePal@GamePal{..} transceiverMVar frameNumber = do
   -- Get latest Hydra data
   hands <- getHands gamePal
 
@@ -50,7 +49,9 @@ processControls gamePal@GamePal{..} transceiver frameNumber = do
       return ()
     else do
       -- Disabled hydra joysticks for no motion sickness
-      --applyHandJoystickMovement hands (wldPlayer . plrPose)
+      case gpSixenseBase of
+        Just _ -> applyHandJoystickMovement hands (wldPlayer . plrPose)
+        Nothing -> return ()
       return ()
   -- Handle keyboard movement events
   applyWASD gpWindow (wldPlayer . plrPose)
@@ -68,18 +69,18 @@ processControls gamePal@GamePal{..} transceiver frameNumber = do
     onGamepadAxes e $ \GamepadAllAxes{..} -> 
       -- Use the right trigger to fire a cube
       when (gaxTriggers < (-0.5) && frameNumber `mod` 30 == 0) $ 
-        addCube transceiver (shiftBy (V3 0 0.1 0) playerPose)
+        addCube transceiverMVar (shiftBy (V3 0 0.1 0) playerPose)
     
     -- Handle key events
     -- Spawn a cube offset by 0.1 y
-    onKeyDown Key'Space e (addCube transceiver (shiftBy (V3 0 0.1 0) playerPose))
+    onKeyDown Key'Space e (addCube transceiverMVar (shiftBy (V3 0 0.1 0) playerPose))
     onKeyDown Key'F e (setCursorInputMode gpWindow CursorInputMode'Disabled)
     onKeyDown Key'G e (setCursorInputMode gpWindow CursorInputMode'Normal)
     onKeyDown Key'O e (recenterWhenOculus gamePal)
-    onKeyDown Key'Z e (addCube transceiver newPose)
+    onKeyDown Key'Z e (addCube transceiverMVar newPose)
     onKeyDown Key'N e startLogo
     onKeyDown Key'M e startMain
-    onKeyDown Key'0 e (restart transceiver)
+    onKeyDown Key'0 e (restart transceiverMVar)
 
   xDown <- (== KeyState'Pressed) <$> getKey gpWindow Key'X
   -- Til I finish per-hand vacuuming, vacuum when either bumper is down
@@ -92,13 +93,13 @@ processControls gamePal@GamePal{..} transceiver frameNumber = do
     -- Bind Hydra 'Start' buttons to HMD Recenter
     when (hand ^. hndButtonS) $ recenterWhenOculus gamePal
 
-    processHandCubeFiring hand (poseFromMatrix handMatrix) frameNumber transceiver
+    processHandCubeFiring hand (poseFromMatrix handMatrix) frameNumber transceiverMVar
 
 
 
 processHandCubeFiring :: (Integral a, MonadIO m, MonadState World m, MonadRandom m) 
-                      => Hand -> Pose GLfloat -> a -> Transceiver Op -> m ()    
-processHandCubeFiring hand handPose frameNumber transceiver  = do
+                      => Hand -> Pose GLfloat -> a -> MVar (Transceiver Op) -> m ()    
+processHandCubeFiring hand handPose _frameNumber transceiverMVar  = do
   let triggerIsDown = hand ^. hndTrigger > 0.5
   triggerWasDown <- fromMaybe False <$> use (wldHandTriggers . at (hand ^. hndID))
   wldHandTriggers . at (hand ^. hndID) ?= triggerIsDown
@@ -116,17 +117,18 @@ processHandCubeFiring hand handPose frameNumber transceiver  = do
           shouldSpawn = triggerIsDown && not triggerWasDown 
                         -- || triggerIsDown && frameNumber `mod` 30 == 0
       when shouldSpawn $
-        addCube transceiver cubePose
+        addCube transceiverMVar cubePose
 
 
-addCube :: (MonadIO m, MonadState World m, MonadRandom m) => Transceiver Op -> Pose GLfloat -> m ()
-addCube transceiver pose = do
+addCube :: (MonadIO m, MonadState World m, MonadRandom m) => MVar (Transceiver Op) -> Pose GLfloat -> m ()
+addCube transceiverMVar pose = do
   -- Spawn a cube at the player's position and orientation
   instruction <- newCubeInstruction pose
 
   interpret instruction
 
-  writeTransceiver transceiver $ Reliable instruction
+  whenMVar transceiverMVar $ \transceiver -> 
+    writeTransceiver transceiver $ Reliable instruction
   return ()
 
 
@@ -141,9 +143,10 @@ startMain = do
   wldPhase .= PhaseMain
   wldTime  .= 0
 
-restart :: (MonadState World m, MonadIO m) => Transceiver Op -> m ()
-restart transceiver = do
-  writeTransceiver transceiver $ Reliable Restart
+restart :: (MonadState World m, MonadIO m) => MVar (Transceiver Op) -> m ()
+restart transceiverMVar = do
+  whenMVar transceiverMVar $ \transceiver ->
+    writeTransceiver transceiver $ Reliable Restart
   wldStarted .= 0
   wldPhase .= PhaseVoid
   wldTime  .= 0
@@ -152,4 +155,9 @@ restart transceiver = do
 
 
 
-
+whenMVar :: MonadIO m => MVar a -> (a -> m ()) -> m ()
+whenMVar mvar action = do
+  maybeFull <- liftIO (tryReadMVar mvar)
+  case maybeFull of
+    Just full -> action full
+    Nothing -> return ()

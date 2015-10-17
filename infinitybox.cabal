@@ -29,6 +29,7 @@ library
     Types
     Render
     Controls
+    Matchmaker
   build-depends:
       network
     , base
