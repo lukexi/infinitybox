@@ -37,7 +37,8 @@ enableEKG = False
 -- enableEKG = True
 
 enableDevices :: [GamePalDevices]
-enableDevices = [UseOpenVR]
+-- enableDevices = [UseOpenVR]
+enableDevices = [UseOpenVR, UseHydra]
 -- enableDevices = [UseOculus, UseHydra]
 -- enableDevices = [UseOculus]
 -- enableDevices = [UseHydra]

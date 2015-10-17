@@ -31,7 +31,7 @@ processControls :: (MonadIO m, MonadState World m, MonadRandom m)
                 -> m ()
 processControls gamePal@GamePal{..} transceiverMVar frameNumber = do
   -- Get latest Hydra data
-  hands <- getHands gamePal
+  (hands, handsType) <- getHands gamePal
 
   -- Update hand positions
   handWorldPoses <- flip handsToWorldPoses hands . transformationFromPose <$> use (wldPlayer . plrPose)
@@ -49,9 +49,8 @@ processControls gamePal@GamePal{..} transceiverMVar frameNumber = do
       return ()
     else do
       -- Disabled hydra joysticks for no motion sickness
-      case gpSixenseBase of
-        Just _ -> applyHandJoystickMovement hands (wldPlayer . plrPose)
-        Nothing -> return ()
+      when (handsType == HandsHydra) $
+        applyHandJoystickMovement hands (wldPlayer . plrPose)
       return ()
   -- Handle keyboard movement events
   applyWASD gpWindow (wldPlayer . plrPose)
