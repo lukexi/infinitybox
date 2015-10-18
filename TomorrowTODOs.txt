@@ -1,10 +1,10 @@
 
 [ ] Fix head sizes
 [ ] Package newest demo and put up on tree.is
-[ ] Bring 2nd hydras!
+[x] Bring 2nd hydras!
 [x] Update to 0.6 for Crescent bay test????
 
-[ ] Try adding performGC at beginning of each frame
+[x] Try adding performGC at beginning of each frame
 
 [x] Shrink light colliders
 [x] Turn off joysticks

@@ -25,10 +25,10 @@ listToTuple :: (t, t) -> [t] -> (t, t)
 listToTuple _   [a,b] = (a,b)
 listToTuple def _     = def
 
+-- | Extracts a list of results using the given lens
 useListOf :: MonadState s m => Getting (Endo [a]) s a -> m [a]
-useListOf aLens = do
-  stat <- use id
-  return (stat ^.. aLens)
+useListOf aLens = (^.. aLens) <$> get
+
 
 getLocalHandPositions :: MonadState World m => m [V3 GLfloat]
 getLocalHandPositions = 
@@ -38,6 +38,7 @@ getLocalHandPositions =
             . to (shiftBy handLightOffset) 
             . posPosition 
             )
+
 
 -- | We draw the second pair of lights for one remote player
 -- (4 is the most we can handle currently)
@@ -51,6 +52,7 @@ getFirstRemoteHandPositions = do
     case remoteHandPoses of
       Just hands -> hands ^.. traverse . posPosition
       Nothing -> []
+
 
 render :: (MonadIO m, MonadState World m) 
        => Resources
@@ -88,10 +90,6 @@ render Resources{..} projection viewMat = do
 
   drawRoom room projectionView eyePos lightPositions filledness
 
-
-  
-
-
   
 drawCubes :: (MonadIO m, MonadState World m)
           => Shape Uniforms
@@ -113,7 +111,6 @@ drawCubes cube projectionView eyePos lights filledness = do
   uniformF  uStarted =<< use wldStarted
   uniformF  uDayNight =<< dayNightCycleAt <$> use wldTime
   uniformF  uDayLength dayLength
-  -- putStrLnIO (show view)
   
   uniformV3 uCamera eyePos
 
@@ -125,8 +122,7 @@ drawCubes cube projectionView eyePos lights filledness = do
     glDisable GL_CULL_FACE
     glCullFace GL_BACK
     
-    forM_ ( zip [0..] ( Map.toList cubes ) ) $ \( i , (objID, obj) ) -> do
-
+    forM_ (zip [0..] (Map.toList cubes)) $ \(i , (objID, obj)) -> do
 
       mVoiceID <- use (wldCubeVoices . at objID)
       (pitch, amp) <- case mVoiceID of
@@ -143,7 +139,7 @@ drawCubes cube projectionView eyePos lights filledness = do
       --   -- TODO(isaac) fill in uniforms for collision here:
       --   uniformF  uCollisionTime      (collision ^. ccTime)
       --   -- uniformF  uCollisionImpulse   (collision ^. ccImpulse)
-      --   uniformV3 uCollisionPosition  ( collision ^. ccPosition  ) 
+      --   uniformV3 uCollisionPosition  (collision ^. ccPosition)
       --   -- uniformV3 uCollisionDirection (collision ^. ccDirection)
       --   return ()
       
@@ -161,8 +157,9 @@ drawCubes cube projectionView eyePos lights filledness = do
           -- This is render-only at the moment; physics object is still
           -- full size from the beginning.
           -- scaledModel = model !*! scaleMatrix 0.3
-          scaledModel = model !*! scaleMatrix (realToFrac ( cubeAge * ( obj ^. objScale ))) 
+          scaledModel = model !*! scaleMatrix (realToFrac (cubeAge * (obj ^. objScale)))
       drawShape scaledModel projectionView i cube
+
 
 drawLogo :: (MonadIO m, MonadState World m)
           => Shape Uniforms
@@ -189,10 +186,9 @@ drawLogo cube projectionView eyePos lights = do
     
     let obj = logoObject
         model = transformationFromPose (obj ^. objPose)
-        scaledModel = model !*! scaleMatrix ( realToFrac (obj ^. objScale) )
+        scaledModel = model !*! scaleMatrix (realToFrac (obj ^. objScale))
 
     drawShape scaledModel projectionView 0 cube
-
 
 
 setLightUniforms :: (MonadIO m) 
@@ -204,6 +200,7 @@ setLightUniforms anShape lights = do
       uniformsAndPositions = zip [uLight1, uLight2, uLight3, uLight4] lights
   forM_ uniformsAndPositions $ \(lightUniform, lightPos) ->
     uniformV3 lightUniform lightPos
+
 
 drawLights :: (MonadIO m , MonadState World m) 
            => Shape Uniforms
@@ -238,6 +235,7 @@ drawLights anShape projectionView lights filledness = do
       
       drawShape model projectionView i anShape
 
+
 drawPlayers :: (MonadIO m, MonadState World m) 
             => Shape Uniforms
             -> Shape Uniforms
@@ -265,6 +263,7 @@ drawPlayers hand face projectionView eyePos lights = do
 
   drawRemoteHeads projectionView eyePos face lights
 
+
 drawLocalHands :: (MonadIO m, MonadState World m) 
                => M44 GLfloat -> Shape Uniforms -> m ()
 drawLocalHands projectionView hand = do
@@ -278,12 +277,13 @@ drawLocalHands projectionView hand = do
   forM_ handPoses $ \handPose -> do
 
     let finalMatrix = transformationFromPose $ shiftBy handOffset handPose
-        rotateVec = rotate ( handPose ^. posOrientation ) (V3 0 0 1)
+        rotateVec = rotate (handPose ^. posOrientation) (V3 0 0 1)
 
     uniformV3 uParameterA $ handPose ^. posPosition
     uniformV3 uParameterB $ rotateVec
 
     drawShape finalMatrix projectionView 0 hand
+
 
 drawRemoteHands :: (MonadIO m, MonadState World m) 
                 => M44 GLfloat -> Shape Uniforms -> m ()
@@ -300,12 +300,13 @@ drawRemoteHands projectionView hand = do
     forM_ (player ^. plrHandPoses) $ \handPose -> do
 
       let finalMatrix = transformationFromPose $ shiftBy handOffset handPose
-          rotateVec = rotate ( handPose ^. posOrientation ) (V3 0 0 1) 
+          rotateVec = rotate (handPose ^. posOrientation) (V3 0 0 1) 
       
       uniformV3 uParameterA $ handPose ^. posPosition
       uniformV3 uParameterB rotateVec
       
       drawShape finalMatrix projectionView 0 hand
+
 
 drawRemoteHeads :: (MonadIO m, MonadState World m) 
                 => M44 GLfloat
@@ -332,6 +333,7 @@ drawRemoteHeads projectionView eyePos face lights = do
 
       drawShape finalMatrix projectionView 0 face
 
+
 drawRoom :: (MonadIO m, MonadState World m) 
          => Shape Uniforms
          -> M44 GLfloat
@@ -341,9 +343,6 @@ drawRoom :: (MonadIO m, MonadState World m)
          -> m ()
 drawRoom plane projectionView eyePos lights filledness = do
   let Uniforms{..} = sUniforms plane
-
-  
-
 
   useProgram (sProgram plane)
 
@@ -368,7 +367,6 @@ drawRoom plane projectionView eyePos lights filledness = do
   tick <- fromMaybe 0 <$> use (wldVoicePitch . at kickVoiceID)
   uniformF uTick tick
 
-  -- printIO view
   uniformV3 uCamera eyePos
 
   setLightUniforms plane lights
@@ -378,9 +376,7 @@ drawRoom plane projectionView eyePos lights filledness = do
     glEnable GL_CULL_FACE
     glCullFace GL_FRONT
 
-    let model = mkTransformation 
-            ( axisAngle ( V3 1 0 0 ) 0 )
-            ( V3 0 0 0 )
+    let model = identity
 
     drawShape model projectionView 0 plane
 

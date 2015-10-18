@@ -82,8 +82,9 @@ processControls gamePal@GamePal{..} transceiver frameNumber = do
     onKeyDown Key'0 e (restart transceiver)
 
   xDown <- (== KeyState'Pressed) <$> getKey gpWindow Key'X
+
   -- Til I finish per-hand vacuuming, vacuum when either bumper is down
-  let shouldVacuum = or (map (^. hndTrigger . to (> 0.5)) hands) || xDown
+  let shouldVacuum = or (map (^. hndGrip . to (> 0.5)) hands) || xDown
   wldPlayer . plrVacuum .= shouldVacuum
 
   -- Fire cubes from each hand when their triggers are held down
@@ -99,12 +100,14 @@ processControls gamePal@GamePal{..} transceiver frameNumber = do
 processHandCubeFiring :: (Integral a, MonadIO m, MonadState World m, MonadRandom m) 
                       => Hand -> Pose GLfloat -> a -> Transceiver Op -> m ()    
 processHandCubeFiring hand handPose frameNumber transceiver  = do
-  let triggerIsDown = hand ^. hndTrigger > 0.5
+
+  -- Determine if the trigger has been freshly pressed
   triggerWasDown <- fromMaybe False <$> use (wldHandTriggers . at (hand ^. hndID))
+  let triggerIsDown = hand ^. hndTrigger > 0.5
+      isNewTrigger  = triggerIsDown && not triggerWasDown
   wldHandTriggers . at (hand ^. hndID) ?= triggerIsDown
 
   phase <- use wldPhase
-  --printIO triggerIsDown
 
   case phase of
     PhaseVoid -> when triggerIsDown $ startLogo
@@ -113,7 +116,7 @@ processHandCubeFiring hand handPose frameNumber transceiver  = do
       -- Move the cube upwards a bit so it spawns at the tip of the hand
       let cubePose = shiftBy (V3 0 0 (-0.5)) handPose
       -- Spawn every 0.1 secs, and on fresh trigger squeezes
-          shouldSpawn = triggerIsDown && not triggerWasDown 
+          shouldSpawn = isNewTrigger
                         -- || triggerIsDown && frameNumber `mod` 30 == 0
       when shouldSpawn $
         addCube transceiver cubePose

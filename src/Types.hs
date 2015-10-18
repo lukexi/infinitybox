@@ -296,7 +296,7 @@ interpret (ObjectCollision collision) = do
   --     Nothing -> return ()
   --     Just obj -> do
   --       let model = transformationFromPose (obj ^. objPose)
-  --           scaledModel = model !*! scaleMatrix ( realToFrac (obj ^. objScale) )
+  --           scaledModel = model !*! scaleMatrix (realToFrac (obj ^. objScale))
   --           invModel = fromMaybe scaledModel (inv44 scaledModel) :: M44 GLfloat
   --           positionPoint = point position :: V4 GLfloat
 

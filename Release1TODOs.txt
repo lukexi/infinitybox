@@ -3,8 +3,8 @@
 [x] Audio latency is too high
 
 
-[ ] Collisions
-  [ ] Mask center-cube collision to be hand-only until it is first touched by a hand
+[x] Collisions
+  [x] Mask center-cube collision to be hand-only until it is first touched by a hand
   [x] Track collisions from Bullet and transmit them to clients for reaction
     [x] Better to do the filtering on the server, and change the event to be finer-grained
   [x] Pass collision intensity back from Bullet so we can ignore light touches
