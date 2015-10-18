@@ -25,6 +25,7 @@ import Data.Foldable
 
 import Physics.Bullet
 import Types
+import Matchmaker
 import Linear.Extra
 
 handRigidBodyID :: RigidBodyID
@@ -51,9 +52,8 @@ physicsServer serverIPType = do
   serverName <- case serverIPType of
     UseLocalhost -> return "127.0.0.1"
     UsePublicIP -> do
-      localIP <- findLocalIP
-      writeFile "serverIP.txt" localIP
-      return localIP
+      _ <- beginBroadcaster
+      findPrivateNetIP
 
   server@Server{..} <- createServer serverName serverPort packetSize
   putStrLn $ "Server engaged on " ++ serverName

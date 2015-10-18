@@ -6,7 +6,6 @@ import Graphics.UI.GLFW.Pal
 
 import Graphics.GL
 import Graphics.GL.Pal
-import Graphics.Oculus
 
 import Control.Monad
 import Control.Monad.State.Strict
@@ -22,22 +21,24 @@ import qualified System.Remote.Monitoring as EKG
 import Network.UDP.Pal
 import Game.Pal
 import Data.Char
-import Data.Time
 import Halive.Utils
+import Control.Concurrent
 
 import Types
 import Themes
 import Render
 import Controls
 import Audio
-
+import Server
+import Matchmaker
 
 enableEKG :: Bool
 enableEKG = False
 -- enableEKG = True
 
 enableDevices :: [GamePalDevices]
-enableDevices = [UseOpenVR]
+-- enableDevices = [UseOpenVR]
+enableDevices = [UseOpenVR, UseHydra]
 -- enableDevices = [UseOculus, UseHydra]
 -- enableDevices = [UseOculus]
 -- enableDevices = [UseHydra]
@@ -56,6 +57,8 @@ getServerNameFromFile = do
         Just line -> return line
         Nothing -> return "127.0.0.1"
 
+
+
 infinityClient :: ServerIPType -> IO ()
 infinityClient serverIPType = do
   when enableEKG    . void $ EKG.forkServer "localhost" 8000
@@ -67,21 +70,30 @@ infinityClient serverIPType = do
   -- let sourcesByVoice = mempty
 
   -- Set up networking
-  serverName <- case serverIPType of
-    UseLocalhost -> return "127.0.0.1"
-    UsePublicIP -> getServerNameFromFile
+  transceiverMVar <- newEmptyMVar
 
-  transceiver@Transceiver{..} <- createTransceiverToAddress serverName serverPort packetSize
-
-  -- Figure out if we're player 1 or 2
-  localIP <- findLocalIP
-  let initialPlayer = if localIP == serverName 
-        then newPlayer1 
-        else newPlayer2
-
-  -- Connect to the server
   playerID <- randomName
-  writeTransceiver transceiver $ Reliable (Connect playerID initialPlayer)
+
+
+  let startTransceiverToServer serverName = do
+        transceiver <- createTransceiverToAddress serverName serverPort packetSize
+        putMVar transceiverMVar transceiver
+
+        -- Connect to the server
+        
+        writeTransceiver transceiver $ Reliable (Connect playerID newPlayer1)
+  case serverIPType of
+    UseLocalhost -> startTransceiverToServer "127.0.0.1"
+    UsePublicIP -> do
+      let onFoundServer = startTransceiverToServer 
+          onNoServer = do
+            _ <- forkOS (physicsServer UsePublicIP)
+            -- Same as finding the server, but connect to ourselves
+            ourIP <- findPrivateNetIP
+            startTransceiverToServer ourIP
+
+      _ <- beginSearch onFoundServer onNoServer
+      return ()
 
   -- Set up OpenGL resources
   themes@Themes{..} <- loadThemes
@@ -96,7 +108,7 @@ infinityClient serverIPType = do
 
   stdGen   <- getStdGen
   now      <- getNow
-  let world = newWorld playerID initialPlayer sourcesByVoice now
+  let world = newWorld playerID newPlayer1 sourcesByVoice now
       theme = themes ^. rainbow
 
   void . flip runRandT stdGen . flip runStateT world . whileWindow gpWindow $ do
@@ -107,14 +119,17 @@ infinityClient serverIPType = do
     wldLastCubes <~ use wldCubes
 
     -- Handle network events
-    interpretNetworkPackets tcVerifiedPackets interpret
+    whenMVar transceiverMVar $ \transceiver -> 
+      interpretNetworkPackets (tcVerifiedPackets transceiver) interpret
 
     -- Process controllers (Keyboard, Mouse, Gamepad, Hydra, Oculus headtracking)
-    processControls gamePal transceiver frameNumber
+    processControls gamePal transceiverMVar frameNumber
 
     -- Send player position
     player <- use wldPlayer
-    writeTransceiver transceiver $ Unreliable [UpdatePlayer playerID player]
+
+    whenMVar transceiverMVar $ \transceiver -> 
+      writeTransceiver transceiver $ Unreliable [UpdatePlayer playerID player]
 
     -- Render to OpenAL
     updateAudio pitchesByVoice amplitudesByVoice
@@ -129,10 +144,11 @@ infinityClient serverIPType = do
     when (phase /= PhaseVoid) $ wldTime += delta
     t <- use wldTime
 
+    -- DEBUG: Jump straight to main
     -- wldPhase   .= PhaseMain
     -- wldStarted .= 1
 
-    --real one 
+    -- Real one 
     when (phase == PhaseLogo && t > 11.0 ) $ do
       wldPhase   .= PhaseMain
       wldTime    .= 0
