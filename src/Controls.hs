@@ -103,17 +103,21 @@ processHandCubeFiring :: (Integral a, MonadIO m, MonadState World m, MonadRandom
 processHandCubeFiring hand handPose _frameNumber transceiverMVar  = do
 
   -- Determine if the trigger is freshly pressed
-  triggerWasDown <- fromMaybe False <$> use (wldLastPlayer . plrHandPoses . at (hand ^. hndID))
+  triggerWasDown <- fromMaybe False <$> use (wldLastPlayer . plrHandPoses . at (hand ^. hndID) . traverse . hndTrigger)
   let triggerIsDown = hand ^. hndTrigger > 0.5
       isNewTrigger  = triggerIsDown && not triggerWasDown
 
   -- Determine if the start button is freshly pressed
   -- Sample the current player position and write it as a dummy remote player
   -- to allow inspecting what a multiplayer person looks like
-  startWasDown <- fromMaybe False <$> use (wldLastPlayer . plrHandPoses . at (hand ^. hndID))
+  startWasDown <- fromMaybe False <$> use (wldLastPlayer . plrHandPoses . at (hand ^. hndID) . traverse . hndButtonS)
   when (not startWasDown && hand ^. hndButtonS) $ do
     player <- use wldPlayer
-    wldPlayers . at 1000 ?= player
+
+    let infiniteSnapshots = True
+    dummyID <- if infiniteSnapshots then liftIO randomIO else return 1000
+
+    wldPlayers . at dummyID ?= player
 
   phase <- use wldPhase
 
