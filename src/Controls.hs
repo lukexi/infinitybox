@@ -119,9 +119,8 @@ processHandCubeFiring hand handPose _frameNumber transceiverMVar  = do
   when (not (lastHand ^. hndButtonS) && hand ^. hndButtonS) $ do
     player <- use wldPlayer
 
-    -- let infiniteSnapshots = True
-    -- dummyID <- if infiniteSnapshots then liftIO randomIO else return 1000
-    let dummyID = "dummy"
+    let infiniteSnapshots = True
+    dummyID <- if infiniteSnapshots then liftIO randomName else return "dummy"
 
     wldPlayers . at dummyID ?= player
 
