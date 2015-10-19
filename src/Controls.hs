@@ -21,6 +21,10 @@ import Game.Pal
 import Data.Maybe
 import Sound.Pd1
 
+
+import qualified Data.Map as Map
+
+
 import Control.Concurrent
 
 
@@ -84,7 +88,7 @@ processControls gamePal@GamePal{..} transceiverMVar frameNumber = do
   xDown <- (== KeyState'Pressed) <$> getKey gpWindow Key'X
 
   -- Til I finish per-hand vacuuming, vacuum when either bumper is down
-  let shouldVacuum = or (map (^. hndGrip . to (> 0.5)) hands) || xDown
+  let shouldVacuum = or (map (^. hndGrip) hands) || xDown
   wldPlayer . plrVacuum .= shouldVacuum
 
   -- Fire cubes from each hand when their triggers are held down
@@ -94,7 +98,7 @@ processControls gamePal@GamePal{..} transceiverMVar frameNumber = do
     when (hand ^. hndButtonS) $ recenterWhenOculus gamePal
 
     processHandCubeFiring hand (poseFromMatrix handMatrix) frameNumber transceiverMVar
-  wldLastPlayer <~ use wldPlayer
+  wldLastHands .= Map.fromList (zip (map (^. hndID) hands) hands)
 
 
 
@@ -103,19 +107,21 @@ processHandCubeFiring :: (Integral a, MonadIO m, MonadState World m, MonadRandom
 processHandCubeFiring hand handPose _frameNumber transceiverMVar  = do
 
   -- Determine if the trigger is freshly pressed
-  triggerWasDown <- fromMaybe False <$> use (wldLastPlayer . plrHandPoses . at (hand ^. hndID) . traverse . hndTrigger)
+  lastHand <- fromMaybe emptyHand <$> use (wldLastHands . at (hand ^. hndID))
+  
   let triggerIsDown = hand ^. hndTrigger > 0.5
+      triggerWasDown = lastHand ^. hndTrigger > 0.5
       isNewTrigger  = triggerIsDown && not triggerWasDown
 
   -- Determine if the start button is freshly pressed
   -- Sample the current player position and write it as a dummy remote player
   -- to allow inspecting what a multiplayer person looks like
-  startWasDown <- fromMaybe False <$> use (wldLastPlayer . plrHandPoses . at (hand ^. hndID) . traverse . hndButtonS)
-  when (not startWasDown && hand ^. hndButtonS) $ do
+  when (not (lastHand ^. hndButtonS) && hand ^. hndButtonS) $ do
     player <- use wldPlayer
 
-    let infiniteSnapshots = True
-    dummyID <- if infiniteSnapshots then liftIO randomIO else return 1000
+    -- let infiniteSnapshots = True
+    -- dummyID <- if infiniteSnapshots then liftIO randomIO else return 1000
+    let dummyID = "dummy"
 
     wldPlayers . at dummyID ?= player
 
