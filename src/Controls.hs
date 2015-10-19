@@ -94,6 +94,7 @@ processControls gamePal@GamePal{..} transceiverMVar frameNumber = do
     when (hand ^. hndButtonS) $ recenterWhenOculus gamePal
 
     processHandCubeFiring hand (poseFromMatrix handMatrix) frameNumber transceiverMVar
+  wldLastPlayer <~ use wldPlayer
 
 
 
@@ -101,11 +102,18 @@ processHandCubeFiring :: (Integral a, MonadIO m, MonadState World m, MonadRandom
                       => Hand -> Pose GLfloat -> a -> MVar (Transceiver Op) -> m ()    
 processHandCubeFiring hand handPose _frameNumber transceiverMVar  = do
 
-  -- Determine if the trigger has been freshly pressed
-  triggerWasDown <- fromMaybe False <$> use (wldHandTriggers . at (hand ^. hndID))
+  -- Determine if the trigger is freshly pressed
+  triggerWasDown <- fromMaybe False <$> use (wldLastPlayer . plrHandPoses . at (hand ^. hndID))
   let triggerIsDown = hand ^. hndTrigger > 0.5
       isNewTrigger  = triggerIsDown && not triggerWasDown
-  wldHandTriggers . at (hand ^. hndID) ?= triggerIsDown
+
+  -- Determine if the start button is freshly pressed
+  -- Sample the current player position and write it as a dummy remote player
+  -- to allow inspecting what a multiplayer person looks like
+  startWasDown <- fromMaybe False <$> use (wldLastPlayer . plrHandPoses . at (hand ^. hndID))
+  when (not startWasDown && hand ^. hndButtonS) $ do
+    player <- use wldPlayer
+    wldPlayers . at 1000 ?= player
 
   phase <- use wldPhase
 

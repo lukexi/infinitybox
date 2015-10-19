@@ -135,7 +135,7 @@ data World = World
   , _wldVoiceSources   :: !(Map VoiceID OpenALSource)
   , _wldKickVoiceID    :: !VoiceID
   , _wldCubeAges       :: !(Map ObjectID Float)
-  , _wldHandTriggers   :: !(Map HandID Bool) -- ^ Lets us detect new trigger pushes
+  , _wldLastPlayer     :: !Player -- ^ Lets us detect new button pushes
   , _wldFilledness     :: !(Animation Float)
   , _wldComplete       :: !(Animation Float)
   , _wldPhase          :: !Phase
@@ -192,7 +192,7 @@ newWorld playerID player sourcesByVoice now = World
   , _wldVoiceSources   = sourcesByVoice
   , _wldKickVoiceID    = kickVoiceID
   , _wldCubeAges       = mempty
-  , _wldHandTriggers   = mempty  
+  , _wldLastPlayer     = player
   , _wldFilledness     = Animation
       { animStart      = now
       , animDuration   = 1
