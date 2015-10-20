@@ -20,7 +20,7 @@ out vec4 color;
 
 
 const float MAX_TRACE_DISTANCE = 10.;           // max trace distance
-const float INTERSECTION_PRECISION = 0.01;        // precision of the intersection
+const float INTERSECTION_PRECISION = 0.001;        // precision of the intersection
 const int NUM_OF_TRACE_STEPS = 20;
 
 
