@@ -53,7 +53,7 @@ physicsServer serverIPType = do
     UseLocalhost -> return "127.0.0.1"
     UsePublicIP -> do
       putStrLn "Starting broadcaster..."
-      -- _ <- beginBroadcaster
+      _ <- beginBroadcaster
       findPrivateNetIP
 
   putStrLn "Starting server..."
