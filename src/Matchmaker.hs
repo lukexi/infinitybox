@@ -40,6 +40,9 @@ bufferSize = 4096
 beginSearch :: (HostName -> IO ()) -> IO () -> IO ThreadId
 beginSearch onFoundHost onNoHost = forkIO $ do
 
+
+  ourIP <- findPrivateNetIP
+
   -- Begin trying to receive a server beacon message
   receiveSocket <- boundSocketAny broadcastPort (fromIntegral bufferSize)
   searchResultMVar <- newEmptyMVar
@@ -50,8 +53,9 @@ beginSearch onFoundHost onNoHost = forkIO $ do
           case receivedData of
             (receivedMagicNumber, SockAddrInet _port hostAddress) | receivedMagicNumber == magicNumber -> do
               hostAddressString <- inet_ntoa hostAddress
-              tryPutMVar searchResultMVar hostAddressString
-              return ()
+              if (hostAddressString /= ourIP)
+                then void $ tryPutMVar searchResultMVar hostAddressString  
+                else loop
             _ -> loop
     loop
   -- FIXME: need to kill the searchThread in the event it never sees a broadcast, 
