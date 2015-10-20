@@ -4,7 +4,6 @@ import Network.UDP.Pal
 import Network.Socket
 import Control.Concurrent
 import Control.Monad
-import Control.Exception
 import Data.IORef
 --------------- Broadcast socket utils
 -- TODO move these to 
@@ -47,7 +46,7 @@ beginSearch onFoundHost onNoHost = forkIO $ do
   receiveSocket <- boundSocketAny broadcastPort (fromIntegral bufferSize)
   searchResultMVar <- newEmptyMVar
   stopSearchRef <- newIORef False
-  searchThread <- forkIO $ do
+  _ <- forkIO $ do
     let loop = do
           stopSearch <- readIORef stopSearchRef
           unless stopSearch $ do
@@ -62,9 +61,9 @@ beginSearch onFoundHost onNoHost = forkIO $ do
               _ -> loop
     loop
 
-  -- Search for 1 second
+  -- Search for 2 seconds
   putStrLn $ "Waiting for matchmaking..."
-  threadDelay 1000000
+  threadDelay 2000000
   putStrLn $ "Matchmaking done."
 
   writeIORef stopSearchRef True
