@@ -36,7 +36,7 @@ loadThemes = do
   lightGeo   <- cubeGeometry (V3 0.001 0.001 0.001) (V3 1 1 1)
   roomGeo    <- cubeGeometry (V3 10 10 10) (V3 1 1 1)
   handGeo    <- cubeGeometry handDimensions (V3 1 1 1)
-  faceGeo    <- cubeGeometry (V3 0.5 0.7 0.1) (V3 1 1 1)
+  faceGeo    <- cubeGeometry (V3 0.35 0.4 0.5) (V3 1 1 1)
 
 
   let csp = createShaderProgram
