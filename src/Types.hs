@@ -156,18 +156,9 @@ interpolateObjects :: Object -> Object -> Object
 (Object p1 s1) `interpolateObjects` (Object p2 s2) = 
   Object (interpolatePoses p1 p2) (s1 + (s2 - s1) / 2)
 
-newPlayer1 :: Player
-newPlayer1 = Player
-  { _plrPose      = Pose (V3 0 (-5) 0) (axisAngle (V3 0 1 0) 0)
-  , _plrHeadPose  = Pose (V3 0 0 0)    (axisAngle (V3 0 1 0) 0)
-  , _plrHandPoses = []
-  , _plrHandVacuum = []
-  , _plrVacuum     = False
-  }
-
-newPlayer2 :: Player
-newPlayer2 = Player
-  { _plrPose      = Pose (V3 0 (-5) 0) (axisAngle (V3 0 1 0) pi)
+newPlayer :: Player
+newPlayer  = Player
+  { _plrPose      = Pose (V3 0 (-(roomScale/2)) 0) (axisAngle (V3 0 1 0) 0)
   , _plrHeadPose  = Pose (V3 0 0 0)    (axisAngle (V3 0 1 0) 0)
   , _plrHandPoses = []
   , _plrHandVacuum = []

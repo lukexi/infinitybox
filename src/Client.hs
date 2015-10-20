@@ -81,15 +81,16 @@ infinityClient serverIPType = do
 
         -- Connect to the server
         
-        writeTransceiver transceiver $ Reliable (Connect playerID newPlayer1)
+        writeTransceiver transceiver $ Reliable (Connect playerID newPlayer)
   case serverIPType of
     UseLocalhost -> startTransceiverToServer "127.0.0.1"
     UsePublicIP -> do
-      let onFoundServer = startTransceiverToServer 
+      let onFoundServer = startTransceiverToServer
           onNoServer = do
             _ <- forkOS (physicsServer UsePublicIP)
             -- Same as finding the server, but connect to ourselves
             ourIP <- findPrivateNetIP
+            putStrLn ("No existing server found, starting our own on " ++ show ourIP)
             startTransceiverToServer ourIP
 
       _ <- beginSearch onFoundServer onNoServer
@@ -108,7 +109,7 @@ infinityClient serverIPType = do
 
   stdGen   <- getStdGen
   now      <- getNow
-  let world = newWorld playerID newPlayer1 sourcesByVoice now
+  let world = newWorld playerID newPlayer sourcesByVoice now
       theme = themes ^. rainbow
 
   void . flip runRandT stdGen . flip runStateT world . whileWindow gpWindow $ do

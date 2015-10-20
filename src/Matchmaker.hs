@@ -5,6 +5,7 @@ import Network.Socket
 import Control.Concurrent
 import Control.Monad
 import Control.Exception
+import Data.IORef
 --------------- Broadcast socket utils
 -- TODO move these to 
 
@@ -40,33 +41,36 @@ bufferSize = 4096
 beginSearch :: (HostName -> IO ()) -> IO () -> IO ThreadId
 beginSearch onFoundHost onNoHost = forkIO $ do
 
-
   ourIP <- findPrivateNetIP
 
   -- Begin trying to receive a server beacon message
   receiveSocket <- boundSocketAny broadcastPort (fromIntegral bufferSize)
   searchResultMVar <- newEmptyMVar
+  stopSearchRef <- newIORef False
   searchThread <- forkIO $ do
     let loop = do
-          putStrLn "Receiving..."
-          receivedData <- receiveFromDecoded receiveSocket
-          case receivedData of
-            (receivedMagicNumber, SockAddrInet _port hostAddress) | receivedMagicNumber == magicNumber -> do
-              hostAddressString <- inet_ntoa hostAddress
-              if (hostAddressString /= ourIP)
-                then void $ tryPutMVar searchResultMVar hostAddressString  
-                else loop
-            _ -> loop
+          stopSearch <- readIORef stopSearchRef
+          unless stopSearch $ do
+            putStrLn "Receiving..."
+            receivedData <- receiveFromDecoded receiveSocket
+            case receivedData of
+              (receivedMagicNumber, SockAddrInet _port hostAddress) | receivedMagicNumber == magicNumber -> do
+                hostAddressString <- inet_ntoa hostAddress
+                if (hostAddressString /= ourIP)
+                  then void $ tryPutMVar searchResultMVar hostAddressString  
+                  else loop
+              _ -> loop
     loop
-  -- FIXME: need to kill the searchThread in the event it never sees a broadcast, 
-  -- but it was somhow killing its parent or hanging on killthread?
 
-  putStrLn $ "Waiting for matchmaking..."
   -- Search for 1 second
+  putStrLn $ "Waiting for matchmaking..."
   threadDelay 1000000
   putStrLn $ "Matchmaking done."
-  -- mask $ \_ -> killThread searchThread
+
+  writeIORef stopSearchRef True
+  close (bsSocket receiveSocket)
   putStrLn $ "Killed...."
+  threadDelay 100000
   -- Check the results
   searchResult <- tryReadMVar searchResultMVar
   putStrLn $ "Result of matchmaking: " ++ show searchResult

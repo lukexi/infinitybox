@@ -5,5 +5,5 @@ import Types
 
 main :: IO ()
 main = do
-  _ <- forkOS (Server.physicsServer UsePublicIP)
+  -- _ <- forkOS (Server.physicsServer UsePublicIP)
   Client.infinityClient UsePublicIP

@@ -52,9 +52,11 @@ physicsServer serverIPType = do
   serverName <- case serverIPType of
     UseLocalhost -> return "127.0.0.1"
     UsePublicIP -> do
-      _ <- beginBroadcaster
+      putStrLn "Starting broadcaster..."
+      -- _ <- beginBroadcaster
       findPrivateNetIP
 
+  putStrLn "Starting server..."
   server@Server{..} <- createServer serverName serverPort packetSize
   putStrLn $ "Server engaged on " ++ serverName
   
