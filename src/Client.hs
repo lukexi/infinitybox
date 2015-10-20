@@ -147,9 +147,9 @@ infinityClient serverIPType = do
     -- DEBUG: Jump straight to main
     -- wldPhase   .= PhaseMain
     -- wldStarted .= 1
-
-    -- Real one 
-    when (phase == PhaseLogo && t > 11.0 ) $ do
+    
+    -- Begin the main phase of the experience after 11 seconds
+    when (phase == PhaseLogo && t > 11.0) $ do
       wldPhase   .= PhaseMain
       wldTime    .= 0
       wldStarted .= 1

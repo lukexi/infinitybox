@@ -56,10 +56,10 @@ processControls gamePal@GamePal{..} transceiverMVar frameNumber = do
       when (handsType == HandsHydra) $
         applyHandJoystickMovement hands (wldPlayer . plrPose)
       return ()
+  
   -- Handle keyboard movement events
   applyWASD gpWindow (wldPlayer . plrPose)
   
-
   -- Handle UI events
   processEvents gpEvents $ \e -> do
     closeOnEscape gpWindow e
