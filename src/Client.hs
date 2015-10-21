@@ -6,7 +6,6 @@ import Graphics.UI.GLFW.Pal
 
 import Graphics.GL
 import Graphics.GL.Pal
-import Graphics.Oculus
 
 import Control.Monad
 import Control.Monad.State.Strict
@@ -22,7 +21,6 @@ import qualified System.Remote.Monitoring as EKG
 import Network.UDP.Pal
 import Game.Pal
 import Data.Char
-import Data.Time
 import Halive.Utils
 
 import Types
@@ -37,7 +35,8 @@ enableEKG = False
 -- enableEKG = True
 
 enableDevices :: [GamePalDevices]
-enableDevices = [UseOpenVR]
+-- enableDevices = [UseOpenVR]
+enableDevices = [UseOpenVR, UseHydra]
 -- enableDevices = [UseOculus, UseHydra]
 -- enableDevices = [UseOculus]
 -- enableDevices = [UseHydra]
@@ -78,8 +77,8 @@ infinityClient serverIPType = do
     UseLocalhost -> return "127.0.0.1"
     UsePublicIP  -> findLocalIP 
   let initialPlayer = if localIP == serverName 
-        then newPlayer1 
-        else newPlayer2
+        then newPlayer1 gpRoomScale
+        else newPlayer2 gpRoomScale
 
   -- Connect to the server
   playerID <- randomName

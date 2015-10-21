@@ -5,7 +5,6 @@ module Controls where
 
 import Graphics.UI.GLFW.Pal
 
-import Graphics.Oculus
 import Linear.Extra
 
 
@@ -33,6 +32,7 @@ processControls :: (MonadIO m, MonadState World m, MonadRandom m)
 processControls gamePal@GamePal{..} transceiver frameNumber = do
   -- Get latest Hydra data
   hands <- getHands gamePal
+  -- printIO hands
 
   -- Update hand positions
   handWorldPoses <- flip handsToWorldPoses hands . transformationFromPose <$> use (wldPlayer . plrPose)
@@ -98,7 +98,7 @@ processControls gamePal@GamePal{..} transceiver frameNumber = do
 
 processHandCubeFiring :: (Integral a, MonadIO m, MonadState World m, MonadRandom m) 
                       => Hand -> Pose GLfloat -> a -> Transceiver Op -> m ()    
-processHandCubeFiring hand handPose frameNumber transceiver  = do
+processHandCubeFiring hand handPose _frameNumber transceiver  = do
   let triggerIsDown = hand ^. hndTrigger > 0.5
   triggerWasDown <- fromMaybe False <$> use (wldHandTriggers . at (hand ^. hndID))
   wldHandTriggers . at (hand ^. hndID) ?= triggerIsDown

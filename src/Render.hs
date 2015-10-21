@@ -70,8 +70,6 @@ render Resources{..} projection viewMat = do
   now <- getNow
   let filledness = evanResult (evalAnim now fillednessAnim)
 
-  --let theme =
-
   drawLights  light      projectionView        lightPositions filledness
   drawPlayers hand face  projectionView eyePos lightPositions 
 
