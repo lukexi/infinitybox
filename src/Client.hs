@@ -12,15 +12,12 @@ import Control.Monad.State.Strict
 import System.Random
 import Control.Lens.Extra hiding (view)
 import Control.Monad.Random
-import System.Directory
-import Data.Maybe
 import Animation.Pal
 
 import qualified System.Remote.Monitoring as EKG
 
 import Network.UDP.Pal
 import Game.Pal
-import Data.Char
 import Halive.Utils
 import Control.Concurrent
 
@@ -44,21 +41,6 @@ enableDevices = [UseOpenVR, UseHydra]
 -- enableDevices = [UseHydra]
 -- enableDevices = []
 
-
-getServerNameFromFile :: IO String
-getServerNameFromFile = do
-  let serverIPFile = "serverIP.txt"
-  exists <- doesFileExist serverIPFile
-  if not exists 
-    then return "127.0.0.1"
-    else do 
-      mLine <- fmap (filter (not . isSpace)) . listToMaybe . lines <$> readFile serverIPFile
-      case mLine of
-        Just line -> return line
-        Nothing -> return "127.0.0.1"
-
-
-
 infinityClient :: ServerIPType -> IO ()
 infinityClient serverIPType = do
   when enableEKG    . void $ EKG.forkServer "localhost" 8000
@@ -67,8 +49,7 @@ infinityClient serverIPType = do
   gamePal@GamePal{..} <- reacquire 0 $ initGamePal "Infinity Box" GCPerFrame enableDevices
   
   (pitchesByVoice, amplitudesByVoice, sourcesByVoice) <- initAudio
-  -- let sourcesByVoice = mempty
-
+  
   -- Set up networking
   transceiverMVar <- newEmptyMVar
 
@@ -94,6 +75,7 @@ infinityClient serverIPType = do
             startTransceiverToServer ourIP
 
       _ <- beginSearch onFoundServer onNoServer
+      -- onNoServer
       return ()
 
   -- Set up OpenGL resources

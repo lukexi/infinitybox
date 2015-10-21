@@ -345,7 +345,7 @@ profile action = do
   return x
 
 serverPort :: PortNumber
-serverPort = 3000
+serverPort = 54321
 
 packetSize :: Int
 packetSize = 4096

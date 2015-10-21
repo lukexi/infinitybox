@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module Matchmaker where
 
 import Network.UDP.Pal
@@ -5,6 +6,7 @@ import Network.Socket
 import Control.Concurrent
 import Control.Monad
 import Data.IORef
+import Control.Exception
 --------------- Broadcast socket utils
 -- TODO move these to 
 
@@ -49,25 +51,29 @@ beginSearch onFoundHost onNoHost = forkIO $ do
   _ <- forkIO $ do
     let loop = do
           stopSearch <- readIORef stopSearchRef
-          unless stopSearch $ do
-            putStrLn "Receiving..."
-            receivedData <- receiveFromDecoded receiveSocket
-            case receivedData of
-              (receivedMagicNumber, SockAddrInet _port hostAddress) | receivedMagicNumber == magicNumber -> do
-                hostAddressString <- inet_ntoa hostAddress
-                if (hostAddressString /= ourIP)
-                  then void $ tryPutMVar searchResultMVar hostAddressString  
-                  else loop
-              _ -> loop
+          if not stopSearch 
+            then do
+              putStrLn "Receiving..."
+              receivedData <- receiveFromDecoded receiveSocket
+                `catch` \(e :: SomeException) -> putStr "receiveFromRaw: " >> print e >> return undefined
+              case receivedData of
+                (receivedMagicNumber, SockAddrInet _port hostAddress) | receivedMagicNumber == magicNumber -> do
+                  hostAddressString <- inet_ntoa hostAddress
+                  if (hostAddressString /= ourIP)
+                    then void $ tryPutMVar searchResultMVar hostAddressString  
+                    else loop
+                _ -> loop
+            else close (bsSocket receiveSocket)
+
     loop
 
   -- Search for 2 seconds
   putStrLn $ "Waiting for matchmaking..."
-  threadDelay 2000000
+  threadDelay 1000000
   putStrLn $ "Matchmaking done."
 
   writeIORef stopSearchRef True
-  close (bsSocket receiveSocket)
+  
   putStrLn $ "Killed...."
   threadDelay 100000
   -- Check the results
@@ -77,7 +83,7 @@ beginSearch onFoundHost onNoHost = forkIO $ do
     Just foundServerIP -> onFoundHost foundServerIP
     Nothing            -> onNoHost
 
-beginBroadcaster :: IO ThreadId
+beginBroadcaster :: IO ()
 beginBroadcaster = do
   bcastSocket <- broadcastSocket broadcastPort 4096
 
@@ -86,3 +92,4 @@ beginBroadcaster = do
     _ <- sendBinary bcastSocket magicNumber
     threadDelay (1000000 `div` 2)
 
+  return ()
