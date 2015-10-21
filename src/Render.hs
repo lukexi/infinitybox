@@ -17,6 +17,7 @@ import Graphics.GL.Pal
 
 import Types
 import Data.Monoid
+import Data.Foldable
 
 import Animation.Pal
 
@@ -98,9 +99,9 @@ drawCubes :: (MonadIO m, MonadState World m)
           -> m ()
 drawCubes cube projectionView eyePos lights filledness = do
   -- Interpolate between the last and newest cube states
-  newCubes  <- use wldCubes
-  lastCubes <- use wldLastCubes
-  let cubes = Map.unionWith interpolateObjects lastCubes newCubes
+  cubes <- Map.unionWith interpolateObjects 
+    <$> use wldLastCubes 
+    <*> use wldCubes
 
   let Uniforms{..} = sUniforms cube
   useProgram (sProgram cube)
@@ -229,7 +230,6 @@ drawLights anShape projectionView lights filledness = do
 
       uniformF uFilledness filledness
       -- uniformF uComplete   =<< use wldComplete
-
       
       drawShape model projectionView i anShape
 
@@ -242,6 +242,11 @@ drawPlayers :: (MonadIO m, MonadState World m)
             -> [V3 GLfloat]
             -> m ()
 drawPlayers hand face projectionView eyePos lights = do
+
+  interpolatedPlayers <- toList <$> (Map.unionWith interpolatePlayers
+    <$> use wldLastPlayers
+    <*> use wldPlayers)
+
   useProgram (sProgram hand)
   let Uniforms{..} = sUniforms hand
   uniformV3 uCamera eyePos
@@ -257,9 +262,9 @@ drawPlayers hand face projectionView eyePos lights = do
     glCullFace GL_BACK
 
     drawLocalHands projectionView hand
-    drawRemoteHands projectionView hand
+    drawRemoteHands projectionView hand interpolatedPlayers
 
-  drawRemoteHeads projectionView eyePos face lights
+  drawRemoteHeads projectionView eyePos face lights interpolatedPlayers
 
 
 drawLocalHands :: (MonadIO m, MonadState World m) 
@@ -284,8 +289,8 @@ drawLocalHands projectionView hand = do
 
 
 drawRemoteHands :: (MonadIO m, MonadState World m) 
-                => M44 GLfloat -> Shape Uniforms -> m ()
-drawRemoteHands projectionView hand = do
+                => M44 GLfloat -> Shape Uniforms -> [Player] -> m ()
+drawRemoteHands projectionView hand players = do
   let Uniforms{..} = sUniforms hand
    
   uniformF  uStarted =<< use wldStarted
@@ -311,8 +316,9 @@ drawRemoteHeads :: (MonadIO m, MonadState World m)
                 -> V3 GLfloat
                 -> Shape Uniforms
                 -> [V3 GLfloat]
+                -> [Player]
                 -> m ()
-drawRemoteHeads projectionView eyePos face lights = do
+drawRemoteHeads projectionView eyePos face lights players = do
   let Uniforms{..} = sUniforms face
   -- Draw all remote players' heads 
   -- (we don't draw the local player's head)
@@ -325,8 +331,7 @@ drawRemoteHeads projectionView eyePos face lights = do
   setLightUniforms face lights
 
   withVAO (sVAO face) $ do
-    players <- use $ wldPlayers . to Map.toList
-    forM_ players $ \(_playerID, player) -> do
+    forM_ players $ \player -> do
       let finalMatrix = transformationFromPose (totalHeadPose player)
 
       drawShape finalMatrix projectionView 0 face

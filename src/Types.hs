@@ -124,6 +124,7 @@ data World = World
   { _wldPlayer         :: !Player
   , _wldPlayerID       :: !PlayerID
   , _wldPlayers        :: !(Map PlayerID Player)
+  , _wldLastPlayers    :: !(Map PlayerID Player)
   , _wldCubes          :: !(Map ObjectID Object)
   , _wldLastCubes      :: !(Map ObjectID Object)
   , _wldLastCollisions :: !(Map ObjectID CubeCollision)
@@ -153,9 +154,19 @@ makeLenses ''Themes
 makeLenses ''CubeCollision
 
 interpolateObjects :: Object -> Object -> Object
-(Object p1 s1) `interpolateObjects` (Object p2 s2) = 
-  Object (interpolatePoses p1 p2) (s1 + (s2 - s1) / 2)
+(Object poseA scaleA) `interpolateObjects` (Object poseB scaleB) = 
+  Object (interpolatePoses poseA poseB) (scaleA + (scaleB - scaleA) / 2)
 
+
+interpolatePlayers  :: Player -> Player -> Player
+(Player poseA headPoseA handsA _ _) `interpolatePlayers` (Player poseB headPoseB handsB handVacB vacB) = 
+  Player
+    { _plrPose       = interpolatePoses poseA poseB
+    , _plrHeadPose   = interpolatePoses headPoseA headPoseB
+    , _plrHandPoses  = zipWith interpolatePoses handsA handsB
+    , _plrHandVacuum = handVacB
+    , _plrVacuum     = vacB
+    }
 
 newPlayer :: RoomScale -> Player
 newPlayer isRoomScale = Player
@@ -176,6 +187,7 @@ newWorld playerID player sourcesByVoice now = World
   { _wldPlayer         = player
   , _wldPlayerID       = playerID 
   , _wldPlayers        = mempty 
+  , _wldLastPlayers    = mempty
   , _wldCubes          = mempty 
   , _wldLastCubes      = mempty 
   , _wldFrameNumber    = 0

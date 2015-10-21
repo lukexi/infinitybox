@@ -99,8 +99,9 @@ infinityClient serverIPType = do
     frameNumber <- wldFrameNumber <+= 1
 
     -- Update interpolation buffer
-    wldLastCubes <~ use wldCubes
-
+    wldLastCubes   <~ use wldCubes
+    wldLastPlayers <~ use wldPlayers
+    
     -- Handle network events
     whenMVar transceiverMVar $ \transceiver -> 
       interpretNetworkPackets (tcVerifiedPackets transceiver) interpret

@@ -1,4 +1,5 @@
 GIT_HASH=`git rev-parse --short HEAD`
+RELEASE_ZIP=infinitybox-$GIT_HASH.zip
 
 rm -rf infinitybox-r/
 mkdir infinitybox-r
@@ -12,4 +13,6 @@ cp -R audio-prototypes/ infinitybox-r/
 cp -R openal/ infinitybox-r/
 cp README.txt infinitybox-r/
 
-7z a -tzip infinitybox-$GIT_HASH.zip infinitybox-r/
+7z a -tzip $RELEASE_ZIP infinitybox-r/
+cp $RELEASE_ZIP /c/Users/$USER/Desktop
+cp -R infinitybox-r /c/Users/$USER/Desktop/

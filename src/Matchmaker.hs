@@ -69,7 +69,7 @@ beginSearch onFoundHost onNoHost = forkIO $ do
 
   -- Search for 2 seconds
   putStrLn $ "Waiting for matchmaking..."
-  threadDelay 1000000
+  threadDelay 2000000
   putStrLn $ "Matchmaking done."
 
   writeIORef stopSearchRef True
