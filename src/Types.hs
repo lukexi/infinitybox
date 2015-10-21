@@ -135,7 +135,7 @@ data World = World
   , _wldVoiceSources   :: !(Map VoiceID OpenALSource)
   , _wldKickVoiceID    :: !VoiceID
   , _wldCubeAges       :: !(Map ObjectID Float)
-  , _wldHandTriggers   :: !(Map HandID Bool) -- ^ Lets us detect new trigger pushes
+  , _wldLastHands      :: !(Map HandID Hand) -- ^ Lets us detect new button pushes
   , _wldFilledness     :: !(Animation Float)
   , _wldComplete       :: !(Animation Float)
   , _wldPhase          :: !Phase
@@ -156,22 +156,12 @@ interpolateObjects :: Object -> Object -> Object
 (Object p1 s1) `interpolateObjects` (Object p2 s2) = 
   Object (interpolatePoses p1 p2) (s1 + (s2 - s1) / 2)
 
-newPlayer1 :: RoomScale -> Player
-newPlayer1 isRoomScale = Player
+
+newPlayer :: RoomScale -> Player
+newPlayer isRoomScale = Player
   { _plrPose      = if isRoomScale == RoomScale 
       then Pose (V3 0 ((-roomScale/2)) 0) (axisAngle (V3 0 1 0) 0)
       else Pose (V3 0 (-roomScale/3) (roomScale/3))          (axisAngle (V3 0 1 0) 0)
-  , _plrHeadPose  = newPose
-  , _plrHandPoses = []
-  , _plrHandVacuum = []
-  , _plrVacuum     = False
-  }
-
-newPlayer2 :: RoomScale -> Player
-newPlayer2 isRoomScale = Player
-  { _plrPose      = if isRoomScale == RoomScale 
-      then Pose (V3 0 (-(roomScale/2)) 0) (axisAngle (V3 0 1 0) 0)
-      else Pose (V3 0 (-roomScale/3) (-roomScale/3)) (axisAngle (V3 0 1 0) pi)
   , _plrHeadPose  = newPose
   , _plrHandPoses = []
   , _plrHandVacuum = []
@@ -196,7 +186,7 @@ newWorld playerID player sourcesByVoice now = World
   , _wldVoiceSources   = sourcesByVoice
   , _wldKickVoiceID    = kickVoiceID
   , _wldCubeAges       = mempty
-  , _wldHandTriggers   = mempty  
+  , _wldLastHands      = mempty
   , _wldFilledness     = Animation
       { animStart      = now
       , animDuration   = 1
@@ -300,7 +290,7 @@ interpret (ObjectCollision _collision) = do
   --     Nothing -> return ()
   --     Just obj -> do
   --       let model = transformationFromPose (obj ^. objPose)
-  --           scaledModel = model !*! scaleMatrix ( realToFrac (obj ^. objScale) )
+  --           scaledModel = model !*! scaleMatrix (realToFrac (obj ^. objScale))
   --           invModel = fromMaybe scaledModel (inv44 scaledModel) :: M44 GLfloat
   --           positionPoint = point position :: V4 GLfloat
 

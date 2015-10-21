@@ -1,5 +1,21 @@
 
 BUGS
+
+
+[ ] Add Icon http://stackoverflow.com/questions/708238/how-do-i-add-an-icon-to-a-mingw-gcc-compiled-executable
+
+[ ] Remove Console
+      Use:
+      -optl-mwindows ??
+
+      http://stackoverflow.com/questions/5995433/removing-console-window-for-glut-freeglut-glfw
+      http://trac.haskell.org/gtk2hs/ticket/1276
+      http://stackoverflow.com/questions/7993912/how-do-i-stop-the-console-window-from-appearing-when-making-system-calls
+
+[ ] Render to each eye simultaneously
+      http://vrfocus.com/archives/23546/epic-games-bullet-train-runs-at-a-solid-90-fps-much-higher-than-1080p/
+
+
 [x] Fix sound sources not staying stably attached to the cube they started from
     (we should round robin the oldest expiring source onto the newest cube)
 [ ] Apply handOffset right at the point of putting the hands into the player struct rather than offsetting all over the codebase
@@ -17,7 +33,7 @@ FEATURES
 [x] Add more lights to shaders
 [x] Collision for hands
 [x] Sound v1 
-  [ ] Sound v2
+  [x] Sound v2
       ( https://soundcloud.com/chvrches/chvrches-leave-a-trace-four-tet-remix-1 )
 [x] Set up proper uniforms for player hands, passing orientations etc. to control the shaders
 [x] Pass parameters to the room
@@ -31,23 +47,22 @@ FEATURES
 [x] Fix cube firing timer (even though we're getting rid of that...)
 
 [x] Simpler client/server setup for standalone executable;
-    [ ] Either have the server continually pulse out its IP and have the client listen for it
+    [x] Either have the server continually pulse out its IP and have the client listen for it
         (it should reset its state when it connects, besides the players current position which it can send)
     [x] Or have the client read from a textfile who it should connect to
     (we could do a UI with freetype-gl-mini too if we want.)
     Have server obtain its own IP.
 
 [x] Update oculus-mini to Oculus SDK 0.6
+[x] Try gl_Discard on fragments outside of SDF boundary
 
 [ ] FFT as texture
-
-[ ] Try gl_Discard on fragments outside of SDF boundary
 
 [ ] Add viscosity
 
 
 SIDEPROJECTS
-[ ] Get stack-ide-sublime working on Windows
+[x] Get stack-ide-sublime working on Windows
 [x] Finish Halive on Windows
 
 

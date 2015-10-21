@@ -17,6 +17,9 @@ exhaustChanIO = liftIO . atomically . exhaustChan
 
 initAudio :: IO (TChan Message, TChan Message, Map VoiceID OpenALSource)
 initAudio = do
+
+  -- OpenAL-soft annoyingly needs its hrtf files in a certain APPDATA subfolder,
+  -- so copy them here
   _ <- copyOpenALHRTFs
 
   -- Set up sound

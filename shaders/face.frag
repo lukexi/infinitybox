@@ -12,6 +12,7 @@ in vec3 vNorm;
 in vec3 vLight1;
 in vec3 vLight2;
 
+
 in vec2 vUv;
 
 out vec4 color;
@@ -19,43 +20,9 @@ out vec4 color;
 
 
 const float MAX_TRACE_DISTANCE = 10.;           // max trace distance
-const float INTERSECTION_PRECISION = 0.01;        // precision of the intersection
+const float INTERSECTION_PRECISION = 0.001;        // precision of the intersection
 const int NUM_OF_TRACE_STEPS = 20;
 
-
-
-// Taken from https://www.shadertoy.com/view/4ts3z2
-float tri(in float x){return abs(fract(x)-.5);}
-vec3 tri3(in vec3 p){return vec3( tri(p.z+tri(p.y*1.)), tri(p.z+tri(p.x*1.)), tri(p.y+tri(p.x*1.)));}
-                                 
-
-// Taken from https://www.shadertoy.com/view/4ts3z2
-float triNoise3D(in vec3 p, in float spd)
-{
-    float z=1.4;
-  float rz = 0.;
-    vec3 bp = p;
-  for (float i=0.; i<=3.; i++ )
-  {
-        vec3 dg = tri3(bp*2.);
-        p += (dg+uTime*.1*spd);
-
-        bp *= 1.8;
-    z *= 1.5;
-    p *= 1.2;
-        //p.xz*= m2;
-        
-        rz+= (tri(p.z+tri(p.x+tri(p.y))))/z;
-        bp += 0.14;
-  }
-  return rz;
-}
-
-
-vec3 hsv(float h, float s, float v){
-        return mix( vec3( 1.0 ), clamp(( abs( fract(h + vec3( 3.0, 2.0, 1.0 ) / 3.0 )
-                   * 6.0 - 3.0 ) - 1.0 ), 0.0, 1.0 ), s ) * v;
-      }
 
 
 
@@ -124,6 +91,40 @@ float smin( float a, float b )
 }
 
 
+float smax(float a, float b, float k)
+{
+    return log(exp(k*a)+exp(k*b))/k;
+}
+
+vec2 smoothU( vec2 d1, vec2 d2, float k)
+{
+    float a = d1.x;
+    float b = d2.x;
+    float h = clamp(0.5+0.5*(b-a)/k, 0.0, 1.0);
+    return vec2( mix(b, a, h) - k*h*(1.0-h), mix(d2.y, d1.y, pow(h, 2.0)));
+}
+
+
+float opS( float d1, float d2 )
+{
+    return max(-d1,d2);
+}
+
+
+vec2 opS( vec2 d1, vec2 d2 )
+{
+   return (-d1.x>d2.x) ? vec2( -d1.x , d1.y ) : d2;
+}
+
+
+
+
+vec2 smoothSub( vec2 d1, vec2 d2, float k)
+{
+    return  vec2( smax( -d1.x , d2.x , k ) , d2.y );
+}
+
+
 
 // Using SDF from IQ's two tweet shadertoy : 
 // https://www.shadertoy.com/view/MsfGzM
@@ -169,6 +170,14 @@ float sdTorus( vec3 p, vec2 t )
   return length(q)-t.y;
 }
 
+float sdCapsule( vec3 p, vec3 a, vec3 b, float r )
+{
+    vec3 pa = p - a, ba = b - a;
+    float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
+    return length( pa - ba*h ) - r;
+}
+
+
 float face( vec3 pos , vec3 p ){
     
     vec3 headPos  = ( pos - p );
@@ -197,6 +206,93 @@ float face( vec3 pos , vec3 p ){
     return f;
     
 }
+
+float doRing( vec3 p  , float size ){
+  
+    vec3 pos = p;
+    
+     
+    float lor = sign( pos.x );
+    
+    
+    pos.x = abs( pos.x );
+    
+    //pos.x = mod( pos.x , 1.5 );
+    float degree = atan( pos.y , pos.z );
+    
+    float ogD = degree;
+    
+    degree += uTime;// * (1. + lor * .2);
+    float l = length( pos.yz );
+    
+
+    
+    degree = mod( degree - 3.14159  / 8. , 3.14159  / 4. );
+ 
+    
+    pos.y = l * sin( degree );
+    pos.z = l * cos( degree );
+
+    
+    return sdSphere( pos - vec3( 2.4 ,  1. , 2.39 )  * .2 * size , .04 *( 1. + abs(ogD) ) * size) ;
+    
+}
+
+
+//--------------------------------
+// Modelling 
+//--------------------------------
+vec2 map( vec3 pos ){
+
+vec3 og = pos;  
+  pos.z = -pos.z;
+  pos -= vec3( 0. , -.03 , -.05 );
+  //pos.z -= .5;
+   
+    float size = .2;
+   //pos *= 2.5;
+  // pos -= vec3( 0. , 0., .5 );
+    
+    vec2 ring;
+
+
+    vec2 res = vec2( sdSphere( pos , 1. * size  ) , 1. );
+    
+   
+    vec2 mouth = vec2( sdSphere( pos - vec3( 0. , -.6 , 1. ) *size , .3 * size ) , 2. );
+    
+    //res.x = smax( res.x , -mouth.x  , 10.1 );//
+      
+ 
+    
+    res = opS( mouth , res );
+    
+    
+        
+    ring = vec2( doRing( pos , size  ) , 2. );
+   
+    
+    res.x = smax( res.x , -ring.x  , 20.1 );//
+    res = opU( ring , res );
+    
+    float lor = sign( pos.x );
+    
+    pos.x = abs( pos.x );
+
+    ring =  vec2( sdCapsule( pos , vec3( 0.) , vec3( .3 , .5 , .6 ) * 2. * size ,  .1 * size ) , 2. );
+    res = smoothU( res, ring , .2 * size);
+    
+    ring =  vec2( sdSphere( pos - vec3( 0.2  , .2,  .7 ) * 1.4 * size , .1 * size ) , 2. );
+    res = opU( ring , res);
+
+    res.x = smin( res.x , sdSphere(og - vLight1, .1 ));
+    res.x = smin( res.x , sdSphere(og - vLight2, .1 ));
+    
+      
+    return res;
+    
+}
+/*
 
 
 //--------------------------------
@@ -230,7 +326,7 @@ vec2 map( vec3 pos ){
     return res;
     
 }
-
+*/
 
 vec2 calcIntersection( in vec3 ro, in vec3 rd ){
 
@@ -258,27 +354,6 @@ vec2 calcIntersection( in vec3 ro, in vec3 rd ){
 }
 
 
-// Calculates the normal by taking a very small distance,
-// remapping the function, and getting normal for that
-vec3 calcNoiseNormal( in vec3 pos ){
-    
-  vec3 eps = vec3( 0.001, 0.0, 0.0 );
-  vec3 nor = vec3(
-      map(pos+eps.xyy).x - map(pos-eps.xyy).x,
-      map(pos+eps.yxy).x - map(pos-eps.yxy).x,
-      map(pos+eps.yyx).x - map(pos-eps.yyx).x );
-
-  float noiseS = sin( uParameterA.z * 1. ) * 3. + 4.;
-  vec3 noiseNorm = vec3(
-      triNoise3D(pos*noiseS+eps.xyy, .4 ) - triNoise3D(pos*noiseS-eps.xyy, .4 ),
-      triNoise3D(pos*noiseS+eps.yxy, .4 ) - triNoise3D(pos*noiseS-eps.yxy, .4 ),
-      triNoise3D(pos*noiseS+eps.yyx, .4 ) - triNoise3D(pos*noiseS-eps.yyx, .4 ) );
-
-  nor = nor + noiseNorm * .2;
-
-
-  return normalize(nor);
-}
 
 // Calculates the normal by taking a very small distance,
 // remapping the function, and getting normal for that
@@ -304,17 +379,6 @@ vec3 calcNormal( in vec3 pos ){
     + vec3( .3 , .6 , 1. ) *  hsv( uParameterB.y , 1. , 1. ) * nSpec;// hsv( nSpec , abs( sin( uParameterB.y )) * .4 + .6 , abs( sin( uParameterB.x ) * .3 + .8 )) * nSpec;
 }*/
 
-
-vec3 doCol( float lamb1 , float spec1  , float lamb2 , float spec2){
-
-  float nSpec1= pow( spec1 , abs(sin(uParameterA.x * 1.1))* 10. + 2. );
-  float nSpec2= pow( spec2 , abs(sin(uParameterA.x * 1.1))* 10. + 2. );
-  return
-      .5 *  hsv( lamb1  * .3 + uParameterA.y , abs( sin( uParameterB.z )) * .2 + .6 , abs( sin( uParameterA.y ) * .4 + .6 )) * lamb1 
-    +  hsv( nSpec1 * .6 + uParameterA.z , abs( sin( uParameterB.y )) * .4 + .6 , abs( sin( uParameterB.x ) * .3 + .8 )) * nSpec1
-    + .5 *  hsv( lamb2  * .3 + uParameterA.y , abs( cos( uParameterB.z )) * .2 + .6 , abs( cos( uParameterA.y ) * .4 + .6 )) * lamb2
-    +  hsv( nSpec2 * .6 + uParameterA.z , abs( cos( uParameterB.y )) * .4 + .6 , abs( cos( uParameterB.x ) * .3 + .8 )) * nSpec2;
-}
 
 
 
@@ -348,8 +412,7 @@ void main(){
   float iSpec2 = max( dot( iReflDir2 , rd ), 0.);
 
 
-  vec3 col = doCol( iLamb1 , iSpec1 , iLamb2 , iSpec2 );//-vNorm * .5 + .5;
-  
+  vec3 col = rd * .5 + .5;
   if( res.y > .5 ){
 
     vec3 pos = ro + rd * res.x;
@@ -358,11 +421,10 @@ void main(){
     vec3 lightDir2 = normalize( vLight2 - pos);
     vec3 norm;
 
-    if( res.y == 3.){
-      norm = calcNoiseNormal( pos );
-    }else{
-      norm = calcNormal( pos );
-    }
+    
+    norm = calcNormal( pos );
+    
+
     vec3 reflDir1 = reflect( lightDir1 , norm );
     vec3 reflDir2 = reflect( lightDir2 , norm );
 
@@ -374,13 +436,17 @@ void main(){
 
 
     //col = lamb * vec3( 1. , 0. , 0. ) + pow( spec , 10.) * vec3( 0. , 0. , 1. );// norm * .5 +.5;
-    col = doCol( lamb1 , spec1 , lamb2 , spec2 );
+    //col = doCol( lamb1 , spec1 , lamb2 , spec2 );
+
+    col = norm * .5 +  .5;
   }
 
   if( vUv.x < .05 || vUv.x > .95 || vUv.y < .05 || vUv.y > .95 ){
-    col = doCol( lamb1 , spec1 , lamb2 , spec2 );
+    //col = doCol( lamb1 , spec1 , lamb2 , spec2 );
     col += vec3( .3 , .3 , .3 );
   }
+
+  //if( length( col ) < .001 ){ discard; }
 
   color = vec4( col , 1. );
 
