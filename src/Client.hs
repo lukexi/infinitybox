@@ -74,9 +74,7 @@ infinityClient serverIPType = do
 
   playerID <- randomName
 
-  let initialPlayer = gpRoomScale gpRoomScale
-
-
+  let initialPlayer = newPlayer gpRoomScale
   let startTransceiverToServer serverName = do
         transceiver <- createTransceiverToAddress serverName serverPort packetSize
         putMVar transceiverMVar transceiver
