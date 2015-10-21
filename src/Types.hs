@@ -272,7 +272,7 @@ interpret (Disconnect playerID)          = do
   wldPlayers . at playerID .= Nothing
   putStrLnIO (playerID ++ " disconnected")
 
-interpret (ObjectCollision collision) = do
+interpret (ObjectCollision _collision) = do
   return ()
   -- putStrLnIO $ "Client got collision! " ++ show objectAID ++ " " ++ show objectBID ++ ": " ++ show strength
   -- now <- use wldTime
@@ -337,7 +337,7 @@ profile action = do
   before <- liftIO getCPUTime
   x <- action
   after <- liftIO getCPUTime
-  let diff = (fromIntegral (after - before)) / (10^12)
+  let diff = (fromIntegral (after - before)) / (10^(12::Integer))
   liftIO $ printf "Computation time: %0.3f sec\n" (diff :: Double)
   return x
 

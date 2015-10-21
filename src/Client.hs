@@ -87,10 +87,10 @@ infinityClient serverIPType = do
     UsePublicIP -> do
       let onFoundServer = startTransceiverToServer
           onNoServer = do
-            _ <- forkOS (physicsServer UsePublicIP)
             -- Same as finding the server, but connect to ourselves
             ourIP <- findPrivateNetIP
             putStrLn ("No existing server found, starting our own on " ++ show ourIP)
+            _ <- forkOS (physicsServer UsePublicIP)
             startTransceiverToServer ourIP
 
       _ <- beginSearch onFoundServer onNoServer

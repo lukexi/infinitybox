@@ -31,7 +31,7 @@ magicNumber :: Int
 magicNumber = 12345
 
 broadcastPort :: PortNumber
-broadcastPort = 9999
+broadcastPort = 55555
 
 bufferSize :: Integer
 bufferSize = 4096
