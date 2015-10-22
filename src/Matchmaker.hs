@@ -33,7 +33,7 @@ magicNumber :: Int
 magicNumber = 12345
 
 broadcastPort :: PortNumber
-broadcastPort = 55555
+broadcastPort = 55255
 
 bufferSize :: Integer
 bufferSize = 4096
@@ -87,7 +87,7 @@ beginBroadcaster :: IO ()
 beginBroadcaster = do
   bcastSocket <- broadcastSocket broadcastPort 4096
 
-  forkIO . forever $ do
+  _ <- forkIO . forever $ do
     -- putStrLn "Tick!"
     _ <- sendBinary bcastSocket magicNumber
     threadDelay (1000000 `div` 2)
