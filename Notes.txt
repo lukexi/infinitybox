@@ -1,6 +1,11 @@
 
 BUGS
 
+[ ] Increase falloff rate for sound sources (add configuration to pd-haskell)
+
+[ ] Add touch-blobbing inside cubes
+
+[ ] Haptic feedback for touching cubes
 
 [ ] Add Icon http://stackoverflow.com/questions/708238/how-do-i-add-an-icon-to-a-mingw-gcc-compiled-executable
 
@@ -15,10 +20,12 @@ BUGS
 [ ] Render to each eye simultaneously
       http://vrfocus.com/archives/23546/epic-games-bullet-train-runs-at-a-solid-90-fps-much-higher-than-1080p/
 
+[ ] Apply handOffset right at the point of putting the hands into the player struct rather than offsetting all over the codebase
+
+[ ] Reduce physics server latency (only cache one frame?)
 
 [x] Fix sound sources not staying stably attached to the cube they started from
     (we should round robin the oldest expiring source onto the newest cube)
-[ ] Apply handOffset right at the point of putting the hands into the player struct rather than offsetting all over the codebase
 [x] Fix shivering avatars 
       (is the server maybe relaying this back to us or something? 
       Or, did I fix this by removing the reliable flag from player positions?)
@@ -30,6 +37,12 @@ BUGS
 [?] Disconnecting players still leave zombie hands
 
 FEATURES
+
+[ ] Grabbing
+[ ] FFT as texture
+[ ] Add viscosity
+
+
 [x] Add more lights to shaders
 [x] Collision for hands
 [x] Sound v1 
@@ -39,8 +52,7 @@ FEATURES
 [x] Pass parameters to the room
 
 [x] Rendered remote heads should include oculus position
-[ ] Head shaders should look like deformable head
-[ ] Grabbing
+[x] Head shaders should look like deformable head
 
 [x] Add view recentering to hydra start buttons
 [x] Slow down the hydra joystick raising/lowering
@@ -56,9 +68,6 @@ FEATURES
 [x] Update oculus-mini to Oculus SDK 0.6
 [x] Try gl_Discard on fragments outside of SDF boundary
 
-[ ] FFT as texture
-
-[ ] Add viscosity
 
 
 SIDEPROJECTS
