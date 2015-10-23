@@ -84,6 +84,7 @@ processControls gamePal@GamePal{..} transceiverMVar frameNumber = do
     onKeyDown Key'Z e (addCube transceiverMVar newPose)
     onKeyDown Key'N e startLogo
     onKeyDown Key'M e startMain
+    onKeyDown Key'C e clonePlayer
     onKeyDown Key'0 e (restart transceiverMVar)
 
   xDown <- (== KeyState'Pressed) <$> getKey gpWindow Key'X
@@ -181,3 +182,13 @@ whenMVar mvar action = do
   case maybeFull of
     Just full -> action full
     Nothing -> return ()
+
+
+clonePlayer :: (MonadIO m, MonadState World m) => m ()
+clonePlayer = do
+    player <- use wldPlayer
+
+    let infiniteSnapshots = True
+    dummyID <- if infiniteSnapshots then liftIO randomName else return "dummy"
+
+    wldPlayers . at dummyID ?= player

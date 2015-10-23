@@ -19,7 +19,7 @@ out vec4 color;
 
 
 
-const float MAX_TRACE_DISTANCE = 10.;           // max trace distance
+const float MAX_TRACE_DISTANCE = 2.;           // max trace distance
 const float INTERSECTION_PRECISION = 0.001;        // precision of the intersection
 const int NUM_OF_TRACE_STEPS = 20;
 
@@ -246,10 +246,10 @@ vec2 map( vec3 pos ){
 
 vec3 og = pos;  
   pos.z = -pos.z;
-  pos -= vec3( 0. , -.03 , -.05 );
+  pos -= vec3( 0. , -.015 , -.025 );
   //pos.z -= .5;
    
-    float size = .2;
+    float size = .1;
    //pos *= 2.5;
   // pos -= vec3( 0. , 0., .5 );
     
@@ -272,7 +272,7 @@ vec3 og = pos;
     ring = vec2( doRing( pos , size  ) , 2. );
    
     
-    res.x = smax( res.x , -ring.x  , 20.1 );//
+    res.x = smax( res.x , -ring.x  ,  4. / size );//
     res = opU( ring , res );
     
     float lor = sign( pos.x );
