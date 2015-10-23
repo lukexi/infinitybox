@@ -12,6 +12,7 @@ cp -R patches/ infinitybox-r/
 cp -R audio-prototypes/ infinitybox-r/
 cp -R openal/ infinitybox-r/
 cp README.txt infinitybox-r/
+cp InfinityBoxIcon.ico infinitybox-r/
 
 7z a -tzip $RELEASE_ZIP infinitybox-r/
 cp $RELEASE_ZIP /c/Users/$USER/Desktop
