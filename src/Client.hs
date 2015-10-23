@@ -64,7 +64,9 @@ infinityClient serverIPType = do
         
         writeTransceiver transceiver $ Reliable (Connect playerID initialPlayer)
   case serverIPType of
-    UseLocalhost -> startTransceiverToServer "127.0.0.1"
+    UseLocalhost -> do
+      _ <- forkOS (physicsServer UseLocalhost)
+      startTransceiverToServer "127.0.0.1"
     UsePublicIP -> do
       let onFoundServer = startTransceiverToServer
           onNoServer = do

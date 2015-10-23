@@ -297,9 +297,7 @@ drawRemoteHands projectionView hand players = do
   uniformF  uDayNight =<< dayNightCycleAt <$> use wldTime
   uniformF  uDayLength dayLength
 
-
-  players <- use $ wldPlayers . to Map.toList
-  forM_ players $ \(_playerID, player) -> 
+  forM_ players $ \player -> 
     forM_ (player ^. plrHandPoses) $ \handPose -> do
 
       let finalMatrix = transformationFromPose $ shiftBy handOffset handPose

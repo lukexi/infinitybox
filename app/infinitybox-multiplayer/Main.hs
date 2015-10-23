@@ -2,4 +2,4 @@ import Client
 import Types
 
 main :: IO ()
-main = infinityClient UseLocalhost
+main = infinityClient UsePublicIP
