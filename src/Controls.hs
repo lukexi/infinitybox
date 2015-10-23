@@ -118,13 +118,8 @@ processHandCubeFiring hand handPose _frameNumber transceiverMVar  = do
   -- Determine if the start button is freshly pressed
   -- Sample the current player position and write it as a dummy remote player
   -- to allow inspecting what a multiplayer person looks like
-  when (not (lastHand ^. hndButtonS) && hand ^. hndButtonS) $ do
-    player <- use wldPlayer
-
-    let infiniteSnapshots = True
-    dummyID <- if infiniteSnapshots then liftIO randomName else return "dummy"
-
-    wldPlayers . at dummyID ?= player
+  -- when (not (lastHand ^. hndButtonS) && hand ^. hndButtonS) $ 
+  --   clonePlayer
 
   phase <- use wldPhase
 
