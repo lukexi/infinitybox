@@ -17,7 +17,7 @@ import Animation.Pal
 import qualified System.Remote.Monitoring as EKG
 
 import Network.UDP.Pal
-import Game.Pal
+import Graphics.VR.Pal
 import Halive.Utils
 import Control.Concurrent
 
@@ -33,7 +33,7 @@ enableEKG :: Bool
 enableEKG = False
 -- enableEKG = True
 
-enableDevices :: [GamePalDevices]
+enableDevices :: [VRPalDevices]
 -- enableDevices = [UseOpenVR]
 enableDevices = [UseOpenVR, UseHydra]
 -- enableDevices = [UseOculus, UseHydra]
@@ -46,7 +46,7 @@ infinityClient serverIPType = do
   when enableEKG    . void $ EKG.forkServer "localhost" 8000
   
   -- Set up GLFW/Oculus/Hydra
-  gamePal@GamePal{..} <- reacquire 0 $ initGamePal "Infinity Box" GCPerFrame enableDevices
+  vrPal@VRPal{..} <- reacquire 0 $ initVRPal "Infinity Box" GCPerFrame enableDevices
   
   (pitchesByVoice, amplitudesByVoice, sourcesByVoice) <- initAudio
   
@@ -109,7 +109,7 @@ infinityClient serverIPType = do
       interpretNetworkPackets (tcVerifiedPackets transceiver) interpret
 
     -- Process controllers (Keyboard, Mouse, Gamepad, Hydra, Oculus headtracking)
-    processControls gamePal transceiverMVar frameNumber
+    processControls vrPal transceiverMVar frameNumber
 
     -- Send player position
     player <- use wldPlayer
@@ -142,7 +142,7 @@ infinityClient serverIPType = do
 
 
     viewMat <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
-    renderWith gamePal viewMat 
+    renderWith vrPal viewMat 
       (glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT))
       (render theme)
 

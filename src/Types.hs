@@ -18,7 +18,6 @@ import Network.UDP.Pal
 import Sound.Pd1
 import Data.List
 import Graphics.GL.Pal
-import Data.Data
 import Animation.Pal
 import Data.Time
 -- import Data.Maybe
@@ -27,7 +26,7 @@ import Physics.Bullet
 
 import System.CPUTime
 import Text.Printf
-import Game.Pal
+import Graphics.VR.Pal
 
 data ServerIPType = UseLocalhost | UsePublicIP
 

@@ -40,7 +40,7 @@ library
     , directory
     , ekg
     , free
-    , game-pal
+    , vr-pal
     , gl
     , gl-pal
     , glfw-pal

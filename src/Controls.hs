@@ -17,7 +17,7 @@ import Graphics.GL
 import Network.UDP.Pal
 import Types
 
-import Game.Pal
+import Graphics.VR.Pal
 import Data.Maybe
 import Sound.Pd1
 
@@ -29,11 +29,11 @@ import Control.Concurrent
 
 
 processControls :: (MonadIO m, MonadState World m, MonadRandom m) 
-                => GamePal
+                => VRPal
                 -> MVar (Transceiver Op)
                 -> Integer
                 -> m ()
-processControls gamePal@GamePal{..} transceiverMVar frameNumber = do
+processControls gamePal@VRPal{..} transceiverMVar frameNumber = do
   -- Get latest Hydra data
 
   (hands, handsType) <- getHands gamePal

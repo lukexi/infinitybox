@@ -157,7 +157,7 @@ drawCubes cube projectionView eyePos lights filledness = do
           -- full size from the beginning.
           -- scaledModel = model !*! scaleMatrix 0.3
           scaledModel = model !*! scaleMatrix (realToFrac (cubeAge * (obj ^. objScale)))
-      drawShape scaledModel projectionView i cube
+      drawShape' scaledModel projectionView i cube
 
 
 drawLogo :: (MonadIO m, MonadState World m)
@@ -187,7 +187,7 @@ drawLogo cube projectionView eyePos lights = do
         model = transformationFromPose (obj ^. objPose)
         scaledModel = model !*! scaleMatrix (realToFrac (obj ^. objScale))
 
-    drawShape scaledModel projectionView 0 cube
+    drawShape' scaledModel projectionView 0 cube
 
 
 setLightUniforms :: (MonadIO m) 
@@ -231,7 +231,7 @@ drawLights anShape projectionView lights filledness = do
       uniformF uFilledness filledness
       -- uniformF uComplete   =<< use wldComplete
       
-      drawShape model projectionView i anShape
+      drawShape' model projectionView i anShape
 
 
 drawPlayers :: (MonadIO m, MonadState World m) 
@@ -285,7 +285,7 @@ drawLocalHands projectionView hand = do
     uniformV3 uParameterA $ handPose ^. posPosition
     uniformV3 uParameterB $ rotateVec
 
-    drawShape finalMatrix projectionView 0 hand
+    drawShape' finalMatrix projectionView 0 hand
 
 
 drawRemoteHands :: (MonadIO m, MonadState World m) 
@@ -306,7 +306,7 @@ drawRemoteHands projectionView hand players = do
       uniformV3 uParameterA $ handPose ^. posPosition
       uniformV3 uParameterB rotateVec
       
-      drawShape finalMatrix projectionView 0 hand
+      drawShape' finalMatrix projectionView 0 hand
 
 
 drawRemoteHeads :: (MonadIO m, MonadState World m) 
@@ -332,7 +332,7 @@ drawRemoteHeads projectionView eyePos face lights players = do
     forM_ players $ \player -> do
       let finalMatrix = transformationFromPose (totalHeadPose player)
 
-      drawShape finalMatrix projectionView 0 face
+      drawShape' finalMatrix projectionView 0 face
 
 
 drawRoom :: (MonadIO m, MonadState World m) 
@@ -379,10 +379,10 @@ drawRoom plane projectionView eyePos lights filledness = do
 
     let model = identity
 
-    drawShape model projectionView 0 plane
+    drawShape' model projectionView 0 plane
 
-drawShape :: MonadIO m => M44 GLfloat -> M44 GLfloat -> GLfloat -> Shape Uniforms -> m ()
-drawShape model projectionView drawID shape = do 
+drawShape' :: MonadIO m => M44 GLfloat -> M44 GLfloat -> GLfloat -> Shape Uniforms -> m ()
+drawShape' model projectionView drawID shape = do 
 
   let Uniforms{..} = sUniforms shape
 
@@ -392,7 +392,7 @@ drawShape model projectionView drawID shape = do
 
   uniformF uID drawID
 
-  let vc = vertCount (sGeometry shape) 
+  let vc = geoVertCount (sGeometry shape) 
   glDrawElements GL_TRIANGLES vc GL_UNSIGNED_INT nullPtr
 
 
