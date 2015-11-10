@@ -77,15 +77,15 @@ processControls gamePal@VRPal{..} transceiverMVar frameNumber = do
     
     -- Handle key events
     -- Spawn a cube offset by 0.1 y
-    onKeyDown Key'Space e (addCube transceiverMVar (shiftBy (V3 0 0.1 0) playerPose))
-    onKeyDown Key'F e (setCursorInputMode gpWindow CursorInputMode'Disabled)
-    onKeyDown Key'G e (setCursorInputMode gpWindow CursorInputMode'Normal)
-    onKeyDown Key'O e (recenterWhenOculus gamePal)
-    onKeyDown Key'Z e (addCube transceiverMVar newPose)
-    onKeyDown Key'N e startLogo
-    onKeyDown Key'M e startMain
-    onKeyDown Key'C e clonePlayer
-    onKeyDown Key'0 e (restart transceiverMVar)
+    onKeyDown e Key'Space (addCube transceiverMVar (shiftBy (V3 0 0.1 0) playerPose))
+    onKeyDown e Key'F (setCursorInputMode gpWindow CursorInputMode'Disabled)
+    onKeyDown e Key'G (setCursorInputMode gpWindow CursorInputMode'Normal)
+    onKeyDown e Key'O (recenterWhenOculus gamePal)
+    onKeyDown e Key'Z (addCube transceiverMVar newPose)
+    onKeyDown e Key'N startLogo
+    onKeyDown e Key'M startMain
+    onKeyDown e Key'C clonePlayer
+    onKeyDown e Key'0 (restart transceiverMVar)
 
   xDown <- (== KeyState'Pressed) <$> getKey gpWindow Key'X
 
