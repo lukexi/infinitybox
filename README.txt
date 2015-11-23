@@ -8,10 +8,14 @@ Squeeze grip to attract boxes.
 
 CONTACT
 
+Tree Computer, Inc.
+who@tree.is
+@vrtree
+
 Luke Iannini
 luke@tree.is
 @lukexi
 
 Isaac Cohen
-isaaclandoncohen@gmail.com
+isaac@tree.is
 @cabbibo

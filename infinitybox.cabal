@@ -45,12 +45,10 @@ library
     , gl-pal
     , glfw-pal
     , halive
-    , hydra-hs
     , lens-extra
     , linear-extra
     , MonadRandom
     , mtl
-    , oculus-mini
     , pd
     , random
     , stm
