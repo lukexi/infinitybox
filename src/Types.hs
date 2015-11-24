@@ -20,7 +20,6 @@ import Data.List
 import Graphics.GL.Pal
 import Animation.Pal
 import Data.Time
--- import Data.Maybe
 import Control.Monad.Random
 import Physics.Bullet
 
@@ -29,6 +28,18 @@ import Text.Printf
 import Graphics.VR.Pal
 
 data ServerIPType = UseLocalhost | UsePublicIP
+
+
+data Op = CreateObject    !ObjectID !Object
+        | UpdateObject    !ObjectID !Object
+        | DeleteObject    !ObjectID
+        | Connect         !PlayerID !Player
+        | UpdatePlayer    !PlayerID !Player
+        | Disconnect      !PlayerID
+        | ObjectCollision !Collision
+        | Restart
+  deriving (Generic, Binary, Show)
+
 
 -- | The maximum number of cubes before we start kicking cubes out
 maxCubes :: Int
@@ -225,112 +236,8 @@ dequeueVoice = do
   wldVoiceQueue .= xs ++ [x]
   return x
 
--- | Interpret a command into the client's world state.
--- We use a pattern here of Reliable Create/Destroy messages and Unreliable Update
--- messages. We only create and destroy the object when receiving those messages,
--- and only perform updates if the object already exists, since unreliable messages
--- can come in before the object is created and after it is destroyed.
-
-interpret :: (MonadIO m, MonadState World m) => Op -> m ()
-
-interpret (CreateObject objID obj)       = do
-  voiceID <- dequeueVoice
-  
-  wldCubes      . at objID ?= obj
-  wldCubeVoices . at objID ?= voiceID
-  wldCubeAges   . at objID ?= 0
-
-  liftIO $ sendGlobal (show voiceID ++ "new-phrase") Bang
-  
-  -- wldFilledness += 1.0 / fromIntegral maxCubes 
-
-  fillednessAnim  <- use wldFilledness
-  -- completeAnim    <- use wldComplete
-
-  numCubes <- Map.size <$> use wldCubes
-  now <- getNow
-  wldFilledness .= Animation
-        { animStart = now
-        , animDuration = 1
-        , animFunc = anim id
-        , animFrom = evanResult (evalAnim now fillednessAnim)
-        , animTo = (1 / fromIntegral maxCubes) * fromIntegral numCubes
-        }
 
 
-interpret (DeleteObject objID)           = do
-  mVoiceID <- use $ wldCubeVoices . at objID
-  forM_ mVoiceID $ \voiceID -> do
-    mSourceID <- use $ wldVoiceSources . at voiceID
-    forM_ mSourceID silenceVoice
-  wldCubes      . at objID .= Nothing
-  wldCubeAges   . at objID .= Nothing
-  wldCubeVoices . at objID .= Nothing
-
-interpret (UpdateObject objID obj)       = 
-  wldCubes   . at objID    . traverse .= obj
-
-interpret (UpdatePlayer playerID player) = 
-  wldPlayers . at playerID . traverse .= player
-
-interpret (Connect playerID player)      = do
-  wldPlayers . at playerID ?= player
-  putStrLnIO (playerID ++ " connected")
-  
-interpret (Disconnect playerID)          = do
-  wldPlayers . at playerID .= Nothing
-  putStrLnIO (playerID ++ " disconnected")
-
-interpret (ObjectCollision _collision) = do
-  return ()
-  -- putStrLnIO $ "Client got collision! " ++ show objectAID ++ " " ++ show objectBID ++ ": " ++ show strength
-  -- now <- use wldTime
-  -- let objectIDs = fromIntegral <$> sequence [cbBodyAID, cbBodyBID]                collision
-  --     positions =                  sequence [cbPositionOnA, cbPositionOnB]          collision
-  --     normals   =                  sequence [negate . cbNormalOnB , cbNormalOnB]  collision
-  --     impulse   = cbAppliedImpulse collision
-  -- forM_ (zip3 objectIDs positions normals) $ \(objID, position, normal) -> do
-
-  --   mObj <- use $ wldCubes . at objID 
-  --   case mObj of 
-  --     Nothing -> return ()
-  --     Just obj -> do
-  --       let model = transformationFromPose (obj ^. objPose)
-  --           scaledModel = model !*! scaleMatrix (realToFrac (obj ^. objScale))
-  --           invModel = fromMaybe scaledModel (inv44 scaledModel) :: M44 GLfloat
-  --           positionPoint = point position :: V4 GLfloat
-
-  --       wldLastCollisions . at objID ?= CubeCollision
-
-  --         { _ccTime = now
-  --         , _ccImpulse = impulse
-  --         , _ccPosition = normalizePoint (invModel !* positionPoint)
-  --         , _ccDirection = normal
-  --         }
-
-  --   mVoiceID <- use (wldCubeVoices . at objID)
-  --   -- The objectID may be invalid since we send hands and walls as objectIDs,
-  --   -- thus we may not have a voice for them.
-  --   let volume = min 1 (impulse * 5)
-    
-  --   forM_ mVoiceID $ \voiceID -> do
-  --     wldVoicePitch . at voiceID ?= volume
-  --     liftIO $ sendGlobal (show voiceID ++ "trigger") $ 
-  --       Atom (Float volume)
-interpret Restart = return ()
-
-
--- | Deriving Generics
-
-data Op = CreateObject    !ObjectID !Object
-        | UpdateObject    !ObjectID !Object
-        | DeleteObject    !ObjectID
-        | Connect         !PlayerID !Player
-        | UpdatePlayer    !PlayerID !Player
-        | Disconnect      !PlayerID
-        | ObjectCollision !Collision
-        | Restart
-  deriving (Generic, Binary, Show)
 
 -- Util
 
@@ -401,3 +308,15 @@ roomScale = 10
 silenceVoice :: MonadIO m => OpenALSource -> m ()
 silenceVoice sourceID = 
   alSourcePosition sourceID (V3 0 0 (-10000) :: V3 GLfloat)
+
+roomRigidBodyID :: RigidBodyID
+roomRigidBodyID = RigidBodyID 0
+
+leftHandRigidBodyID :: RigidBodyID
+leftHandRigidBodyID = RigidBodyID 1
+
+rightHandRigidBodyID :: RigidBodyID
+rightHandRigidBodyID = RigidBodyID 2
+
+handRigidBodyIDs :: [RigidBodyID]
+handRigidBodyIDs = [leftHandRigidBodyID, rightHandRigidBodyID]

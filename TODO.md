@@ -21,6 +21,8 @@ BETA RELEASE 1
       http://trac.haskell.org/gtk2hs/ticket/1276
       http://stackoverflow.com/questions/7993912/how-do-i-stop-the-console-window-from-appearing-when-making-system-calls
 
+[ ] Per hand vacuum
+
 BUGS
 
 [ ] Fix unreliable multiplayer

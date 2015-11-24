@@ -28,8 +28,7 @@ import Types
 import Matchmaker
 import Linear.Extra
 
-handRigidBodyID :: RigidBodyID
-handRigidBodyID = RigidBodyID 1
+
 
 data ServerState = ServerState 
   { _ssRigidBodies         :: !(Map ObjectID RigidBody)
@@ -62,7 +61,7 @@ physicsServer serverIPType = do
   
   -- Initialize physics
   dynamicsWorld  <- createDynamicsWorld mempty { gravity = 0.0 }
-  _              <- addStaticRoom dynamicsWorld (RigidBodyID 0) (-roomScale)
+  _              <- addStaticRoom dynamicsWorld roomRigidBodyID (-roomScale)
   
   void . flip runStateT newServerState $ 
     forever $ serverLoop server dynamicsWorld
@@ -164,7 +163,7 @@ interpretS _ dynamicsWorld _fromAddr (UpdatePlayer playerID player) = do
   -- in the hydra after the executable is running
   case (maybeHandRigidBodies, player ^. plrHandPoses) of
     (Nothing, hands) | not (null hands) -> do
-      handRigidBodies <- forM (player ^. plrHandPoses) $ \_ -> do
+      handRigidBodies <- forM (zip handRigidBodyIDs (player ^. plrHandPoses)) $ \(handRigidBodyID, _) -> do
         body <- addCube dynamicsWorld handRigidBodyID
                         mempty { pcScale = handDimensions
                                }

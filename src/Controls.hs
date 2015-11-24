@@ -16,6 +16,7 @@ import Graphics.GL
 
 import Network.UDP.Pal
 import Types
+import Interpret
 
 import Graphics.VR.Pal
 import Data.Maybe
@@ -33,10 +34,10 @@ processControls :: (MonadIO m, MonadState World m, MonadRandom m)
                 -> MVar (Transceiver Op)
                 -> Integer
                 -> m ()
-processControls gamePal@VRPal{..} transceiverMVar frameNumber = do
+processControls vrPal@VRPal{..} transceiverMVar frameNumber = do
   -- Get latest Hydra data
 
-  (hands, handsType) <- getHands gamePal
+  (hands, handsType) <- getHands vrPal
 
   -- Update hand positions
   handWorldPoses <- flip handsToWorldPoses hands . transformationFromPose <$> use (wldPlayer . plrPose)
@@ -75,15 +76,15 @@ processControls gamePal@VRPal{..} transceiverMVar frameNumber = do
     onGamepadAxes e $ \GamepadAllAxes{..} -> 
       -- Use the right trigger to fire a cube
       when (gaxTriggers < (-0.5) && frameNumber `mod` 30 == 0) $ 
-        addCube transceiverMVar (shiftBy (V3 0 0.1 0) playerPose)
+        addCube vrPal transceiverMVar (shiftBy (V3 0 0.1 0) playerPose)
     
     -- Handle key events
     -- Spawn a cube offset by 0.1 y
-    onKeyDown e Key'Space (addCube transceiverMVar (shiftBy (V3 0 0.1 0) playerPose))
+    onKeyDown e Key'Space (addCube vrPal transceiverMVar (shiftBy (V3 0 0.1 0) playerPose))
     onKeyDown e Key'F (setCursorInputMode gpWindow CursorInputMode'Disabled)
     onKeyDown e Key'G (setCursorInputMode gpWindow CursorInputMode'Normal)
-    onKeyDown e Key'O (recenterWhenOculus gamePal)
-    onKeyDown e Key'Z (addCube transceiverMVar newPose)
+    onKeyDown e Key'O (recenterWhenOculus vrPal)
+    onKeyDown e Key'Z (addCube vrPal transceiverMVar newPose)
     onKeyDown e Key'N startLogo
     onKeyDown e Key'M startMain
     onKeyDown e Key'C clonePlayer
@@ -99,16 +100,16 @@ processControls gamePal@VRPal{..} transceiverMVar frameNumber = do
   forM_ (zip hands handWorldPoses) $ \(hand, handMatrix) -> do
 
     -- Bind Hydra 'Start' buttons to HMD Recenter
-    when (hand ^. hndButtonS) $ recenterWhenOculus gamePal
+    when (hand ^. hndButtonS) $ recenterWhenOculus vrPal
 
-    processHandCubeFiring hand (poseFromMatrix handMatrix) frameNumber transceiverMVar
+    processHandCubeFiring vrPal hand (poseFromMatrix handMatrix) frameNumber transceiverMVar
   wldLastHands .= Map.fromList (zip (map (^. hndID) hands) hands)
 
 
 
 processHandCubeFiring :: (Integral a, MonadIO m, MonadState World m, MonadRandom m) 
-                      => Hand -> Pose GLfloat -> a -> MVar (Transceiver Op) -> m ()    
-processHandCubeFiring hand handPose _frameNumber transceiverMVar  = do
+                      => VRPal -> Hand -> Pose GLfloat -> a -> MVar (Transceiver Op) -> m ()    
+processHandCubeFiring vrPal hand handPose _frameNumber transceiverMVar  = do
 
   -- Determine if the trigger is freshly pressed
   lastHand <- fromMaybe emptyHand <$> use (wldLastHands . at (hand ^. hndID))
@@ -135,15 +136,15 @@ processHandCubeFiring hand handPose _frameNumber transceiverMVar  = do
           shouldSpawn = isNewTrigger
                         -- || triggerIsDown && frameNumber `mod` 30 == 0
       when shouldSpawn $
-        addCube transceiverMVar cubePose
+        addCube vrPal transceiverMVar cubePose
 
 
-addCube :: (MonadIO m, MonadState World m, MonadRandom m) => MVar (Transceiver Op) -> Pose GLfloat -> m ()
-addCube transceiverMVar pose = do
+addCube :: (MonadIO m, MonadState World m, MonadRandom m) => VRPal -> MVar (Transceiver Op) -> Pose GLfloat -> m ()
+addCube vrPal transceiverMVar pose = do
   -- Spawn a cube at the player's position and orientation
   instruction <- newCubeInstruction pose
 
-  interpret instruction
+  interpret vrPal instruction
 
   whenMVar transceiverMVar $ \transceiver -> 
     writeTransceiver transceiver $ Reliable instruction

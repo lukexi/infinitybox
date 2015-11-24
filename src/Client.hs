@@ -28,6 +28,8 @@ import Controls
 import Audio
 import Server
 import Matchmaker
+import Interpret
+
 
 enableEKG :: Bool
 enableEKG = False
@@ -41,6 +43,8 @@ enableDevices = [UseOpenVR, UseHydra]
 -- enableDevices = [UseHydra]
 -- enableDevices = []
 
+
+
 infinityClient :: ServerIPType -> IO ()
 infinityClient serverIPType = do
   when enableEKG    . void $ EKG.forkServer "localhost" 8000
@@ -48,6 +52,8 @@ infinityClient serverIPType = do
   -- Set up GLFW/Oculus/Hydra
   vrPal@VRPal{..} <- reacquire 0 $ initVRPal "Infinity Box" GCPerFrame enableDevices
   
+
+
   (pitchesByVoice, amplitudesByVoice, sourcesByVoice) <- initAudio
   
   -- Set up networking
@@ -105,7 +111,7 @@ infinityClient serverIPType = do
     
     -- Handle network events
     whenMVar transceiverMVar $ \transceiver -> 
-      interpretNetworkPackets (tcVerifiedPackets transceiver) interpret
+      interpretNetworkPackets (tcVerifiedPackets transceiver) (interpret vrPal)
 
     -- Process controllers (Keyboard, Mouse, Gamepad, Hydra, Oculus headtracking)
     processControls vrPal transceiverMVar frameNumber

@@ -27,6 +27,7 @@ library
     Server
     Shapes
     Types
+    Interpret
     Render
     Controls
     Matchmaker
