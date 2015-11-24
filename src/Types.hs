@@ -386,15 +386,17 @@ newCubeInstruction pose = do
 handLightOffset :: V3 GLfloat
 handLightOffset = handOffset * 2
 
--- Offset the hand model outward to feel like wands rather than batons
-handOffset :: V3 GLfloat
-handOffset = V3 0 0 (5 * ((-(handDimensions ^. _z) / 2) + (handleDimensions ^. _z)))
 
 handDimensions :: V3 GLfloat
-handDimensions = V3 0.05 0.05 0.5
+handDimensions = V3 0.055 0.055 0.5
 
 handleDimensions :: V3 GLfloat
-handleDimensions = V3 0.02 0.02 0.25
+handleDimensions = V3 0.038 0.038 0.1651
+
+
+-- Offset the hand model outward to feel like wands rather than batons
+handOffset :: V3 GLfloat
+handOffset = V3 0 0 (((-(handDimensions ^. _z) / 2) - ((handleDimensions ^. _z)/2)))
 
 
 cubeScale :: GLfloat
