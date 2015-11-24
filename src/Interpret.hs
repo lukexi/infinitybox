@@ -71,7 +71,7 @@ interpret vrPal (ObjectCollision collision) = do
   let bodyIDs  = fromIntegral <$> sequence [cbBodyAID, cbBodyBID] collision
       impulse  = cbAppliedImpulse collision
       axis     = 0
-      duration = floor (1000 * realToFrac impulse)
+      duration = floor (10000 * realToFrac impulse)
   when (leftHandRigidBodyID `elem` bodyIDs) $ do
     let controllerNumber = 0
     triggerHandHapticPulse vrPal controllerNumber axis duration
