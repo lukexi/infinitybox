@@ -268,6 +268,11 @@ drawPlayers hand face projectionView eyePos lights = do
     drawRemoteHands projectionView hand interpolatedPlayers
 
   drawRemoteHeads projectionView eyePos face lights interpolatedPlayers
+  -- DEBUG (display local head shifted in space so it can be observed)
+  -- localPlayer <- view wldPlayer
+  -- let localPlayer' = localPlayer & plrPose %~ shiftBy (V3 (-1) 0 0)
+  -- drawRemoteHeads projectionView eyePos face lights (localPlayer':interpolatedPlayers)
+  -- /DEBUG
 
 
 drawLocalHands :: (MonadIO m, MonadReader World m) 
