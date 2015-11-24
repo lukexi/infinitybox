@@ -276,8 +276,8 @@ drawPlayers hand handle face projectionView eyePos lights = do
   let Uniforms{..} = sUniforms handle
 
   uniformV3 uCamera eyePos
-  uniformF  uTime =<< use wldTime
-  uniformF  uDayNight =<< dayNightCycleAt <$> use wldTime
+  uniformF  uTime =<< view wldTime
+  uniformF  uDayNight =<< dayNightCycleAt <$> view wldTime
   uniformF  uDayLength dayLength
 
   setLightUniforms handle lights
