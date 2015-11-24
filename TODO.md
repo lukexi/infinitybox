@@ -1,10 +1,23 @@
 BETA RELEASE 1
 
-[ ] Fix inverted head pitch
+[ ] Have server handle scaling up cubes to fix glitchy cubes
+[ ] Update physics rate to 90hz!
+  [ ] C.f. thread about object weight
+      http://steamcommunity.com/app/358720/discussions/0/535152511347254326/
+
+[ ] Inaccurate head pitch sending over multiplayer, and probably OpenAL
+
 [ ] Add local physics sim option
 [ ] Adjust falloff rate for sound sources (add configuration to pd-haskell)
 [ ] Haptic feedback for touching cubes
+
+[ ] Update to latest OpenAL-soft
+
+[x] Update to latest OpenVR
 [x] Add Icon http://stackoverflow.com/questions/708238/how-do-i-add-an-icon-to-a-mingw-gcc-compiled-executable
+
+
+
 
 [ ] Remove Console
       Use:
