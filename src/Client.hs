@@ -128,16 +128,11 @@ infinityClient serverIPType = do
     delta <- realToFrac <$> liftIO gpGetDelta
 
     -- Render to OpenGL
-    wldCubeAges . traverse += delta
 
     phase <- use wldPhase
     
     when (phase /= PhaseVoid) $ wldTime += delta
     t <- use wldTime
-
-    -- DEBUG: Jump straight to main
-    -- wldPhase   .= PhaseMain
-    -- wldStarted .= 1
     
     -- Begin the main phase of the experience after 11 seconds
     when (phase == PhaseLogo && t > 11.0) $ do
@@ -145,6 +140,9 @@ infinityClient serverIPType = do
       wldTime    .= 0
       wldStarted .= 1
 
+    -- DEBUG: Jump straight to main
+    -- wldPhase   .= PhaseMain
+    -- wldStarted .= 1
 
     viewMat <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
     immutably $ renderWith vrPal viewMat 

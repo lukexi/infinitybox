@@ -8,6 +8,7 @@ import Control.Monad
 import Control.Monad.Random
 import Control.Monad.State.Strict
 import Data.Maybe
+import Data.Time
 
 import Network.UDP.Pal hiding (newClientThread)
 
@@ -28,10 +29,10 @@ import Types
 import Matchmaker
 import Linear.Extra
 
-
+data Cube = Cube { cubCreated :: UTCTime, cubRigidBody :: RigidBody }
 
 data ServerState = ServerState 
-  { _ssRigidBodies         :: !(Map ObjectID RigidBody)
+  { _ssCubes               :: !(Map ObjectID Cube)
   , _ssPlayerRigidBodies   :: !(Map PlayerID [RigidBody])
   , _ssPlayers             :: !(Map PlayerID Player)
   , _ssPlayerIDs           :: !(Map SockAddr PlayerID)
@@ -95,9 +96,12 @@ serverLoop server@Server{..} dynamicsWorld = do
   playerUpdates <- forM players $ \(playerID, player) -> 
     return $! UpdatePlayer playerID player
 
-  rigidBodies <- use (ssRigidBodies . to Map.toList)
-  objectUpdates <- forM rigidBodies $ \(objID, rigidBody) -> do
-    (pos, orient) <- getBodyState rigidBody
+  cubes <- use (ssCubes . to Map.toList)
+  now <- liftIO getCurrentTime
+  objectUpdates <- forM cubes $ \(objID, Cube{..}) -> do
+    let rawScale = max (realToFrac initialCubeScale) $ min 1 (now `diffUTCTime` cubCreated)
+    setCubeScale dynamicsWorld cubRigidBody (realToFrac rawScale)
+    (pos, orient) <- getBodyState cubRigidBody
 
     -- During the rigidBody loop, also apply vacuum forces if needed
     forM_ players $ \(_playerID, player) -> do
@@ -105,11 +109,11 @@ serverLoop server@Server{..} dynamicsWorld = do
         let target = player ^. plrPose . posPosition
             -- orientation = normalize (target - pos)
             orientation = (target - pos) * 0.01
-        setRigidBodyActive rigidBody
-        _ <- applyCentralImpulse rigidBody orientation
+        setRigidBodyActive cubRigidBody
+        _ <- applyCentralImpulse cubRigidBody orientation
         return ()
 
-    return $! UpdateObject objID (Object (Pose pos orient) cubeScale)
+    return $! UpdateObject objID (Object (Pose pos orient) (realToFrac rawScale * cubeScale))
   let transientInstructions = playerUpdates ++ objectUpdates ++ collisionUpdates
 
   -- Broadcast the simulation results to all clients
@@ -142,11 +146,14 @@ interpretS _ dynamicsWorld _fromAddr (CreateObject objID obj) = do
                               , pcRotation = obj ^. objPose  . posOrientation
                               , pcScale    = obj ^. objScale . to realToFrac
                               }
+  -- Cubes start scaled to 0, and then slowly scale to their natural size (objScale)
+  -- (except bullet gets mad if we actually use 0, so use a small number instead)
+  setCubeScale dynamicsWorld rigidBody (realToFrac initialCubeScale :: V3 Float)
   -- Shoot the cube outwards
   --let v = rotate ( obj ^. objPose . posOrientation ) ( V3 0 0 ( -3 ) )
   --_ <- applyCentralForce rigidBody v
-
-  ssRigidBodies . at objID ?= rigidBody
+  now <- liftIO getCurrentTime
+  ssCubes . at objID ?= Cube { cubRigidBody = rigidBody, cubCreated = now }
 
   -- Add the cube to the expiration queue
   ssCubeExpirationQueue %= (objID <|)
@@ -194,11 +201,11 @@ interpretS _ dynamicsWorld fromAddr (Disconnect playerID) = do
 
 interpretS _ dynamicsWorld _fromAddr (DeleteObject objID) = do
 
-  rigidBody <- use $ ssRigidBodies . at objID
-  maybe (return ()) (removeCube dynamicsWorld) rigidBody
+  cube <- use $ ssCubes . at objID
+  maybe (return ()) (removeCube dynamicsWorld . cubRigidBody) cube
   
   ssCubeExpirationQueue    %= Seq.filter (/= objID)
-  ssRigidBodies . at objID .= Nothing
+  ssCubes . at objID .= Nothing
 
 interpretS _ _dynamicsWorld _fromAddr (UpdateObject _ _) = return ()
 interpretS _ _ _ (ObjectCollision _) = return ()

@@ -1,7 +1,8 @@
 BETA RELEASE 1
 
-[ ] Haptic feedback for touching cubes
-[ ] Have server handle scaling up cubes to fix glitchy cubes
+[~] Haptic feedback for touching cubes
+
+[ ] Close down OpenAL and libpd properly on quit to avoid dialog boxes on Windows
 
 [ ] Add local physics sim option
 [ ] Update physics rate to 90hz!
@@ -9,6 +10,7 @@ BETA RELEASE 1
       http://steamcommunity.com/app/358720/discussions/0/535152511347254326/
 [ ] Update to OpenAL API for locating hrtf files rather than copying them
 
+[x] Have server handle scaling up cubes to fix glitchy cubes
 [x] Adjust falloff rate for sound sources (add configuration to pd-haskell)
 [x] Update to latest OpenAL-soft
 [x] Update to latest OpenVR

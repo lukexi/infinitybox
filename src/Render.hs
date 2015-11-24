@@ -153,13 +153,9 @@ drawCubes cube projectionView eyePos lights filledness = do
       uniformF uFilledness filledness
       -- uniformF uComplete   =<< view wldComplete
 
-      cubeAge <- min 1 . fromMaybe 0 <$> view (wldCubeAges . at objID)
       let model = transformationFromPose (obj ^. objPose)
-          -- Scale the cube up from 0 at beginning. 
-          -- This is render-only at the moment; physics object is still
-          -- full size from the beginning.
-          -- scaledModel = model !*! scaleMatrix 0.3
-          scaledModel = model !*! scaleMatrix (realToFrac (cubeAge * (obj ^. objScale)))
+          -- The server will continuously update us on the scale of the cube
+          scaledModel = model !*! scaleMatrix (realToFrac (obj ^. objScale))
       drawShape' scaledModel projectionView i cube
 
 

@@ -141,7 +141,6 @@ data World = World
   , _wldVoiceAmplitude :: !(Map VoiceID GLfloat)
   , _wldVoiceSources   :: !(Map VoiceID OpenALSource)
   , _wldKickVoiceID    :: !VoiceID
-  , _wldCubeAges       :: !(Map ObjectID Float)
   , _wldLastHands      :: !(Map HandID Hand) -- ^ Lets us detect new button pushes
   , _wldFilledness     :: !(Animation Float)
   , _wldComplete       :: !(Animation Float)
@@ -202,7 +201,6 @@ newWorld playerID player sourcesByVoice now = World
   , _wldVoiceAmplitude = mempty 
   , _wldVoiceSources   = sourcesByVoice
   , _wldKickVoiceID    = kickVoiceID
-  , _wldCubeAges       = mempty
   , _wldLastHands      = mempty
   , _wldFilledness     = Animation
       { animStart      = now
@@ -280,7 +278,7 @@ totalHeadPose player = addPoses (player ^. plrPose) (player ^. plrHeadPose)
 newCubeInstruction :: MonadRandom m => Pose GLfloat -> m Op
 newCubeInstruction pose = do
   objID <- getRandom
-  return $ CreateObject objID (Object pose cubeScale)
+  return $ CreateObject objID (Object pose initialCubeScale)
 
 -- Offset the lights to be on the end of the wands
 handLightOffset :: V3 GLfloat
@@ -298,6 +296,8 @@ handleDimensions = V3 0.038 0.038 0.1651
 handOffset :: V3 GLfloat
 handOffset = V3 0 0 (((-(handDimensions ^. _z) / 2) - ((handleDimensions ^. _z)/2)))
 
+initialCubeScale :: GLfloat
+initialCubeScale = 0.01
 
 cubeScale :: GLfloat
 cubeScale = 0.4

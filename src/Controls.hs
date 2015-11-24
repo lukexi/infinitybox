@@ -142,12 +142,16 @@ processHandCubeFiring vrPal hand handPose _frameNumber transceiverMVar  = do
 addCube :: (MonadIO m, MonadState World m, MonadRandom m) => VRPal -> MVar (Transceiver Op) -> Pose GLfloat -> m ()
 addCube vrPal transceiverMVar pose = do
   -- Spawn a cube at the player's position and orientation
-  instruction <- newCubeInstruction pose
-
-  interpret vrPal instruction
+  objID <- getRandom
+  -- Ugly: need to have the cube instantly small so we don't render it full size temporarily,
+  -- but the server needs to know its full size since it uses that internally. Thus
+  -- we need two messages to hide the latency...
+  let serverInstruction = CreateObject objID (Object pose cubeScale)
+      clientInstruction = CreateObject objID (Object pose initialCubeScale)
+  interpret vrPal clientInstruction
 
   whenMVar transceiverMVar $ \transceiver -> 
-    writeTransceiver transceiver $ Reliable instruction
+    writeTransceiver transceiver $ Reliable serverInstruction
   return ()
 
 

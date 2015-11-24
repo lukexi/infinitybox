@@ -26,7 +26,6 @@ interpret _ (CreateObject objID obj)       = do
   
   wldCubes      . at objID ?= obj
   wldCubeVoices . at objID ?= voiceID
-  wldCubeAges   . at objID ?= 0
 
   liftIO $ sendGlobal (show voiceID ++ "new-phrase") Bang
   
@@ -52,7 +51,6 @@ interpret _ (DeleteObject objID)           = do
     mSourceID <- use $ wldVoiceSources . at voiceID
     forM_ mSourceID silenceVoice
   wldCubes      . at objID .= Nothing
-  wldCubeAges   . at objID .= Nothing
   wldCubeVoices . at objID .= Nothing
 
 interpret _ (UpdateObject objID obj)       = 
