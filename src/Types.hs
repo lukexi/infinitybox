@@ -85,7 +85,7 @@ data Uniforms = Uniforms
   , uDayLength           :: UniformLocation GLfloat
   } deriving (Data)
 
-data Resources = Resources
+data Shapes = Shapes
   { room    :: Shape Uniforms
   , cube    :: Shape Uniforms
   , light   :: Shape Uniforms
@@ -93,12 +93,6 @@ data Resources = Resources
   , handle  :: Shape Uniforms
   , face    :: Shape Uniforms
   , logo    :: Shape Uniforms
-  }
-
-
-data Themes = Themes
-  { _rainbow :: Resources
-  , _ao      :: Resources
   }
 
 data Object = Object
@@ -151,7 +145,6 @@ makeLenses ''Object
 makeLenses ''Player
 makeLenses ''World
 makeLenses ''Visuals
-makeLenses ''Themes
 makeLenses ''CubeCollision
 
 interpolateObjects :: Object -> Object -> Object

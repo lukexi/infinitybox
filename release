@@ -1,20 +1,40 @@
+# Get the short git hash (e.g. fa5g6b)
 GIT_HASH=`git rev-parse --short HEAD`
-RELEASE_ZIP=infinitybox-$GIT_HASH.zip
+# Get date in form of 15Nov23-0321 to name the zip with
+DATE=`date +%y%b%d-%H%M`
 
-rm -rf infinitybox-r/
-mkdir infinitybox-r
+# Parse out the project name from the .cabal file
+CABAL_FILE=`echo *.cabal`
+PROJECT_NAME="${CABAL_FILE%%.*}"
+
+RELEASE_ZIP=$PROJECT_NAME-$DATE.zip
+
+# Use .release as a temporary directory
+RELEASE_DIR=.release/$PROJECT_NAME/
+
+# Clean the temp dir
+rm -rf $RELEASE_DIR
+mkdir -p $RELEASE_DIR
+
+# Copy the executables into the release dir
 stack build
-stack install infinitybox --local-bin-path infinitybox-r/
-cp -R dlls/* infinitybox-r/
-cp -R src/ infinitybox-r/
-cp -R shaders/ infinitybox-r/
-cp -R patches/ infinitybox-r/
-cp -R audio-prototypes/ infinitybox-r/
-cp README.txt infinitybox-r/
+stack install $PROJECT_NAME --local-bin-path $RELEASE_DIR
 
-rcedit infinitybox-r/infinitybox.exe --set-icon InfinityBoxIcon.ico
-rcedit infinitybox-r/infinitybox-multiplayer.exe --set-icon InfinityBoxIcon.ico
+# Copy binary, source files and readme into the release dir
+cp -R dlls/* $RELEASE_DIR
+cp -R src/ $RELEASE_DIR
+cp -R shaders/ $RELEASE_DIR
+cp -R patches/ $RELEASE_DIR
+cp README.txt $RELEASE_DIR
 
-7z a -tzip $RELEASE_ZIP infinitybox-r/
+rcedit $RELEASE_DIR/infinitybox.exe --set-icon InfinityBoxIcon.ico
+rcedit $RELEASE_DIR/infinitybox-multiplayer.exe --set-icon InfinityBoxIcon.ico
+
+# Zip up the release and copy it to the desktop
+cd .release 
+7z a -tzip $RELEASE_ZIP $PROJECT_NAME/
 cp $RELEASE_ZIP /c/Users/$USER/Desktop
-cp -R infinitybox-r /c/Users/$USER/Desktop/
+
+# Copy to the desktop for testing
+cp -R $PROJECT_NAME/ /c/Users/$USER/Desktop/$PROJECT_NAME-$DATE
+cd ..

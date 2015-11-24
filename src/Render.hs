@@ -55,15 +55,15 @@ getFirstRemoteHandPositions = do
   return $ 
     case remoteHandPoses of
       Just hands -> hands ^.. traverse . posPosition
-      Nothing -> []
+      Nothing    -> []
 
 
 render :: (MonadIO m, MonadReader World m) 
-       => Resources
+       => Shapes
        -> M44 GLfloat
        -> M44 GLfloat
        -> m ()
-render Resources{..} projection viewMat = do
+render Shapes{..} projection viewMat = do
 
   let projectionView = projection !*! viewMat
       eyePos = fromMaybe viewMat (inv44 viewMat) ^. translation

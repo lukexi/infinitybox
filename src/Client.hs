@@ -22,7 +22,7 @@ import Halive.Utils
 import Control.Concurrent
 
 import Types
-import Themes
+import Shapes
 import Render
 import Controls
 import Audio
@@ -81,7 +81,7 @@ infinityClient serverIPType = do
       return ()
 
   -- Set up OpenGL resources
-  themes@Themes{..} <- loadThemes
+  shapes <- loadShapes
 
   -- Set up GL state
   glEnable GL_DEPTH_TEST
@@ -94,7 +94,6 @@ infinityClient serverIPType = do
   stdGen   <- getStdGen
   now      <- getNow
   let world = newWorld playerID initialPlayer sourcesByVoice now
-      theme = themes ^. rainbow
 
   void . flip runRandT stdGen . flip runStateT world . whileWindow gpWindow $ do
   
@@ -144,6 +143,6 @@ infinityClient serverIPType = do
     viewMat <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
     immutably $ renderWith vrPal viewMat 
       (glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT))
-      (render theme)
+      (render shapes)
 
 

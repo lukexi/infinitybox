@@ -8,7 +8,7 @@ import Control.Monad
 import Data.IORef
 import Control.Exception
 --------------- Broadcast socket utils
--- TODO move these to 
+-- TODO move these to udp-pal
 
 broadcastIP :: HostName
 broadcastIP = "255.255.255.255"

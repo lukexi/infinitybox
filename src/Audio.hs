@@ -26,8 +26,7 @@ initAudio = do
   addToLibPdSearchPath "patches/kit"
   addToLibPdSearchPath "patches/kit/list-abs"
   addToLibPdSearchPath "patches"
-  addToLibPdSearchPath "audio-prototypes/infinity6"
-  _main <- makePatch   "audio-prototypes/infinity6/percy"
+  _main <- makePatch   "patches/percy"
   
   -- Associate each voice number with an OpenAL source
   openALSources <- getPdSources
