@@ -46,7 +46,7 @@ infinityClient serverIPType = do
   when enableEKG    . void $ EKG.forkServer "localhost" 8000
   
   -- Set up GLFW/Oculus/Hydra
-  vrPal@VRPal{..} <- reacquire 0 $ initVRPal "Infinity Box" GCPerFrame enableDevices
+  vrPal@VRPal{..} <- reacquire 0 $ initVRPal "Infinity Box" NoGCPerFrame enableDevices
   
   (pitchesByVoice, amplitudesByVoice, sourcesByVoice) <- initAudio
   

@@ -164,6 +164,7 @@ float smin_2_3(float a, float b, float k) {
   float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
   return mix(b, a, h) - k * h * (1.0 - h);
 }
+
 float sdTorus( vec3 p, vec2 t )
 {
   vec2 q = vec2(length(p.xy)-t.x,p.z);
@@ -239,12 +240,11 @@ float doRing( vec3 p  , float size ){
 }
 
 
-//--------------------------------
 // Modelling 
 //--------------------------------
-vec2 map( vec3 pos ){
+vec2 map( vec3 pos ){  
 
-vec3 og = pos;  
+  vec3 og = pos;  
   pos.z = -pos.z;
   pos -= vec3( 0. , -.015 , -.025 );
   //pos.z -= .5;

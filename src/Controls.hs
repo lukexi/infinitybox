@@ -40,7 +40,9 @@ processControls gamePal@VRPal{..} transceiverMVar frameNumber = do
 
   -- Update hand positions
   handWorldPoses <- flip handsToWorldPoses hands . transformationFromPose <$> use (wldPlayer . plrPose)
-  wldPlayer . plrHandPoses .= map poseFromMatrix handWorldPoses
+ -- wldPlayer . plrHandPoses .= map poseFromMatrix handWorldPoses
+  
+  wldPlayer . plrHandPoses .= [newPose,newPose]
 
   -- Update head position
   wldPlayer . plrHeadPose <~ poseFromMatrix <$> getPoseForHMDType gpHMD
