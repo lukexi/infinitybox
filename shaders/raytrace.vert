@@ -24,12 +24,11 @@ out vec2 vUv;
 
 void main(){
 
-  vUv = aUV;
-
-  vPos = aPosition;
+  vUv   = aUV;
+  vPos  = aPosition;
   vNorm = aNormal;
 
-  vCam   = ( uInverseModel * vec4( uCamera , 1. ) ).xyz;
+  vCam    = ( uInverseModel * vec4( uCamera , 1. ) ).xyz;
   vLight1 = ( uInverseModel * vec4( uLight1 , 1. ) ).xyz;
   vLight2 = ( uInverseModel * vec4( uLight2 , 1. ) ).xyz;
 

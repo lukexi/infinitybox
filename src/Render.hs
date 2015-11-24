@@ -77,7 +77,7 @@ render Resources{..} projection viewMat = do
   let filledness = evanResult (evalAnim now fillednessAnim)
 
   drawLights  light      projectionView        lightPositions filledness
-  drawPlayers hand face  projectionView eyePos lightPositions 
+  drawPlayers hand handle face  projectionView eyePos lightPositions 
 
   phase <- view wldPhase
   case phase of 
@@ -240,11 +240,12 @@ drawLights anShape projectionView lights filledness = do
 drawPlayers :: (MonadIO m, MonadReader World m) 
             => Shape Uniforms
             -> Shape Uniforms
+            -> Shape Uniforms
             -> M44 GLfloat
             -> V3 GLfloat
             -> [V3 GLfloat]
             -> m ()
-drawPlayers hand face projectionView eyePos lights = do
+drawPlayers hand handle face projectionView eyePos lights = do
 
   interpolatedPlayers <- toList <$> (Map.unionWith interpolatePlayers
     <$> view wldLastPlayers
@@ -252,6 +253,7 @@ drawPlayers hand face projectionView eyePos lights = do
 
   useProgram (sProgram hand)
   let Uniforms{..} = sUniforms hand
+
   uniformV3 uCamera eyePos
   uniformF  uTime =<< view wldTime
   uniformF  uDayNight =<< dayNightCycleAt <$> view wldTime
@@ -264,8 +266,30 @@ drawPlayers hand face projectionView eyePos lights = do
     glEnable GL_CULL_FACE
     glCullFace GL_BACK
 
-    drawLocalHands projectionView hand
+    drawLocalHands  projectionView hand
     drawRemoteHands projectionView hand interpolatedPlayers
+
+
+
+
+  useProgram (sProgram handle)
+  let Uniforms{..} = sUniforms handle
+
+  uniformV3 uCamera eyePos
+  uniformF  uTime =<< use wldTime
+  uniformF  uDayNight =<< dayNightCycleAt <$> use wldTime
+  uniformF  uDayLength dayLength
+
+  setLightUniforms handle lights
+
+  withVAO (sVAO handle) $ do
+
+    glEnable GL_CULL_FACE
+    glCullFace GL_BACK
+
+    drawLocalHandles  projectionView handle
+    drawRemoteHandles projectionView handle interpolatedPlayers
+
 
   drawRemoteHeads projectionView eyePos face lights interpolatedPlayers
   -- DEBUG (display local head shifted in space so it can be observed)
@@ -278,6 +302,7 @@ drawPlayers hand face projectionView eyePos lights = do
 drawLocalHands :: (MonadIO m, MonadReader World m) 
                => M44 GLfloat -> Shape Uniforms -> m ()
 drawLocalHands projectionView hand = do
+
   let Uniforms{..} = sUniforms hand
 
   uniformF  uStarted =<< view wldStarted
@@ -309,6 +334,53 @@ drawRemoteHands projectionView hand players = do
     forM_ (player ^. plrHandPoses) $ \handPose -> do
 
       let finalMatrix = transformationFromPose $ shiftBy handOffset handPose
+          rotateVec = rotate (handPose ^. posOrientation) (V3 0 0 1) 
+      
+      uniformV3 uParameterA $ handPose ^. posPosition
+      uniformV3 uParameterB rotateVec
+      
+      drawShape' finalMatrix projectionView 0 hand
+
+
+-- drawing handles is the same as drawing the hands
+-- but with no offeset, since they will be right on the actual controllers
+drawLocalHandles :: (MonadIO m, MonadReader World m) 
+               => M44 GLfloat -> Shape Uniforms -> m ()
+drawLocalHandles projectionView hand = do
+
+  let Uniforms{..} = sUniforms hand
+
+  uniformF  uStarted =<< view wldStarted
+
+
+  -- Draw the local player's hands
+  handPoses <- view $ wldPlayer . plrHandPoses
+  forM_ handPoses $ \handPose -> do
+
+    let finalMatrix = transformationFromPose handPose
+        rotateVec = rotate (handPose ^. posOrientation) (V3 0 0 1)
+
+    uniformV3 uParameterA $ handPose ^. posPosition
+    uniformV3 uParameterB $ rotateVec
+
+    drawShape' finalMatrix projectionView 0 hand
+
+
+
+
+drawRemoteHandles :: (MonadIO m, MonadReader World m) 
+                => M44 GLfloat -> Shape Uniforms -> [Player] -> m ()
+drawRemoteHandles projectionView hand players = do
+  let Uniforms{..} = sUniforms hand
+   
+  uniformF  uStarted =<< view wldStarted
+  uniformF  uDayNight =<< dayNightCycleAt <$> view wldTime
+  uniformF  uDayLength dayLength
+
+  forM_ players $ \player -> 
+    forM_ (player ^. plrHandPoses) $ \handPose -> do
+
+      let finalMatrix = transformationFromPose handPose
           rotateVec = rotate (handPose ^. posOrientation) (V3 0 0 1) 
       
       uniformV3 uParameterA $ handPose ^. posPosition

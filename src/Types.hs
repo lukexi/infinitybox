@@ -52,13 +52,14 @@ type PlayerID = String
 type VoiceID = Int
 
 data Visuals = Visuals
-  { _cubeShader  :: !FilePath
-  , _logoShader  :: !FilePath
-  , _roomShader  :: !FilePath
-  , _handShader  :: !FilePath
-  , _faceShader  :: !FilePath
-  , _lightShader :: !FilePath
-  , _vertShader  :: !FilePath
+  { _cubeShader     :: !FilePath
+  , _logoShader     :: !FilePath
+  , _roomShader     :: !FilePath
+  , _handShader     :: !FilePath
+  , _handleShader   :: !FilePath
+  , _faceShader     :: !FilePath
+  , _lightShader    :: !FilePath
+  , _vertShader     :: !FilePath
   }
 
 data Uniforms = Uniforms
@@ -85,12 +86,13 @@ data Uniforms = Uniforms
   } deriving (Data)
 
 data Resources = Resources
-  { room  :: Shape Uniforms
-  , cube  :: Shape Uniforms
-  , light :: Shape Uniforms
-  , hand  :: Shape Uniforms
-  , face  :: Shape Uniforms
-  , logo  :: Shape Uniforms
+  { room    :: Shape Uniforms
+  , cube    :: Shape Uniforms
+  , light   :: Shape Uniforms
+  , hand    :: Shape Uniforms
+  , handle  :: Shape Uniforms
+  , face    :: Shape Uniforms
+  , logo    :: Shape Uniforms
   }
 
 
@@ -384,12 +386,17 @@ newCubeInstruction pose = do
 handLightOffset :: V3 GLfloat
 handLightOffset = handOffset * 2
 
--- Offset the hand model outward to feel like wands rather than batons
-handOffset :: V3 GLfloat
-handOffset = V3 0 0 (-(handDimensions ^. _z) / 2)
 
 handDimensions :: V3 GLfloat
-handDimensions = V3 0.05 0.05 0.5
+handDimensions = V3 0.055 0.055 0.5
+
+handleDimensions :: V3 GLfloat
+handleDimensions = V3 0.038 0.038 0.1651
+
+
+-- Offset the hand model outward to feel like wands rather than batons
+handOffset :: V3 GLfloat
+handOffset = V3 0 0 (((-(handDimensions ^. _z) / 2) - ((handleDimensions ^. _z)/2)))
 
 
 cubeScale :: GLfloat
