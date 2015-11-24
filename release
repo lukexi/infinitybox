@@ -39,6 +39,10 @@ cd .release
 7z a -tzip $RELEASE_ZIP $PROJECT_NAME/
 cp $RELEASE_ZIP /c/Users/$USER/Desktop
 
+# Copy to tree.is server
+scp $RELEASE_ZIP tree@tree.is:/var/www/tree.is/files/
+
 # Copy to the desktop for testing
 cp -R $PROJECT_NAME/ /c/Users/$USER/Desktop/$PROJECT_NAME-$DATE
 cd ..
+

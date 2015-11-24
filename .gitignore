@@ -1,12 +1,9 @@
-dist
-cabal.sandbox.config
-TAGS
-build/
 .stack-work/
-*.exe
+.release/
+
 $Recycle.Bin/
-src/client
-src/server
+TAGS
+*.exe
 *.o
 *.hi
 *.dyn_o
@@ -18,7 +15,4 @@ src/server
 *.pdf
 *.prof
 
-infinitybox*.tar.gz
-
-infinitybox-r/
-serverIP.txt
+infinitybox.log
