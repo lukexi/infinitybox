@@ -11,7 +11,6 @@ import Control.Lens.Extra
 import Control.Monad.State
 import Control.Concurrent.STM
 
-
 exhaustChanIO :: MonadIO m => TChan a -> m [a]
 exhaustChanIO = liftIO . atomically . exhaustChan
 
@@ -30,6 +29,9 @@ initAudio = do
   
   -- Associate each voice number with an OpenAL source
   openALSources <- getPdSources
+
+  -- Use an exponential falloff rate to magnify proximity effects
+  setOpenALDistanceModelExponent
 
   let voiceSources = init openALSources -- reserve last source for the logo sound
       sourcesByVoice = Map.fromList (zip [1..] voiceSources)

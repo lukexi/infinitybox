@@ -27,6 +27,10 @@ cp -R shaders/ $RELEASE_DIR
 cp -R patches/ $RELEASE_DIR
 cp README.txt $RELEASE_DIR
 
+# Place the current git revision at the end of the README
+echo "" >> $RELEASE_DIR/README.txt
+echo "Built from git rev: $(git rev-parse --short HEAD)" >> $RELEASE_DIR/README.txt
+
 rcedit $RELEASE_DIR/infinitybox.exe --set-icon InfinityBoxIcon.ico
 rcedit $RELEASE_DIR/infinitybox-multiplayer.exe --set-icon InfinityBoxIcon.ico
 

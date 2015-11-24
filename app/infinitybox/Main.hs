@@ -1,5 +1,6 @@
 import Client
 import Types
+import Graphics.UI.GLFW.Pal
 
 main :: IO ()
-main = infinityClient UseLocalhost
+main = suppressConsole "infinitybox.log" >> infinityClient UseLocalhost

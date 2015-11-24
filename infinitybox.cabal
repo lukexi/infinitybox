@@ -62,11 +62,14 @@ executable infinitybox
   hs-source-dirs:      app/infinitybox
   -- other-modules:
   build-depends:
-    base, infinitybox
+    base, infinitybox, glfw-pal
   default-language:    Haskell2010
   -- -T enables GC data collection, and is apparently benign to performance according to jtibell
   ghc-options:         -Wall -O2 -threaded -rtsopts "-with-rtsopts=-N -H128m -A4M -qb"
   ghc-prof-options:    -Wall -O2 -threaded -rtsopts -prof -fprof-auto "-with-rtsopts=-N -T -p -s"
+  -- Suppress the console on Windows (be sure to use suppressConsole in main to avoid crashes!)
+  if os(windows)
+    ghc-options:       -optl-mwindows
 
 
 executable infinitybox-multiplayer
@@ -74,11 +77,14 @@ executable infinitybox-multiplayer
   hs-source-dirs:      app/infinitybox-multiplayer
   -- other-modules:
   build-depends:
-    base, infinitybox
+    base, infinitybox, glfw-pal
   default-language:    Haskell2010
   -- -T enables GC data collection, and is apparently benign to performance according to jtibell
   ghc-options:         -Wall -O2 -threaded -rtsopts "-with-rtsopts=-N -A4M -qb -H128m"
   ghc-prof-options:    -Wall -O2 -threaded -rtsopts -prof -fprof-auto "-with-rtsopts=-N -T -p -s"
+  -- Suppress the console on Windows (be sure to use suppressConsole in main to avoid crashes!)
+  if os(windows)
+    ghc-options:       -optl-mwindows
 
 -- executable infinitybox-multiplayer-server
 --   main-is:             Main.hs
