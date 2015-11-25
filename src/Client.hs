@@ -11,7 +11,9 @@ import Sound.Pd
 import Control.Monad
 import Control.Monad.State.Strict
 import System.Random
-import Control.Lens.Extra hiding (view)
+import Control.Lens.Extra
+import qualified Data.Map as Map
+import Data.Foldable
 import Control.Monad.Random
 import Animation.Pal
 
@@ -145,9 +147,26 @@ infinityClient serverIPType = withPd $ \pd -> do
     -- wldPhase   .= PhaseMain
     -- wldStarted .= 1
 
-    viewMat <- viewMatrixFromPose <$> use (wldPlayer . plrPose)
-    immutably $ renderWith vrPal viewMat 
-      (glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT))
-      (render shapes)
+    immutably $ do
+      players <- toList <$> (Map.unionWith interpolatePlayers
+        <$> view wldLastPlayers
+        <*> view wldPlayers)
+      -- Interpolate between the last and newest cube states
+      cubes <- Map.unionWith interpolateObjects 
+        <$> view wldLastCubes 
+        <*> view wldCubes
+
+      lights12 <- getLocalHandPositions
+      lights34 <- getFirstRemoteHandPositions
+      let lights = lights12 ++ lights34
+
+      fillednessAnim  <- view wldFilledness
+      now <- getNow
+      let filledness = evanResult (evalAnim now fillednessAnim)
+
+      viewMat <- viewMatrixFromPose <$> view (wldPlayer . plrPose)
+      renderWith vrPal viewMat 
+        (glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT))
+        (render shapes players cubes lights filledness)
 
 

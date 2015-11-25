@@ -294,7 +294,7 @@ handleDimensions = V3 0.038 0.038 0.1651
 
 -- Offset the hand model outward to feel like wands rather than batons
 handOffset :: V3 GLfloat
-handOffset = V3 0 0 (((-(handDimensions ^. _z) / 2) - ((handleDimensions ^. _z)/2)))
+handOffset = V3 0 0 (-(handDimensions ^. _z) / 2)
 
 initialCubeScale :: GLfloat
 initialCubeScale = 0.01
