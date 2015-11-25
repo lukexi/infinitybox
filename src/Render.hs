@@ -336,8 +336,8 @@ drawLocalHandles projectionView hand = do
   handPoses <- view $ wldPlayer . plrHandPoses
   forM_ handPoses $ \handPose -> do
 
-    let finalMatrix = transformationFromPose handPose
-        rotateVec = rotate (handPose ^. posOrientation) (V3 0 0 1)
+    let finalMatrix = transformationFromPose (shiftBy handleOffset handPose)
+        rotateVec   = rotate (handPose ^. posOrientation) (V3 0 0 1)
 
     uniformV3 uParameterA $ handPose ^. posPosition
     uniformV3 uParameterB $ rotateVec
@@ -359,8 +359,8 @@ drawRemoteHandles projectionView hand players = do
   forM_ players $ \player -> 
     forM_ (player ^. plrHandPoses) $ \handPose -> do
 
-      let finalMatrix = transformationFromPose handPose
-          rotateVec = rotate (handPose ^. posOrientation) (V3 0 0 1) 
+      let finalMatrix = transformationFromPose (shiftBy handleOffset handPose)
+          rotateVec   = rotate (handPose ^. posOrientation) (V3 0 0 1) 
       
       uniformV3 uParameterA $ handPose ^. posPosition
       uniformV3 uParameterB rotateVec

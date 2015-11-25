@@ -291,6 +291,8 @@ handDimensions = V3 0.055 0.055 0.5
 handleDimensions :: V3 GLfloat
 handleDimensions = V3 0.038 0.038 0.1651
 
+handleOffset :: V3 GLfloat
+handleOffset = V3 0 0 ((handleDimensions ^. _z) / 2)
 
 -- Offset the hand model outward to feel like wands rather than batons
 handOffset :: V3 GLfloat
