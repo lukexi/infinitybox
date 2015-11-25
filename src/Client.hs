@@ -6,6 +6,7 @@ import Graphics.UI.GLFW.Pal
 
 import Graphics.GL
 import Graphics.GL.Pal
+import Sound.Pd
 
 import Control.Monad
 import Control.Monad.State.Strict
@@ -46,7 +47,7 @@ enableDevices = [UseOpenVR, UseHydra]
 
 
 infinityClient :: ServerIPType -> IO ()
-infinityClient serverIPType = do
+infinityClient serverIPType = withPd $ \pd -> do
   when enableEKG    . void $ EKG.forkServer "localhost" 8000
   
   -- Set up GLFW/Oculus/Hydra
@@ -54,7 +55,7 @@ infinityClient serverIPType = do
   
 
 
-  (pitchesByVoice, amplitudesByVoice, sourcesByVoice) <- initAudio
+  (pitchesByVoice, amplitudesByVoice, sourcesByVoice) <- initAudio pd
   
   -- Set up networking
   transceiverMVar <- newEmptyMVar
@@ -123,7 +124,7 @@ infinityClient serverIPType = do
       writeTransceiver transceiver $ Unreliable [UpdatePlayer playerID player]
 
     -- Render to OpenAL
-    updateAudio pitchesByVoice amplitudesByVoice
+    updateAudio pd pitchesByVoice amplitudesByVoice
 
     delta <- realToFrac <$> liftIO gpGetDelta
 

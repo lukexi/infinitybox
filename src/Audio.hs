@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Audio where
-import Sound.Pd1
+import Sound.Pd
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
 import Linear.Extra
@@ -14,21 +14,21 @@ import Control.Concurrent.STM
 exhaustChanIO :: MonadIO m => TChan a -> m [a]
 exhaustChanIO = liftIO . atomically . exhaustChan
 
-initAudio :: IO (TChan Message, TChan Message, Map VoiceID OpenALSource)
-initAudio = do
+initAudio :: PureData -> IO (TChan Message, TChan Message, Map VoiceID OpenALSource)
+initAudio pd = do
 
   -- OpenAL-soft annoyingly needs its hrtf files in a certain APPDATA subfolder,
   -- so copy them here
   _ <- copyOpenALHRTFs
 
   -- Set up sound
-  addToLibPdSearchPath "patches/kit"
-  addToLibPdSearchPath "patches/kit/list-abs"
-  addToLibPdSearchPath "patches"
-  _main <- makePatch   "patches/percy"
+  addToLibPdSearchPath pd "patches/kit"
+  addToLibPdSearchPath pd "patches/kit/list-abs"
+  addToLibPdSearchPath pd "patches"
+  _main <- makePatch   pd "patches/percy"
   
   -- Associate each voice number with an OpenAL source
-  openALSources <- getPdSources
+  let openALSources = pdSources pd
 
   -- Use an exponential falloff rate to magnify proximity effects
   setOpenALDistanceModelExponent
@@ -43,15 +43,15 @@ initAudio = do
 
   alListenerGain (3::Double)
 
-  pitchesByVoice    <- makeReceiveChan "pitchesByVoice"
-  amplitudesByVoice <- makeReceiveChan "amplitudesByVoice"
+  pitchesByVoice    <- makeReceiveChan pd "pitchesByVoice"
+  amplitudesByVoice <- makeReceiveChan pd "amplitudesByVoice"
   
   return (pitchesByVoice, amplitudesByVoice, sourcesByVoice)
 
-updateAudio :: (MonadIO m, MonadState World m) => TChan Message -> TChan Message -> m ()
-updateAudio pitchesByVoice amplitudesByVoice = do
+updateAudio :: (MonadIO m, MonadState World m) => PureData -> TChan Message -> TChan Message -> m ()
+updateAudio pd pitchesByVoice amplitudesByVoice = do
 
-  sendGlobal "dayNight" =<< Atom . Float . dayNightCycleAt <$> use wldTime
+  sendGlobal pd "dayNight" =<< Atom . Float . dayNightCycleAt <$> use wldTime
 
   -- Update OpenAL Listener from player's total head pose
   alListenerPose =<< totalHeadPose <$> use wldPlayer
