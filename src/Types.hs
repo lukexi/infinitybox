@@ -15,7 +15,7 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import System.Random
 import Network.UDP.Pal
-import Sound.Pd1
+import Sound.Pd
 import Data.List
 import Graphics.GL.Pal
 import Animation.Pal

@@ -20,7 +20,7 @@ import Interpret
 
 import Graphics.VR.Pal
 import Data.Maybe
-import Sound.Pd1
+import Sound.Pd
 
 
 import qualified Data.Map as Map
@@ -30,11 +30,12 @@ import Control.Concurrent
 
 
 processControls :: (MonadIO m, MonadState World m, MonadRandom m) 
-                => VRPal
+                => PureData
+                -> VRPal
                 -> MVar (Transceiver Op)
                 -> Integer
                 -> m ()
-processControls vrPal@VRPal{..} transceiverMVar frameNumber = do
+processControls pd vrPal@VRPal{..} transceiverMVar frameNumber = do
   -- Get latest Hydra data
 
   (hands, handsType) <- getHands vrPal
@@ -76,16 +77,16 @@ processControls vrPal@VRPal{..} transceiverMVar frameNumber = do
     onGamepadAxes e $ \GamepadAllAxes{..} -> 
       -- Use the right trigger to fire a cube
       when (gaxTriggers < (-0.5) && frameNumber `mod` 30 == 0) $ 
-        addCube vrPal transceiverMVar (shiftBy (V3 0 0.1 0) playerPose)
+        addCube pd vrPal transceiverMVar (shiftBy (V3 0 0.1 0) playerPose)
     
     -- Handle key events
     -- Spawn a cube offset by 0.1 y
-    onKeyDown e Key'Space (addCube vrPal transceiverMVar (shiftBy (V3 0 0.1 0) playerPose))
+    onKeyDown e Key'Space (addCube pd vrPal transceiverMVar (shiftBy (V3 0 0.1 0) playerPose))
     onKeyDown e Key'F (setCursorInputMode gpWindow CursorInputMode'Disabled)
     onKeyDown e Key'G (setCursorInputMode gpWindow CursorInputMode'Normal)
     onKeyDown e Key'O (recenterWhenOculus vrPal)
-    onKeyDown e Key'Z (addCube vrPal transceiverMVar newPose)
-    onKeyDown e Key'N startLogo
+    onKeyDown e Key'Z (addCube pd vrPal transceiverMVar newPose)
+    onKeyDown e Key'N (startLogo pd)
     onKeyDown e Key'M startMain
     onKeyDown e Key'C clonePlayer
     onKeyDown e Key'0 (restart transceiverMVar)
@@ -102,14 +103,14 @@ processControls vrPal@VRPal{..} transceiverMVar frameNumber = do
     -- Bind Hydra 'Start' buttons to HMD Recenter
     when (hand ^. hndButtonS) $ recenterWhenOculus vrPal
 
-    processHandCubeFiring vrPal hand (poseFromMatrix handMatrix) frameNumber transceiverMVar
+    processHandCubeFiring pd vrPal hand (poseFromMatrix handMatrix) frameNumber transceiverMVar
   wldLastHands .= Map.fromList (zip (map (^. hndID) hands) hands)
 
 
 
 processHandCubeFiring :: (Integral a, MonadIO m, MonadState World m, MonadRandom m) 
-                      => VRPal -> Hand -> Pose GLfloat -> a -> MVar (Transceiver Op) -> m ()    
-processHandCubeFiring vrPal hand handPose _frameNumber transceiverMVar  = do
+                      => PureData -> VRPal -> Hand -> Pose GLfloat -> a -> MVar (Transceiver Op) -> m ()    
+processHandCubeFiring pd vrPal hand handPose _frameNumber transceiverMVar  = do
 
   -- Determine if the trigger is freshly pressed
   lastHand <- fromMaybe emptyHand <$> use (wldLastHands . at (hand ^. hndID))
@@ -127,7 +128,7 @@ processHandCubeFiring vrPal hand handPose _frameNumber transceiverMVar  = do
   phase <- use wldPhase
 
   case phase of
-    PhaseVoid -> when triggerIsDown $ startLogo
+    PhaseVoid -> when triggerIsDown $ startLogo pd
     PhaseLogo -> return ()
     _ -> do
       -- Move the cube upwards a bit so it spawns at the tip of the hand
@@ -136,11 +137,12 @@ processHandCubeFiring vrPal hand handPose _frameNumber transceiverMVar  = do
           shouldSpawn = isNewTrigger
                         -- || triggerIsDown && frameNumber `mod` 30 == 0
       when shouldSpawn $
-        addCube vrPal transceiverMVar cubePose
+        addCube pd vrPal transceiverMVar cubePose
 
 
-addCube :: (MonadIO m, MonadState World m, MonadRandom m) => VRPal -> MVar (Transceiver Op) -> Pose GLfloat -> m ()
-addCube vrPal transceiverMVar pose = do
+addCube :: (MonadIO m, MonadState World m, MonadRandom m) 
+        => PureData -> VRPal -> MVar (Transceiver Op) -> Pose GLfloat -> m ()
+addCube pd vrPal transceiverMVar pose = do
   -- Spawn a cube at the player's position and orientation
   objID <- getRandom
   -- Ugly: need to have the cube instantly small so we don't render it full size temporarily,
@@ -148,18 +150,18 @@ addCube vrPal transceiverMVar pose = do
   -- we need two messages to hide the latency...
   let serverInstruction = CreateObject objID (Object pose cubeScale)
       clientInstruction = CreateObject objID (Object pose initialCubeScale)
-  interpret vrPal clientInstruction
+  interpret pd vrPal clientInstruction
 
   whenMVar transceiverMVar $ \transceiver -> 
     writeTransceiver transceiver $ Reliable serverInstruction
   return ()
 
 
-startLogo :: (MonadState World m, MonadIO m) => m ()
-startLogo = do
+startLogo :: (MonadState World m, MonadIO m) => PureData -> m ()
+startLogo pd = do
   wldPhase .= PhaseLogo
   wldTime  .= 0
-  sendGlobal "startLogo" Bang
+  sendGlobal pd "startLogo" Bang
 
 startMain :: (MonadState World m) => m ()
 startMain = do

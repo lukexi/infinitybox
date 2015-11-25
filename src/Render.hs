@@ -76,7 +76,7 @@ render Shapes{..} projection viewMat = do
   now <- getNow
   let filledness = evanResult (evalAnim now fillednessAnim)
 
-  drawLights  light      projectionView        lightPositions filledness
+  --drawLights  light      projectionView        lightPositions filledness
   drawPlayers hand handle face  projectionView eyePos lightPositions 
 
   phase <- view wldPhase

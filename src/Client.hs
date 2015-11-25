@@ -51,7 +51,7 @@ infinityClient serverIPType = withPd $ \pd -> do
   when enableEKG    . void $ EKG.forkServer "localhost" 8000
   
   -- Set up GLFW/Oculus/Hydra
-  vrPal@VRPal{..} <- reacquire 0 $ initVRPal "Infinity Box" GCPerFrame enableDevices
+  vrPal@VRPal{..} <- reacquire 0 $ initVRPal "Infinity Box" enableDevices
   
 
 
@@ -112,10 +112,10 @@ infinityClient serverIPType = withPd $ \pd -> do
     
     -- Handle network events
     whenMVar transceiverMVar $ \transceiver -> 
-      interpretNetworkPackets (tcVerifiedPackets transceiver) (interpret vrPal)
+      interpretNetworkPackets (tcVerifiedPackets transceiver) (interpret pd vrPal)
 
     -- Process controllers (Keyboard, Mouse, Gamepad, Hydra, Oculus headtracking)
-    processControls vrPal transceiverMVar frameNumber
+    processControls pd vrPal transceiverMVar frameNumber
 
     -- Send player position
     player <- use wldPlayer

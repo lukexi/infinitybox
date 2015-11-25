@@ -5,7 +5,7 @@ import Control.Monad.State.Strict
 
 import Control.Lens.Extra
 import qualified Data.Map.Strict as Map
-import Sound.Pd1
+import Sound.Pd
 import Animation.Pal
 import Physics.Bullet
 import Graphics.VR.Pal
@@ -19,15 +19,15 @@ import Types
 -- and only perform updates if the object already exists, since unreliable messages
 -- can come in before the object is created and after it is destroyed.
 
-interpret :: (MonadIO m, MonadState World m) => VRPal -> Op -> m ()
+interpret :: (MonadIO m, MonadState World m) => PureData -> VRPal -> Op -> m ()
 
-interpret _ (CreateObject objID obj)       = do
+interpret pd _ (CreateObject objID obj)       = do
   voiceID <- dequeueVoice
   
   wldCubes      . at objID ?= obj
   wldCubeVoices . at objID ?= voiceID
 
-  liftIO $ sendGlobal (show voiceID ++ "new-phrase") Bang
+  liftIO $ sendGlobal pd (show voiceID ++ "new-phrase") Bang
   
   -- wldFilledness += 1.0 / fromIntegral maxCubes 
 
@@ -45,7 +45,7 @@ interpret _ (CreateObject objID obj)       = do
         }
 
 
-interpret _ (DeleteObject objID)           = do
+interpret pd _ (DeleteObject objID)           = do
   mVoiceID <- use $ wldCubeVoices . at objID
   forM_ mVoiceID $ \voiceID -> do
     mSourceID <- use $ wldVoiceSources . at voiceID
@@ -53,21 +53,21 @@ interpret _ (DeleteObject objID)           = do
   wldCubes      . at objID .= Nothing
   wldCubeVoices . at objID .= Nothing
 
-interpret _ (UpdateObject objID obj)       = 
+interpret _ _ (UpdateObject objID obj)       = 
   wldCubes   . at objID    . traverse .= obj
 
-interpret _ (UpdatePlayer playerID player) = 
+interpret _ _ (UpdatePlayer playerID player) = 
   wldPlayers . at playerID . traverse .= player
 
-interpret _ (Connect playerID player)      = do
+interpret _ _ (Connect playerID player)      = do
   wldPlayers . at playerID ?= player
   putStrLnIO (playerID ++ " connected")
   
-interpret _ (Disconnect playerID)          = do
+interpret _ _ (Disconnect playerID)          = do
   wldPlayers . at playerID .= Nothing
   putStrLnIO (playerID ++ " disconnected")
 
-interpret vrPal (ObjectCollision collision) = do
+interpret _ vrPal (ObjectCollision collision) = do
   let bodyIDs  = fromIntegral <$> sequence [cbBodyAID, cbBodyBID] collision
       impulse  = cbAppliedImpulse collision
       axis     = 0
@@ -114,4 +114,4 @@ interpret vrPal (ObjectCollision collision) = do
   --     wldVoicePitch . at voiceID ?= volume
   --     liftIO $ sendGlobal (show voiceID ++ "trigger") $ 
   --       Atom (Float volume)
-interpret _ Restart = return ()
+interpret _ _ Restart = return ()
