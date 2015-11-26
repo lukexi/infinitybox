@@ -6,7 +6,6 @@ BETA RELEASE 1
   [ ] C.f. thread about object weight
       http://steamcommunity.com/app/358720/discussions/0/535152511347254326/
 [ ] Update to OpenAL API for locating hrtf files rather than copying them
-
 [~] Haptic feedback for touching cubes
 [x] Close down OpenAL and libpd properly on quit to avoid dialog boxes on Windows
 [x] Have server handle scaling up cubes to fix glitchy cubes
@@ -16,6 +15,7 @@ BETA RELEASE 1
 [x] Add Icon http://stackoverflow.com/questions/708238/how-do-i-add-an-icon-to-a-mingw-gcc-compiled-executable
 [x] Inaccurate head pitch sending over multiplayer, and probably OpenAL
 [x] Fix handle positions
+[x] hands fade to slug cube instead of snap
 [x] Remove Console
       Use -optl-mwindows in ghc-options
       http://stackoverflow.com/questions/5995433/removing-console-window-for-glut-freeglut-glfw
