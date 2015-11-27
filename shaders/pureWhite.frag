@@ -2,6 +2,8 @@
 
 uniform float uTime;
 uniform float uStarted;
+uniform float uTrigger;
+uniform float uThumb;
 
 
 
@@ -197,9 +199,14 @@ void main(){
 
     // thumb
     if( res.y == 3. ){
-      col *= vec3( 1. , 0. , 0. );
+      col *= vec3( 1. , 0.5 , 0.5 );
+      col  = mix( col , vec3( .9 , .6 , .3) , uThumb );
+
+    // trigger
     }else if( res.y == 4. ){
-      col *= vec3( 0. , 1. , 0. );
+      col *= vec3( 0.5 , 1. , 0.5 );
+      col  = mix( col , vec3( .4 , .9 , .8) , uTrigger );
+
     }
 
    
@@ -211,6 +218,7 @@ void main(){
     float mixVal = min( 1. , uTime * .5 );
     col = mix( vec3( 1. ) , col , mixVal );
   }
+
 
 
   color = vec4( col , 1. );
