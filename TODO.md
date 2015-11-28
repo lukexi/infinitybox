@@ -1,4 +1,5 @@
 BETA RELEASE 1
+[ ] Do something about the mirror window
 
 [ ] Track down final hitches
 [ ] Add local physics sim option
@@ -21,6 +22,7 @@ BETA RELEASE 1
       http://stackoverflow.com/questions/5995433/removing-console-window-for-glut-freeglut-glfw
       http://trac.haskell.org/gtk2hs/ticket/1276
       http://stackoverflow.com/questions/7993912/how-do-i-stop-the-console-window-from-appearing-when-making-system-calls
+[x] Disable Logging flag during release build
 
 [ ] Per hand vacuum
 

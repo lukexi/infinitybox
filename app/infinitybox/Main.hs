@@ -1,7 +1,9 @@
 {-# LANGUAGE CPP #-}
 import Client
 import Types
+#if !defined(ENABLE_LOGGING)
 import Graphics.UI.GLFW.Pal
+#endif
 
 main :: IO ()
 main = 
