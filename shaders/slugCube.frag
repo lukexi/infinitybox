@@ -322,8 +322,16 @@ void main(){
 
   }
 
-  if( uStarted < .9 ){
-    col = vec3( min( vPos.z * 2. + min( uTime * .8 , 3.) * .6  - 1. , 1. ) ) ;
+  vec3 initialFade =  vec3( min( vPos.z * 2. + min( uTime * .8 , 3.) * .6  - 1. , 1. ) ) ;
+  
+
+  if( uStarted < 1. ){
+    col = initialFade; // = vec3( min( vPos.z * 2. + min( uTime * .8 , 3.) * .6  - 1. , 1. ) ) ;
+  }else{
+
+    float mixVal = min( 1. , uTime * .5 );
+    //float mixVal = min( 1. , (uStarted - .9 ) * 10.));
+    col = mix( vec3( 1. ) , col , mixVal );
   }
  
  //col = vCollision;
