@@ -9,6 +9,7 @@ import Sound.Pd
 import Animation.Pal
 import Physics.Bullet
 import Graphics.VR.Pal
+import Graphics.GL.Pal
 import Types
 
 
@@ -29,10 +30,7 @@ interpret pd _ (CreateObject objID obj)       = do
 
   liftIO $ sendGlobal pd (show voiceID ++ "new-phrase") Bang
   
-  -- wldFilledness += 1.0 / fromIntegral maxCubes 
-
   fillednessAnim  <- use wldFilledness
-  -- completeAnim    <- use wldComplete
 
   numCubes <- Map.size <$> use wldCubes
   now <- getNow

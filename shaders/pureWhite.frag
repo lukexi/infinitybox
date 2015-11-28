@@ -19,7 +19,7 @@ in vec2 vUv;
 
 out vec4 color;
 
-const float uTrigger = 1.;
+// const float uTrigger = 1.;
 
 
 

@@ -25,6 +25,7 @@ import Data.Sequence (Seq)
 import Data.Foldable
 
 import Physics.Bullet
+import Graphics.GL.Pal
 import Types
 import Matchmaker
 import Linear.Extra

@@ -22,9 +22,8 @@ initAudio pd = do
   _ <- copyOpenALHRTFs
 
   -- Set up sound
-  addToLibPdSearchPath pd "patches/kit"
-  addToLibPdSearchPath pd "patches/kit/list-abs"
-  addToLibPdSearchPath pd "patches"
+  forM_ ["patches", "patches/kit", "patches/kit/list-abs"] 
+    (addToLibPdSearchPath pd)
   _main <- makePatch   pd "patches/percy"
   
   -- Associate each voice number with an OpenAL source
