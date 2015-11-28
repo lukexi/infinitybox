@@ -44,7 +44,7 @@ maxCubes :: Int
 maxCubes = 15
 
 dayLength :: Float
-dayLength = 30
+dayLength = 120
 
 dayNightCycleAt :: Float -> Float
 dayNightCycleAt t = dayNightCycle
