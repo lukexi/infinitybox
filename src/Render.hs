@@ -140,7 +140,6 @@ drawCubes cube projectionView eyePos lights cubes filledness = do
       uniformV3 uParameterB rotateVec
 
       uniformF uFilledness filledness
-      -- uniformF uComplete   =<< view wldComplete
 
       let model = transformationFromPose (obj ^. objPose)
           -- The server will continuously update us on the scale of the cube
@@ -212,12 +211,10 @@ drawLights anShape projectionView lights filledness = do
 
     forM_ (zip [0..] lights) $ \(i, lightPos) -> do
       let model = mkTransformation (axisAngle (V3 1 0 0) 0.0) lightPos
-      -- printIO (i, lightPos)
       
       uniformV3 uParameterA lightPos
 
       uniformF uFilledness filledness
-      -- uniformF uComplete   =<< view wldComplete
       
       drawShape' model projectionView i anShape
 
@@ -285,7 +282,6 @@ drawLocalHands projectionView hand = do
   let Uniforms{..} = sUniforms hand
 
   uniformF  uStarted =<< view wldStarted
-
 
   -- Draw the local player's hands
   handPoses <- view $ wldPlayer . plrHandPoses

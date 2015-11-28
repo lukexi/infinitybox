@@ -16,6 +16,10 @@ build-type:          Simple
 -- extra-source-files:  
 cabal-version:       >=1.10
 
+Flag Logging
+  Description: Enable console log output
+  Default:     True
+
 library
   hs-source-dirs:      src
   default-language:    Haskell2010
@@ -65,12 +69,33 @@ executable infinitybox
   build-depends:
     base, infinitybox, glfw-pal
   default-language:    Haskell2010
+  -- -s will print out garbage collector stats
+  -- -S will print every time there is a garbage collection - use this any time you suspect
+  -- there is GC performance interference; it has never been actually the case so far!
+  -- Using performGC per frame is possibly not a good idea:
+  -- http://stackoverflow.com/questions/30244139/how-to-keep-very-big-elements-on-memory-without-exhausting-the-garbage-collector
   -- -T enables GC data collection, and is apparently benign to performance according to jtibell
-  ghc-options:         -Wall -O2 -threaded -rtsopts "-with-rtsopts=-N -H128m -A4M -qb"
-  ghc-prof-options:    -Wall -O2 -threaded -rtsopts -prof -fprof-auto "-with-rtsopts=-N -T -p -s"
+  -- -C0 turns off the interval timer, which I was investigating when I thought the
+  -- main thread was pausing (but was actually just a bug in getCPUTime)
+  -- -H128m gives GHC a 128megabyte heap rather than 512k. This may help with GC?
+  -- -A4M sets the allocation size to be 4Megabytes, which was suggested as being good
+  -- to match the cache size of modern CPUs
+  -- "(a bigger allocation area means worse cache behaviour but fewer garbage collections and less promotion)"
+  -- -qb turns off the parallel GC, read details here and rethink if that's a good idea
+  -- See https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/runtime-control.html
+  -- and https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/using-concurrent.html
+  ghc-options:         -Wall -O2 -threaded -rtsopts "-with-rtsopts=-N"
+  -- ghc-options:         -Wall -O2 -threaded -rtsopts "-with-rtsopts=-N -H128m -A4M -qb -C0"
+  -- ghc-options:         -Wall -O2 -threaded -rtsopts "-with-rtsopts=-N -A4M"
+  -- ghc-options:         -Wall -O2 -threaded -rtsopts "-with-rtsopts=-N1"
+  ghc-prof-options:    -Wall -O2 -threaded -rtsopts -prof -fprof-auto "-with-rtsopts=-N -T -p -s -h"
   -- Suppress the console on Windows (be sure to use suppressConsole in main to avoid crashes!)
-  if os(windows)
-    ghc-options:       -optl-mwindows
+  if flag(Logging)
+    cpp-options: -DENABLE_LOGGING
+  else
+    if os(windows)
+      ghc-options:       -optl-mwindows
+
 
 
 executable infinitybox-multiplayer
@@ -81,7 +106,8 @@ executable infinitybox-multiplayer
     base, infinitybox, glfw-pal
   default-language:    Haskell2010
   -- -T enables GC data collection, and is apparently benign to performance according to jtibell
-  ghc-options:         -Wall -O2 -threaded -rtsopts "-with-rtsopts=-N -A4M -qb -H128m"
+  ghc-options:         -Wall -O2 -threaded -rtsopts "-with-rtsopts=-N"
+  -- ghc-options:         -Wall -O2 -threaded -rtsopts "-with-rtsopts=-N -A4M -qb -H128m"
   ghc-prof-options:    -Wall -O2 -threaded -rtsopts -prof -fprof-auto "-with-rtsopts=-N -T -p -s"
   -- Suppress the console on Windows (be sure to use suppressConsole in main to avoid crashes!)
   if os(windows)

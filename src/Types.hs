@@ -23,8 +23,6 @@ import Data.Time
 import Control.Monad.Random
 import Physics.Bullet
 
-import System.CPUTime
-import Text.Printf
 import Graphics.VR.Pal
 
 data ServerIPType = UseLocalhost | UsePublicIP
@@ -236,24 +234,6 @@ dequeueVoice = do
 
 
 
-
--- Util
-
-putStrLnIO :: MonadIO m => String -> m ()
-putStrLnIO = liftIO . putStrLn
-
-printIO :: (Show s, MonadIO m) => s -> m ()
-printIO = putStrLnIO . show
-
-
-profile :: MonadIO m => m b -> m b
-profile action = do
-  before <- liftIO getCPUTime
-  x <- action
-  after <- liftIO getCPUTime
-  let diff = (fromIntegral (after - before)) / (10^(12::Integer))
-  liftIO $ printf "Computation time: %0.3f sec\n" (diff :: Double)
-  return x
 
 serverPort :: PortNumber
 serverPort = 54321
