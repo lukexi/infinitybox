@@ -24,8 +24,8 @@ out vec4 color;
 
 
 const float MAX_TRACE_DISTANCE = 1.;           // max trace distance
-const float INTERSECTION_PRECISION = 0.0000001;        // precision of the intersection
-const int NUM_OF_TRACE_STEPS = 100;
+const float INTERSECTION_PRECISION = 0.00001;        // precision of the intersection
+const int NUM_OF_TRACE_STEPS = 40;
 const float PI  = 3.14159;
 
 
@@ -209,15 +209,16 @@ vec3 doCrazyThumbColor( vec3 ro , vec3 rd){
 
   vec3 col = vec3( 0. );
 
-  for( int i  = 0; i < 20; i++ ){
+  vec3 p;
+  for( int i  = 0; i < 10; i++ ){
 
-    p = ro + rd * float( i ) * .003;
+    p = ro + rd * float( i ) * .001;
 
     float val = triNoise3D( 2. * p   , .3 ); //length( vec3( sin( p.x * 100. ) , sin( p.y * 100. ) , sin( p.z  * 100. )) );
 
 
     if( val > .3 ){
-      col = hsv( val * 7. + float( i ) * .4 , 1. , 1.);
+      col = mix( hsv( uThumb * sin( uTime ) + float( i ) / 10. , 1. , 1.) , vec3( 0.) , float( i)/10.);
       break;
     }
   }
@@ -256,8 +257,8 @@ void main(){
     // thumb
     if( res.y == 3. ){
       vec3 crazyCol = doCrazyThumbColor( pos , rd );
-      col  = mix( col , crazyCol , uThumb );
-
+     // col  = mix( col , crazyCol , uThumb );
+      col = crazyCol;
     // trigger
     }else if( res.y == 4. ){
       col *= vec3( 0.5 , 1. , 0.5 );
