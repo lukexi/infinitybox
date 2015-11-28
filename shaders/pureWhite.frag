@@ -76,17 +76,18 @@ vec2 subCube( vec3 pos ){
   vec2 spheres = vec2( opRepSphereFall( pos - vec3( 0. , .0 , +.04), vec3( .009  )  , .003 ) , 2.);
 
   vec2 cubeO = vec2( sdBox( pos , vec3( 0.038 , 0.038 , 0.2651 ) * .5 + vec3( .005) ) , 1.);
-  vec2 spheresO = vec2( opRepSphere( pos , vec3( .03  )  , .01 ) , 2.);
+  vec2 spheresO = vec2( opRepSphere( pos , vec3( .03 + .02 * uTrigger )  , .01 ) , 2.);
 
   cubeO = opS( cubeO , spheresO );
 
   vec2 cubeI = vec2( sdBox( pos , vec3( 0.038 , 0.038 , 1.1651 ) * .5 - vec3( .005)) , 2.);
   cubeI = opS( spheres , cubeI );
+
   vec2 thumb = vec2( sdSphere( pos - vec3( 0. , .08 , -.04) , .07 ) , 3. );
   cubeI = opS(  thumb , cubeI );
 
   vec2 trigger = vec2( sdBox( pos - vec3( 0. , -.015 , -.035) , vec3( .005 , .005 , .01) ) , 4. );
-  if( uTrigger == 0. ){
+  if( uTrigger != 1. ){
     cubeI = opU(  trigger , cubeI );
   }else{
     cubeI = opS(  trigger , cubeI );
@@ -168,7 +169,62 @@ vec2 calcIntersection( in vec3 ro, in vec3 rd ){
      
 }
 
+// Taken from https://www.shadertoy.com/view/4ts3z2
+float tri(in float x){return abs(fract(x)-.5);}
+vec3 tri3(in vec3 p){return vec3( tri(p.z+tri(p.y*1.)), tri(p.z+tri(p.x*1.)), tri(p.y+tri(p.x*1.)));}
+                                 
 
+// Taken from https://www.shadertoy.com/view/4ts3z2
+float triNoise3D(in vec3 p, in float spd)
+{
+    float z=1.4;
+  float rz = 0.;
+    vec3 bp = p;
+  for (float i=0.; i<=3.; i++ )
+  {
+        vec3 dg = tri3(bp*2.);
+        p += (dg+uTime*.1*spd);
+
+        bp *= 1.8;
+    z *= 1.5;
+    p *= 1.2;
+        //p.xz*= m2;
+        
+        rz+= (tri(p.z+tri(p.x+tri(p.y))))/z;
+        bp += 0.14;
+  }
+  return rz;
+}
+
+
+vec3 hsv(float h, float s, float v){
+        return mix( vec3( 1.0 ), clamp(( abs( fract(h + vec3( 3.0, 2.0, 1.0 ) / 3.0 )
+                   * 6.0 - 3.0 ) - 1.0 ), 0.0, 1.0 ), s ) * v;
+      }
+
+
+
+vec3 doCrazyThumbColor( vec3 ro , vec3 rd){
+  
+
+  vec3 col = vec3( 0. );
+
+  for( int i  = 0; i < 20; i++ ){
+
+    p = ro + rd * float( i ) * .003;
+
+    float val = triNoise3D( 2. * p   , .3 ); //length( vec3( sin( p.x * 100. ) , sin( p.y * 100. ) , sin( p.z  * 100. )) );
+
+
+    if( val > .3 ){
+      col = hsv( val * 7. + float( i ) * .4 , 1. , 1.);
+      break;
+    }
+  }
+
+  return col;
+  
+}
 
 
 void main(){
@@ -199,8 +255,8 @@ void main(){
 
     // thumb
     if( res.y == 3. ){
-      col *= vec3( 1. , 0.5 , 0.5 );
-      col  = mix( col , vec3( .9 , .6 , .3) , uThumb );
+      vec3 crazyCol = doCrazyThumbColor( pos , rd );
+      col  = mix( col , crazyCol , uThumb );
 
     // trigger
     }else if( res.y == 4. ){
