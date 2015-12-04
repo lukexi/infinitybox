@@ -40,11 +40,11 @@ enableEKG = False
 
 enableDevices :: [VRPalDevices]
 -- enableDevices = [UseOpenVR]
-enableDevices = [UseOpenVR, UseHydra]
+-- enableDevices = [UseOpenVR, UseHydra]
 -- enableDevices = [UseOculus, UseHydra]
 -- enableDevices = [UseOculus]
 -- enableDevices = [UseHydra]
--- enableDevices = []
+enableDevices = []
 
 
 
@@ -54,8 +54,6 @@ infinityClient serverIPType = withPd $ \pd -> do
   
   -- Set up GLFW/Oculus/Hydra
   vrPal@VRPal{..} <- reacquire 0 $ initVRPal "Infinity Box" enableDevices
-  
-
 
   (pitchesByVoice, amplitudesByVoice, sourcesByVoice) <- initAudio pd
   

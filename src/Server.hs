@@ -28,7 +28,6 @@ import Physics.Bullet
 import Graphics.GL.Pal
 import Types
 import Matchmaker
-import Linear.Extra
 
 data Cube = Cube { cubCreated :: UTCTime, cubRigidBody :: RigidBody }
 

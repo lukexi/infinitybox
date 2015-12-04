@@ -18,9 +18,6 @@ import Graphics.GL.Pal
 
 import Types
 import Data.Monoid
-import Data.Foldable
-
-import Animation.Pal
 
 
 listToTuple :: (t, t) -> [t] -> (t, t)
@@ -66,7 +63,7 @@ getFirstRemoteHandPositions = do
 render Shapes{..} players cubes lights filledness projection viewMat = do
 
   let projectionView = projection !*! viewMat
-      eyePos = fromMaybe viewMat (inv44 viewMat) ^. translation
+      eyePos = inv44 viewMat ^. translation
 
   --drawLights  light      projectionView        lights filledness
   drawPlayers hand handle face  projectionView eyePos lights players
@@ -442,7 +439,7 @@ drawShape' model projectionView drawID shape = do
   let Uniforms{..} = sUniforms shape
 
   uniformM44 uModelViewProjection (projectionView !*! model)
-  uniformM44 uInverseModel        (fromMaybe model (inv44 model))
+  uniformM44 uInverseModel        (inv44 model)
   uniformM44 uModel model
 
   uniformF uID drawID

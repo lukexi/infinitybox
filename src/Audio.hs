@@ -7,7 +7,7 @@ import Linear.Extra
 -- import Graphics.GL
 import Types
 import Network.UDP.Pal
-import Control.Lens.Extra
+import Control.Lens.Extra hiding (List)
 import Control.Monad.State
 import Control.Concurrent.STM
 
