@@ -13,6 +13,5 @@ packages:
 - ../linear-extra
 - ../lens-extra
 - ../openvr-hs
-extra-deps:
-- ekg-0.4.0.7
-resolver: nightly-2015-11-03
+extra-deps: []
+resolver: nightly-2015-12-03
