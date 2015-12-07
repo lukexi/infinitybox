@@ -33,14 +33,8 @@ updateAudio.\                  Audio                                  0.5    1.1
 
 
 Performance plan:
-UBO to reduce redundant copying of camera info etc. to eyes
-  uFilledness
-  uStarted
-  setLightUniforms
-  uniformF  uTime =<< view wldTime
-  uniformF  uDayNight =<< dayNightCycleAt <$> view wldTime
-  uniformF  uDayLength dayLength
-  
+[x] UBO to reduce redundant copying of camera info etc. to eyes
+
 Render each eye simultaneously
 Use instancing to render cubes
 

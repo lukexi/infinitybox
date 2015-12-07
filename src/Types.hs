@@ -76,22 +76,10 @@ data Uniforms = Uniforms
   , uInverseModel        :: UniformLocation (M44 GLfloat)
   , uModel               :: UniformLocation (M44 GLfloat)
   , uCamera              :: UniformLocation (V3  GLfloat)
-  , uLight1              :: UniformLocation (V3  GLfloat)
-  , uLight2              :: UniformLocation (V3  GLfloat)
-  , uLight3              :: UniformLocation (V3  GLfloat)
-  , uLight4              :: UniformLocation (V3  GLfloat)
   , uCollisionPosition   :: UniformLocation (V3  GLfloat)
   , uCollisionTime       :: UniformLocation GLfloat
-  , uFilledness          :: UniformLocation GLfloat
-  , uComplete            :: UniformLocation GLfloat
   , uParameterA          :: UniformLocation (V3  GLfloat)
   , uParameterB          :: UniformLocation (V3  GLfloat)
-  , uID                  :: UniformLocation GLfloat
-  , uTime                :: UniformLocation GLfloat
-  , uTick                :: UniformLocation GLfloat
-  , uStarted             :: UniformLocation GLfloat
-  , uDayNight            :: UniformLocation GLfloat
-  , uDayLength           :: UniformLocation GLfloat
   } deriving (Data)
 
 data Shapes = Shapes

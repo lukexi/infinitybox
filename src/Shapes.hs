@@ -7,7 +7,7 @@ import Control.Lens.Extra
 import Types
 
 
-loadShapes :: IO Shapes
+loadShapes :: IO (Shapes, UniformBuffer)
 loadShapes = do
   
   let vRainbow = Visuals
@@ -27,14 +27,26 @@ loadShapes = do
   handGeo    <- cubeGeometry handDimensions   (V3 1 1 1)
   handleGeo  <- cubeGeometry handleDimensions (V3 1 1 1)
   faceGeo    <- cubeGeometry (V3 0.175 0.2 0.25) (V3 1 1 1)
-  
-  let csp = createShaderProgram (vRainbow ^. vertShader)
 
-  Shapes
-    <$> (makeShape roomGeo   =<< csp (vRainbow ^. roomShader  ))
-    <*> (makeShape cubeGeo   =<< csp (vRainbow ^. cubeShader  ))
-    <*> (makeShape lightGeo  =<< csp (vRainbow ^. lightShader ))
-    <*> (makeShape handGeo   =<< csp (vRainbow ^. handShader  ))
-    <*> (makeShape handleGeo =<< csp (vRainbow ^. handleShader))
-    <*> (makeShape faceGeo   =<< csp (vRainbow ^. faceShader  ))
-    <*> (makeShape cubeGeo   =<< csp (vRainbow ^. logoShader  ))
+
+  uboBuffer <- bufferUniformData GL_DYNAMIC_DRAW (replicate 12 (0::GLfloat))
+
+  let uboBindingPoint = UniformBlockBindingPoint 0
+  bindUniformBufferBase uboBuffer uboBindingPoint
+  
+  let csp fragShader = do
+        shader <- createShaderProgram (vRainbow ^. vertShader) fragShader
+        -- Bind the shader's uniform buffer declaration to the correct uniform buffer object
+        bindShaderUniformBuffer shader "uboData" uboBindingPoint
+        return shader
+
+  shapes <- Shapes
+        <$> (makeShape roomGeo   =<< csp (vRainbow ^. roomShader  ))
+        <*> (makeShape cubeGeo   =<< csp (vRainbow ^. cubeShader  ))
+        <*> (makeShape lightGeo  =<< csp (vRainbow ^. lightShader ))
+        <*> (makeShape handGeo   =<< csp (vRainbow ^. handShader  ))
+        <*> (makeShape handleGeo =<< csp (vRainbow ^. handleShader))
+        <*> (makeShape faceGeo   =<< csp (vRainbow ^. faceShader  ))
+        <*> (makeShape cubeGeo   =<< csp (vRainbow ^. logoShader  ))
+
+  return (shapes, uboBuffer)

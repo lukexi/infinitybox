@@ -23,7 +23,7 @@ import Data.Maybe
 import Sound.Pd
 
 
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 
 
 import Control.Concurrent

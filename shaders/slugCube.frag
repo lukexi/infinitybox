@@ -1,14 +1,19 @@
 #version 330 core
 
-uniform float uTime;
-uniform float uStarted;
-uniform float uTick;
 
-uniform float uFilledness;
-uniform float uComplete;
-uniform float uDayNight;
-uniform float uDayLength;
+layout (std140) uniform uboData {
+  // Manually grouping things into 4 'til I integrate a more principled approach
+  uniform float uStarted;
+  uniform float uTime;
+  uniform float uDayNight;
+  uniform float uDayLength;
+  
+  uniform vec3 uLight1;
+  uniform float uFilledness;
 
+  uniform vec3 uLight2;
+  uniform float uTick;
+};
 
 uniform vec3 uParameterA;
 uniform vec3 uParameterB;

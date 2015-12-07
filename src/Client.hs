@@ -12,11 +12,11 @@ import Control.Monad
 import Control.Monad.State.Strict
 import System.Random
 import Control.Lens.Extra
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Foldable
+import Data.Maybe
 import Control.Monad.Random
 import Animation.Pal
-
 import qualified System.Remote.Monitoring as EKG
 
 import Network.UDP.Pal
@@ -88,7 +88,7 @@ infinityClient serverIPType = withPd $ \pd -> do
       return ()
 
   -- Set up OpenGL resources
-  shapes <- loadShapes
+  (shapes, uboBuffer) <- loadShapes
 
   -- Set up GL state
   glEnable GL_DEPTH_TEST
@@ -154,17 +154,69 @@ infinityClient serverIPType = withPd $ \pd -> do
         <$> view wldLastCubes 
         <*> view wldCubes
 
-      lights12 <- getLocalHandPositions
-      lights34 <- getFirstRemoteHandPositions
-      let lights = lights12 ++ lights34
+      lights <- updateUBO uboBuffer
 
-      fillednessAnim  <- view wldFilledness
-      now <- getNow
-      let filledness = evanResult (evalAnim now fillednessAnim)
 
       viewMat <- viewMatrixFromPose <$> view (wldPlayer . plrPose)
       renderWith vrPal viewMat 
         (glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT))
-        (render shapes players cubes lights filledness)
+        (render shapes players cubes lights)
 
 
+updateUBO uboBuffer = do
+  lights12 <- getLocalHandPositions
+  lights34 <- getFirstRemoteHandPositions
+  let [V3 uLight1X uLight1Y uLight1Z, V3 uLight2X uLight2Y uLight2Z] = case lights12 of
+        lights@[light1, light2] -> lights
+        _ -> [0,0]
+  -- let [V3 uLight3X uLight3Y uLight3Z, V3 uLight4X uLight4Y uLight4Z] = case lights34
+  --       lights@[light3, light4] -> lights
+  --       _ -> [0,0]
+
+  now <- getNow
+  fillednessAnim <- view wldFilledness
+  let uFilledness = evanResult (evalAnim now fillednessAnim)
+
+  uTime <- view wldTime
+  uStarted <- view wldStarted
+  uDayNight <- dayNightCycleAt <$> view wldTime
+  let uDayLength = dayLength
+
+  kickVoiceID <- view wldKickVoiceID
+  uTick <- fromMaybe 0 <$> view (wldVoicePitch . at kickVoiceID)
+  let uboData = [ uStarted
+                , uTime
+                , uDayNight
+                , uDayLength
+                
+                , uLight1X, uLight1Y, uLight1Z
+                , uFilledness
+
+                , uLight2X, uLight2Y, uLight2Z
+                , uTick
+                ]
+  bufferUniformSubData uboBuffer uboData
+
+  {- We must ensure we group values by 4 for std140, 
+     so keep an up to date reference of our UBO layout here to match with
+
+  layout (std140) uniform uboData {
+    // Manually grouping things into 4 'til I integrate a more principled approach
+    uniform float uStarted;
+    uniform float uTime;
+    uniform float uDayNight;
+    uniform float uDayLength;
+    
+    uniform vec3 light1;
+    uniform float uFilledness;
+
+    uniform vec3 light2;
+    uniform float uTick;
+  };
+
+  -}
+
+
+  -- Returned solely for debug drawing
+  let lights = lights12 ++ lights34
+  return lights
