@@ -216,14 +216,15 @@ drawLights anShape projectionView lights filledness = do
       drawShape' model projectionView i anShape
 
 
---drawPlayers :: (MonadIO m, MonadReader World m) 
---            => Shape Uniforms
---            -> Shape Uniforms
---            -> Shape Uniforms
---            -> M44 GLfloat
---            -> V3 GLfloat
---            -> [V3 GLfloat]
---            -> m ()
+drawPlayers :: (MonadIO m, MonadReader World m) =>
+                 Shape Uniforms
+                 -> Shape Uniforms
+                 -> Shape Uniforms
+                 -> M44 GLfloat
+                 -> V3 GLfloat
+                 -> [V3 GLfloat]
+                 -> [Player]
+                 -> m ()
 drawPlayers hand handle face projectionView eyePos lights players = do
 
   useProgram (sProgram hand)
@@ -414,7 +415,6 @@ drawRoom room projectionView eyePos lights filledness = do
   uniformV3 uParameterB rotateVec
 
   uniformF uFilledness filledness
-  -- uniformF uComplete   =<< view wldComplete
 
   kickVoiceID <- view wldKickVoiceID
   tick <- fromMaybe 0 <$> view (wldVoicePitch . at kickVoiceID)

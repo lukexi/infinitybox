@@ -141,7 +141,6 @@ data World = World
   , _wldKickVoiceID    :: !VoiceID
   , _wldLastHands      :: !(Map HandID Hand) -- ^ Lets us detect new button pushes
   , _wldFilledness     :: !(Animation Float)
-  , _wldComplete       :: !(Animation Float)
   , _wldPhase          :: !Phase
   , _wldTime           :: !Float
   , _wldStarted        :: !Float
@@ -201,13 +200,6 @@ newWorld playerID player sourcesByVoice now = World
   , _wldKickVoiceID    = kickVoiceID
   , _wldLastHands      = mempty
   , _wldFilledness     = Animation
-      { animStart      = now
-      , animDuration   = 1
-      , animFunc       = anim id
-      , animFrom       = 0
-      , animTo         = 0
-      }
-  , _wldComplete       = Animation
       { animStart      = now
       , animDuration   = 1
       , animFunc       = anim id

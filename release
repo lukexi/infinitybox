@@ -22,7 +22,10 @@ mkdir -p $RELEASE_DIR
 stack install --flag infinitybox:-Logging $PROJECT_NAME --local-bin-path $RELEASE_DIR
 
 # Copy binary, source files and readme into the release dir
-cp -R dlls/* $RELEASE_DIR
+cp ../openvr-hs/openvr/bin/win64/openvr_api.dll $RELEASE_DIR
+cp ../pd-haskell/dlls/*.dll $RELEASE_DIR
+cp -R ../pd-haskell/dlls/openal $RELEASE_DIR
+cp ../bullet-mini/dlls/* $RELEASE_DIR
 cp -R src/ $RELEASE_DIR
 cp -R shaders/ $RELEASE_DIR
 cp -R patches/ $RELEASE_DIR
@@ -40,9 +43,12 @@ cd .release
 7z a -tzip $RELEASE_ZIP $PROJECT_NAME/
 cp $RELEASE_ZIP /c/Users/$USER/Desktop
 
-# Copy to tree.is server
-scp $RELEASE_ZIP tree@tree.is:/var/www/tree.is/releases/
-echo "Build available at http://tree.is/releases/$RELEASE_ZIP"
+# Copy to tree.is server if 'upload' argument is given
+if [[ "$1" == "upload" ]]; then
+  scp $RELEASE_ZIP tree@tree.is:/var/www/tree.is/releases/
+  echo "Build available at http://tree.is/releases/$RELEASE_ZIP"
+fi
+
 
 # Copy to the desktop for testing
 cp -R $PROJECT_NAME/ /c/Users/$USER/Desktop/$PROJECT_NAME-$DATE

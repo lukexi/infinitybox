@@ -39,12 +39,12 @@ enableEKG = False
 -- enableEKG = True
 
 enableDevices :: [VRPalDevices]
--- enableDevices = [UseOpenVR]
+enableDevices = [UseOpenVR]
 -- enableDevices = [UseOpenVR, UseHydra]
 -- enableDevices = [UseOculus, UseHydra]
 -- enableDevices = [UseOculus]
 -- enableDevices = [UseHydra]
-enableDevices = []
+-- enableDevices = []
 
 
 
