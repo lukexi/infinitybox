@@ -55,7 +55,7 @@ infinityClient serverIPType = withPd $ \pd -> do
   -- Set up GLFW/Oculus/Hydra
   vrPal@VRPal{..} <- reacquire 0 $ initVRPal "Infinity Box" enableDevices
 
-  (pitchesByVoice, amplitudesByVoice, sourcesByVoice) <- initAudio pd
+  sourcesByVoice <- initAudio pd
   
   -- Set up networking
   transceiverMVar <- newEmptyMVar
@@ -124,7 +124,7 @@ infinityClient serverIPType = withPd $ \pd -> do
       writeTransceiver transceiver $ Unreliable [UpdatePlayer playerID player]
 
     -- Render to OpenAL
-    updateAudio pd pitchesByVoice amplitudesByVoice
+    updateAudio pd
 
     delta <- realToFrac <$> liftIO gpGetDelta
 

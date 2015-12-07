@@ -47,7 +47,7 @@ Use instancing to render cubes
 [x] Use a withPd helper to initialize audio and shut it down correctly, and to remove the need for a PdRef
 [ ] Make sure encode and decode are occuring on secondary threads
 
-[ ] setListHook\ is from the amplitudes and pitches. Switch these to write to arrays
+[x] setListHook\ is from the amplitudes and pitches. Switch these to write to arrays
     and read those from the app
     On line 129 in Render.hs:
     Read voice pitches and amplitude from an array rather than one at a time!

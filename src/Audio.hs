@@ -14,7 +14,7 @@ import Control.Concurrent.STM
 exhaustChanIO :: MonadIO m => TChan a -> m [a]
 exhaustChanIO = liftIO . atomically . exhaustChan
 
-initAudio :: PureData -> IO (TChan Message, TChan Message, Map VoiceID OpenALSource)
+initAudio :: PureData -> IO (Map VoiceID OpenALSource)
 initAudio pd = do
 
   -- OpenAL-soft annoyingly needs its hrtf files in a certain APPDATA subfolder,
@@ -24,7 +24,7 @@ initAudio pd = do
   -- Set up sound
   forM_ ["patches", "patches/kit", "patches/kit/list-abs"] 
     (addToLibPdSearchPath pd)
-  _main <- makePatch   pd "patches/percy"
+  _main <- makePatch pd "patches/percy"
   
   -- Associate each voice number with an OpenAL source
   let openALSources = pdSources pd
@@ -41,32 +41,26 @@ initAudio pd = do
   forM_ voiceSources silenceVoice
 
   alListenerGain (3::Double)
-
-  pitchesByVoice    <- makeReceiveChan pd "pitchesByVoice"
-  amplitudesByVoice <- makeReceiveChan pd "amplitudesByVoice"
   
-  return (pitchesByVoice, amplitudesByVoice, sourcesByVoice)
+  return sourcesByVoice
 
-updateAudio :: (MonadIO m, MonadState World m) => PureData -> TChan Message -> TChan Message -> m ()
-updateAudio pd pitchesByVoice amplitudesByVoice = do
+updateAudio :: (MonadIO m, MonadState World m) => PureData -> m ()
+updateAudio pd = do
 
   sendGlobal pd "dayNight" =<< Atom . Float . dayNightCycleAt <$> use wldTime
 
   -- Update OpenAL Listener from player's total head pose
   alListenerPose =<< totalHeadPose <$> use wldPlayer
 
-  -- Set voice levels to 1 when they tick
-  exhaustChanIO pitchesByVoice >>= mapM_ (\val -> 
-    case val of
-      List [Float voiceID, Float pitch] -> wldVoicePitch . at (floor voiceID) ?= pitch
-      _ -> return ()
-    )
+  mPitches    <- liftIO $ readArray pd "pitches"    (0::Int) 15
+  mAmplitudes <- liftIO $ readArray pd "amplitudes" (0::Int) 15
 
-  exhaustChanIO amplitudesByVoice >>= mapM_ (\val -> 
-    case val of
-      List [Float voiceID, Float amp]  -> wldVoiceAmplitude . at (floor voiceID) ?= amp
-      _ -> return ()
-    )
+  forM_ mPitches $ \pitches -> 
+    forM_ mAmplitudes $ \amplitudes -> 
+      forM_ (zip3 [1..] pitches amplitudes) $ \(voiceID, pitch, amp) -> do
+        wldVoicePitch     . at voiceID ?= pitch
+        wldVoiceAmplitude . at voiceID ?= amp
+      
 
   -- -- Kick is always centered in the floor
   -- kickVoiceID <- use wldKickVoiceID
