@@ -102,7 +102,7 @@ infinityClient serverIPType = withPd $ \pd -> do
   now      <- getNow
   let world = newWorld playerID initialPlayer sourcesByVoice now
 
-  void . flip runRandT stdGen . flip runStateT world . whileWindow gpWindow $ do
+  void . flip runRandT stdGen . flip runStateT world . whileVR vrPal $ \headM44 hands -> do
   
     frameNumber <- wldFrameNumber <+= 1
 
@@ -157,8 +157,8 @@ infinityClient serverIPType = withPd $ \pd -> do
       lights <- updateUBO uboBuffer
 
 
-      viewMat <- viewMatrixFromPose <$> view (wldPlayer . plrPose)
-      renderWith vrPal viewMat 
+      player <- view (wldPlayer . plrPose)
+      renderWith vrPal player headM44 
         (glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT))
         (render shapes players cubes lights)
 

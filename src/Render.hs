@@ -12,6 +12,7 @@ import Control.Monad.State.Strict
 import Control.Monad.Reader
 import Control.Lens.Extra
 import qualified Data.Map.Strict as Map
+import Data.Map.Strict (Map)
 import Data.Maybe
 
 import Graphics.GL.Pal
@@ -55,12 +56,15 @@ getFirstRemoteHandPositions = do
       Nothing    -> []
 
 
---render :: (MonadIO m, MonadReader World m) 
---       => Shapes
---       -> M44 GLfloat
---       -> M44 GLfloat
---       -> m ()
-render Shapes{..} players cubes lights projection viewMat = do
+render :: (MonadIO m, MonadReader World m) 
+       => Shapes
+       -> [Player]
+       -> Map ObjectID Object
+       -> [V3 GLfloat]
+       -> M44 GLfloat
+       -> M44 GLfloat
+       -> m ()
+render Shapes{..} players cubes _lights projection viewMat = do
 
   let projectionView = projection !*! viewMat
       eyePos = inv44 viewMat ^. translation
@@ -81,13 +85,10 @@ render Shapes{..} players cubes lights projection viewMat = do
 
   drawRoom room projectionView eyePos
 
-  
---drawCubes :: (MonadIO m, MonadReader World m)
---          => Shape Uniforms
---          -> M44 GLfloat
---          -> V3 GLfloat
---          -> GLfloat
---          -> m ()
+
+drawCubes :: (MonadIO m, MonadReader World m) 
+          => Shape Uniforms
+          -> M44 GLfloat -> V3 GLfloat -> Map ObjectID Object -> m ()
 drawCubes cube projectionView eyePos cubes = do
   
 
@@ -180,14 +181,14 @@ drawLights anShape projectionView lights = do
       drawShape' model projectionView anShape
 
 
-drawPlayers :: (MonadIO m, MonadReader World m) =>
-                 Shape Uniforms
-                 -> Shape Uniforms
-                 -> Shape Uniforms
-                 -> M44 GLfloat
-                 -> V3 GLfloat
-                 -> [Player]
-                 -> m ()
+drawPlayers :: (MonadIO m, MonadReader World m) 
+            => Shape Uniforms
+            -> Shape Uniforms
+            -> Shape Uniforms
+            -> M44 GLfloat
+            -> V3 GLfloat
+            -> [Player]
+            -> m ()
 drawPlayers hand handle face projectionView eyePos players = do
   let haveRemotePlayers = not (null players)
   useProgram (sProgram hand)
@@ -214,6 +215,8 @@ drawPlayers hand handle face projectionView eyePos players = do
   -- drawRemoteHeads projectionView eyePos face (localPlayer':players)
   -- /DEBUG
 
+drawHandles :: (MonadIO m, MonadReader World m) 
+            => M44 GLfloat -> V3 GLfloat -> Shape Uniforms -> [Player] -> m ()
 drawHandles projectionView eyePos handle players = do
   let haveRemotePlayers = not (null players)
   useProgram (sProgram handle)
@@ -286,9 +289,6 @@ drawLocalHandles projectionView hand = do
 
     drawShape' finalMatrix projectionView hand
 
-
-
-
 drawRemoteHandles :: (MonadIO m, MonadReader World m) 
                 => M44 GLfloat -> Shape Uniforms -> [Player] -> m ()
 drawRemoteHandles projectionView hand players = do
@@ -326,12 +326,7 @@ drawRemoteHeads projectionView eyePos face players = do
       drawShape' finalMatrix projectionView face
 
 
---drawRoom :: (MonadIO m, MonadReader World m) 
---         => Shape Uniforms
---         -> M44 GLfloat
---         -> V3 GLfloat
---         -> GLfloat
---         -> m ()
+drawRoom :: MonadIO m => Shape Uniforms -> M44 GLfloat -> V3 GLfloat -> m ()
 drawRoom room projectionView eyePos = do
   let Uniforms{..} = sUniforms room
 

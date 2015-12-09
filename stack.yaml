@@ -6,12 +6,12 @@ packages:
 - ../bullet-mini
 - ../vr-pal
 - ../glfw-pal
-- ../hydra-hs
 - ../pd-haskell
 - ../halive
 - ../animation-pal
 - ../linear-extra
 - ../lens-extra
 - ../openvr-hs
+- ../bindings-GLFW
 extra-deps: []
 resolver: nightly-2015-12-03

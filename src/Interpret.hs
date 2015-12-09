@@ -43,7 +43,7 @@ interpret pd _ (CreateObject objID obj)       = do
         }
 
 
-interpret pd _ (DeleteObject objID)           = do
+interpret _pd _ (DeleteObject objID)           = do
   mVoiceID <- use $ wldCubeVoices . at objID
   forM_ mVoiceID $ \voiceID -> do
     mSourceID <- use $ wldVoiceSources . at voiceID
@@ -69,7 +69,7 @@ interpret _ vrPal (ObjectCollision collision) = do
   let bodyIDs  = fromIntegral <$> sequence [cbBodyAID, cbBodyBID] collision
       impulse  = cbAppliedImpulse collision
       axis     = 0
-      duration = floor (10000 * realToFrac impulse)
+      duration = floor (10000 * impulse)
   when (leftHandRigidBodyID `elem` bodyIDs) $ do
     let controllerNumber = 0
     triggerHandHapticPulse vrPal controllerNumber axis duration

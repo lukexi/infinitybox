@@ -25,14 +25,13 @@ initAudio pd = do
   forM_ ["patches", "patches/kit", "patches/kit/list-abs"] 
     (addToLibPdSearchPath pd)
   _main <- makePatch pd "patches/percy"
-  
-  -- Associate each voice number with an OpenAL source
-  let openALSources = pdSources pd
 
   -- Use an exponential falloff rate to magnify proximity effects
   setOpenALDistanceModelExponent
-
-  let voiceSources = init openALSources -- reserve last source for the logo sound
+  
+  -- Associate each voice number with an OpenAL source
+  let openALSources  = pdSources pd
+      voiceSources   = init openALSources -- reserve last source for the logo sound
       sourcesByVoice = Map.fromList (zip [1..] voiceSources)
 
   alSourcePosition (last openALSources) (logoObject ^. objPose . posPosition)
