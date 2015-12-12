@@ -34,11 +34,10 @@ processControls :: (MonadIO m, MonadState World m, MonadRandom m)
                 -> VRPal
                 -> MVar (Transceiver Op)
                 -> Integer
+                -> M44 GLfloat
+                -> [Hand]
                 -> m ()
-processControls pd vrPal@VRPal{..} transceiverMVar frameNumber = do
-  -- Get latest Hydra data
-
-  (hands, handsType) <- getHands vrPal
+processControls pd vrPal@VRPal{..} transceiverMVar frameNumber headMatrix hands = do
 
   -- Update hand positions
   handWorldPoses <- flip handsToWorldPoses hands . transformationFromPose <$> use (wldPlayer . plrPose)
@@ -47,20 +46,7 @@ processControls pd vrPal@VRPal{..} transceiverMVar frameNumber = do
   -- wldPlayer . plrHandPoses .= [newPose,newPose]
 
   -- Update head position
-  wldPlayer . plrHeadPose <~ poseFromMatrix <$> getPoseForHMDType gpHMD
-
-  -- Handle Hydra movement events, or mouse if no Hydra present
-  if null hands 
-    then do
-      -- Disabled mouselook because it's dumb
-      -- isFocused <- getWindowFocused window
-      -- when isFocused $ applyMouseLook window (wldPlayer . plrPose)
-      return ()
-    else do
-      -- Disabled hydra joysticks for no motion sickness
-      when (handsType == HandsHydra) $
-        applyHandJoystickMovement hands (wldPlayer . plrPose)
-      return ()
+  wldPlayer . plrHeadPose .= poseFromMatrix headMatrix
   
   -- Handle keyboard movement events
   applyWASD gpWindow (wldPlayer . plrPose)
@@ -84,7 +70,7 @@ processControls pd vrPal@VRPal{..} transceiverMVar frameNumber = do
     onKeyDown e Key'Space (addCube pd vrPal transceiverMVar (shiftBy (V3 0 0.1 0) playerPose))
     onKeyDown e Key'F (setCursorInputMode gpWindow CursorInputMode'Disabled)
     onKeyDown e Key'G (setCursorInputMode gpWindow CursorInputMode'Normal)
-    onKeyDown e Key'O (recenterWhenOculus vrPal)
+    onKeyDown e Key'O (recenterSeatedPose vrPal)
     onKeyDown e Key'Z (addCube pd vrPal transceiverMVar newPose)
     onKeyDown e Key'N (startLogo pd)
     onKeyDown e Key'M startMain
@@ -101,7 +87,7 @@ processControls pd vrPal@VRPal{..} transceiverMVar frameNumber = do
   forM_ (zip hands handWorldPoses) $ \(hand, handMatrix) -> do
 
     -- Bind Hydra 'Start' buttons to HMD Recenter
-    when (hand ^. hndButtonS) $ recenterWhenOculus vrPal
+    when (hand ^. hndButtonS) $ recenterSeatedPose vrPal
 
     processHandCubeFiring pd vrPal hand (poseFromMatrix handMatrix) frameNumber transceiverMVar
   wldLastHands .= Map.fromList (zip (map (^. hndID) hands) hands)

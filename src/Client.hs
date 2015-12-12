@@ -115,7 +115,7 @@ infinityClient serverIPType = withPd $ \pd -> do
       interpretNetworkPackets (tcVerifiedPackets transceiver) (interpret pd vrPal)
 
     -- Process controllers (Keyboard, Mouse, Gamepad, Hydra, Oculus headtracking)
-    processControls pd vrPal transceiverMVar frameNumber
+    processControls pd vrPal transceiverMVar frameNumber headM44 hands
 
     -- Send player position
     player <- use wldPlayer
